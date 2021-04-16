@@ -64,5 +64,17 @@
             </HBox.margin>
         </Button>
     </HBox>
-    <Button minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#execute" prefHeight="60.0" prefWidth="400.0" text="执行" />
+    <HBox>
+        <Button fx:id="execute" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#execute" prefHeight="60.0" prefWidth="300.0" text="执行" />
+        <Button fx:id="cancel" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#cancel" prefHeight="60.0" text="取消">
+            <HBox.margin>
+                <Insets left="10.0" />
+            </HBox.margin>
+        </Button>
+    </HBox>
+    <TextArea fx:id="messageDetail" prefWidth="400.0">
+        <VBox.margin>
+            <Insets top="10.0" />
+        </VBox.margin>
+    </TextArea>
 </VBox>

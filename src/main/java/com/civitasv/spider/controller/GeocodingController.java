@@ -6,6 +6,7 @@ import com.civitasv.spider.dao.impl.AMapDaoImpl;
 import com.civitasv.spider.model.Geocodes;
 import com.civitasv.spider.util.FileUtil;
 import com.civitasv.spider.util.MessageUtil;
+import com.civitasv.spider.util.MyProgressBar;
 import com.civitasv.spider.util.ParseUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -14,10 +15,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
@@ -36,6 +34,7 @@ import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 public class GeocodingController {
@@ -55,9 +54,12 @@ public class GeocodingController {
     public TextField threadNum;
     // 面板
     public VBox main;
-
-    private LoadingController loadingController;
+    // 信息
+    public TextArea messageDetail;
+    // 取消按钮，执行按钮
+    public Button cancel, execute;
     private ExecutorService worker, executorService;
+    private MyProgressBar progressBar;
 
     public void init() {
         TextFormatter<Integer> formatter = new TextFormatter<>(
@@ -93,8 +95,7 @@ public class GeocodingController {
             MessageUtil.alert(Alert.AlertType.ERROR, "输入文件", null, "输入文件格式有误，请选择json、csv或txt格式文件！");
             return;
         }
-        main.setDisable(true);
-        loadingController = showLoading();
+        startAnalysis();
         // 解析输入文件
         List<Map<String, String>> parseRes = null;
         switch (extension) {
@@ -107,6 +108,7 @@ public class GeocodingController {
         }
         // 解析地址
         if (parseRes != null && parseRes.size() > 0) {
+            progressBar = new MyProgressBar(messageDetail, parseRes.size() - 1, 50, "#");
             // 获取输出格式
             String outputFormat = format.getValue();
             switch (outputFormat) {
@@ -121,7 +123,7 @@ public class GeocodingController {
 
         } else {
             MessageUtil.alert(Alert.AlertType.ERROR, "解析", null, "输入为空或解析失败，请检查后重试！");
-            main.setDisable(false);
+            endAnalysis();
         }
     }
 
@@ -159,24 +161,33 @@ public class GeocodingController {
             int threadNum = this.threadNum.getText().isEmpty() ? 2 : Integer.parseInt(this.threadNum.getText());
             // 创建线程池执行解析工作
             executorService = Executors.newFixedThreadPool(threadNum);
+            final List<Integer> failIds = new ArrayList<>();
             for (int i = 0; i < parseRes.size(); i += threadNum) {
                 List<Callable<Geocodes.Response>> call = new ArrayList<>();
                 for (int j = 0; j < threadNum && (i + j) < parseRes.size(); j++) {
                     Map<String, String> item = parseRes.get(i + j);
-                    call.add(() ->
-                            inputKey.getText().isEmpty() ?
-                                    aMapDao.geocoding(item.get("address"), item.get("city"))
-                                    : aMapDao.geocoding(inputKey.getText(), item.get("address"), item.get("city"))
-                    );
+                    if (item.containsKey("address"))
+                        call.add(() ->
+                                inputKey.getText().isEmpty() ?
+                                        aMapDao.geocoding(item.get("address"), item.get("city"))
+                                        : aMapDao.geocoding(inputKey.getText(), item.get("address"), item.get("city"))
+                        );
                 }
                 try {
                     List<Future<Geocodes.Response>> futures = executorService.invokeAll(call);
                     for (int j = 0; j < futures.size(); j++) {
                         // 更新解析进度
-                        loadingController.setProgress((i + j) * 1.0 / (parseRes.size() - 1));
+                        int finalI = i, finalJ = j;
+                        Platform.runLater(() -> {
+                            progressBar.show(finalI + finalJ);
+                        });
                         Future<Geocodes.Response> future = futures.get(j);
                         Map<String, String> item = parseRes.get(i + j);
                         Geocodes.Response response = future.get();
+                        if (response == null) {
+                            failIds.add(i + j);
+                            continue;
+                        }
                         item.put("status", response.getStatus().toString());
                         item.put("info", response.getInfo());
                         item.put("infocode", response.getInfoCode());
@@ -231,9 +242,9 @@ public class GeocodingController {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            main.setDisable(false);
+            endAnalysis();
             // 解析完成，在主线程进行UI更新
-            Platform.runLater(() -> hideLoading(true));
+            Platform.runLater(() -> finish(parseRes, failIds));
         });
         worker.shutdown();
     }
@@ -245,27 +256,36 @@ public class GeocodingController {
             int threadNum = this.threadNum.getText().isEmpty() ? 2 : Integer.parseInt(this.threadNum.getText());
             // 创建线程池执行解析工作
             executorService = Executors.newFixedThreadPool(threadNum);
+            final List<Integer> failIds = new ArrayList<>();
             JsonArray jsonArray = new JsonArray();
             for (int i = 0; i < parseRes.size(); i += threadNum) {
                 List<Callable<Geocodes.Response>> call = new ArrayList<>();
                 for (int j = 0; j < threadNum && (i + j) < parseRes.size(); j++) {
                     Map<String, String> item = parseRes.get(i + j);
-                    call.add(() ->
-                            inputKey.getText().isEmpty() ?
-                                    aMapDao.geocoding(item.get("address"), item.get("city"))
-                                    : aMapDao.geocoding(inputKey.getText(), item.get("address"), item.get("city"))
-                    );
+                    if (item.containsKey("address"))
+                        call.add(() ->
+                                inputKey.getText().isEmpty() ?
+                                        aMapDao.geocoding(item.get("address"), item.get("city"))
+                                        : aMapDao.geocoding(inputKey.getText(), item.get("address"), item.get("city"))
+                        );
                 }
                 try {
                     List<Future<Geocodes.Response>> futures = executorService.invokeAll(call);
                     for (int j = 0; j < futures.size(); j++) {
                         // 更新解析进度
-                        loadingController.setProgress((i + j) * 1.0 / (parseRes.size() - 1));
+                        int finalI = i, finalJ = j;
+                        Platform.runLater(() -> {
+                            progressBar.show(finalI + finalJ);
+                        });
                         JsonObject jsonObject = new JsonObject();
                         Future<Geocodes.Response> future = futures.get(j);
                         Map<String, String> item = parseRes.get(i + j);
                         item.forEach(jsonObject::addProperty);
                         Geocodes.Response response = future.get();
+                        if (response == null) {
+                            failIds.add(i + j);
+                            continue;
+                        }
                         jsonObject.addProperty("status", response.getStatus().toString());
                         jsonObject.addProperty("info", response.getInfo());
                         jsonObject.addProperty("infocode", response.getInfoCode());
@@ -305,35 +325,51 @@ public class GeocodingController {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            main.setDisable(false);
+            endAnalysis();
             // 解析完成，在主线程进行UI更新
-            Platform.runLater(() -> hideLoading(true));
+            Platform.runLater(() -> finish(parseRes, failIds));
         });
         worker.shutdown();
     }
 
-    private LoadingController showLoading() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("loading.fxml"));
-        Parent root = fxmlLoader.load();
-        Stage stage = new Stage();
-        stage.initStyle(StageStyle.UNDECORATED);
-        stage.setResizable(false);
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
-        stage.show();
-        LoadingController controller = fxmlLoader.getController();
-        controller.cancel(event -> {
-            // 停止解析
-            executorService.shutdownNow();
-            worker.shutdownNow();
-            main.setDisable(false);
-        });
-        return controller;
+    private void finish(List<Map<String, String>> parseRes, List<Integer> failIds) {
+        if (failIds.size() == 0) {
+            setMessage("解析成功");
+        } else {
+            StringBuilder builder = new StringBuilder();
+            builder.append("成功了").append(parseRes.size() - failIds.size()).append("个，失败了").append(failIds.size()).append("个，失败条目如下：\r\n");
+            for (int id : failIds) {
+                Map<String, String> item = parseRes.get(id);
+                builder.append(item.toString()).append("\r\n");
+            }
+            setMessage(builder.toString());
+        }
     }
 
-    private void hideLoading(boolean success) {
-        loadingController.setMessage(success ? "解析成功" : "解析失败");
+    private void setMessage(String text) {
+        this.messageDetail.appendText(text);
+    }
+
+    private void startAnalysis() {
+        execute.setDisable(true);
+        inputKey.setDisable(true);
+        inputFile.setDisable(true);
+        format.setDisable(true);
+        outputDirectory.setDisable(true);
+    }
+
+    private void endAnalysis() {
+        execute.setDisable(false);
+        inputKey.setDisable(false);
+        inputFile.setDisable(false);
+        format.setDisable(false);
+        outputDirectory.setDisable(false);
+    }
+
+    public void cancel() {
+        // 停止解析
+        executorService.shutdownNow();
+        worker.shutdownNow();
+        main.setDisable(false);
     }
 }

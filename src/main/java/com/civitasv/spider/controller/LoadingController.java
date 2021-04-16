@@ -3,6 +3,7 @@ package com.civitasv.spider.controller;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TextArea;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.text.Text;
@@ -32,8 +33,7 @@ public class LoadingController {
         stage.close();
     }
 
-    public void setMessage(String text) {
-        this.message.setText(text);
+    public void finish() {
         this.cancel.setVisible(false);
         this.message.setVisible(true);
     }

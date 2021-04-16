@@ -25,8 +25,7 @@ public class AMapDaoImpl implements AMapDao {
         try {
             return call.execute().body();
         } catch (IOException e) {
-            e.printStackTrace();
+            return null;
         }
-        return null;
     }
 }
