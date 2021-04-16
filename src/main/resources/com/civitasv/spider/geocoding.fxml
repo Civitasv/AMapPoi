@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.collections.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="main" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.civitasv.spider.controller.GeocodingController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+    <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <padding>
+            <Insets bottom="10.0" top="10.0" />
+        </padding>
+        <Label text="高德Key：" />
+        <TextField fx:id="inputKey" prefWidth="280.0" />
+    </HBox>
+    <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <padding>
+            <Insets bottom="10.0" top="10.0" />
+        </padding>
+        <Label text="线程数目：" />
+        <TextField fx:id="threadNum" prefWidth="280.0" />
+    </HBox>
+    <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <padding>
+            <Insets bottom="10.0" top="10.0" />
+        </padding>
+        <Label text="输入文件：" />
+        <TextField fx:id="inputFile" prefWidth="280.0" />
+        <Button onMouseClicked="#chooseFile" text="浏览">
+            <HBox.margin>
+                <Insets left="5.0" />
+            </HBox.margin>
+        </Button>
+    </HBox>
+    <HBox alignment="CENTER_LEFT">
+        <padding>
+            <Insets bottom="10.0" />
+        </padding>
+        <Label text="输出格式：" />
+        <ChoiceBox fx:id="format" prefWidth="150.0" value="json">
+            <items>
+                <FXCollections fx:factory="observableArrayList">
+                    <String fx:value="json" />
+                    <String fx:value="csv" />
+                    <String fx:value="txt" />
+                </FXCollections>
+            </items>
+        </ChoiceBox>
+    </HBox>
+
+    <HBox alignment="CENTER_LEFT">
+        <padding>
+            <Insets bottom="10.0" />
+        </padding>
+        <Label text="输出目录：" />
+        <TextField fx:id="outputDirectory" prefWidth="280.0" />
+        <Button onMouseClicked="#chooseDirectory" text="浏览">
+            <HBox.margin>
+                <Insets left="5.0" />
+            </HBox.margin>
+        </Button>
+    </HBox>
+    <Button minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#execute" prefHeight="60.0" prefWidth="400.0" text="执行" />
+</VBox>
