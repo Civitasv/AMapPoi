@@ -87,28 +87,25 @@ public class GeocodingController {
         String extension = FileUtil.getExtension(inputFile.getText());
         if (extension != null) {
             extension = extension.toLowerCase(Locale.ROOT);
-            if (!extension.equals("json") && !extension.equals("csv") && !extension.equals("txt")) {
-                MessageUtil.alert(Alert.AlertType.ERROR, "输入文件", null, "输入文件格式有误，请选择json、csv或txt格式文件！");
+            if (!extension.equals("csv") && !extension.equals("txt")) {
+                MessageUtil.alert(Alert.AlertType.ERROR, "输入文件", null, "输入文件格式有误，请选择csv或txt格式文件！");
                 return;
             }
         } else {
-            MessageUtil.alert(Alert.AlertType.ERROR, "输入文件", null, "输入文件格式有误，请选择json、csv或txt格式文件！");
+            MessageUtil.alert(Alert.AlertType.ERROR, "输入文件", null, "输入文件格式有误，请选择csv或txt格式文件！");
             return;
         }
         startAnalysis();
         // 解析输入文件
-        List<Map<String, String>> parseRes = null;
-        switch (extension) {
-            case "csv":
-            case "txt":
-                parseRes = ParseUtil.parseTxtOrCsv(inputFile.getText());
-                break;
-            case "json":
-                break;
-        }
+        List<Map<String, String>> parseRes = ParseUtil.parseTxtOrCsv(inputFile.getText());
         // 解析地址
         if (parseRes != null && parseRes.size() > 0) {
-            progressBar = new MyProgressBar(messageDetail, parseRes.size() - 1, 50, "#");
+            if (!parseRes.get(0).containsKey("address")) {
+                MessageUtil.alert(Alert.AlertType.ERROR, "解析", null, "输入文件不含address关键字，请修改后重试！");
+                endAnalysis();
+                return;
+            }
+            progressBar = new MyProgressBar(messageDetail, 50, parseRes.size() - 1, "|", "-");
             // 获取输出格式
             String outputFormat = format.getValue();
             switch (outputFormat) {
@@ -120,9 +117,8 @@ public class GeocodingController {
                     saveToJson(parseRes);
                     break;
             }
-
         } else {
-            MessageUtil.alert(Alert.AlertType.ERROR, "解析", null, "输入为空或解析失败，请检查后重试！");
+            MessageUtil.alert(Alert.AlertType.ERROR, "解析", null, "输入文件为空或解析失败，请检查后重试！");
             endAnalysis();
         }
     }
@@ -134,7 +130,6 @@ public class GeocodingController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("选择输入文件");
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("json", "*.json"),
                 new FileChooser.ExtensionFilter("csv", "*.csv"),
                 new FileChooser.ExtensionFilter("txt", "*.txt")
         );
@@ -368,8 +363,11 @@ public class GeocodingController {
 
     public void cancel() {
         // 停止解析
-        executorService.shutdownNow();
-        worker.shutdownNow();
-        main.setDisable(false);
+        if (executorService != null)
+            executorService.shutdownNow();
+        if (worker != null)
+            worker.shutdownNow();
+        endAnalysis();
+        messageDetail.clear();
     }
 }
