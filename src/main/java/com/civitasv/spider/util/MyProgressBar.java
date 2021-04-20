@@ -69,7 +69,7 @@ public class MyProgressBar {
         for (int i = 0; i < unFinish; i++) {
             this.textArea.appendText(unFinishChar);
         }
-        this.textArea.appendText("[");
+        this.textArea.appendText("]");
         if ((int) (rate * 100) == 100)
             this.textArea.appendText("\r\n");
     }

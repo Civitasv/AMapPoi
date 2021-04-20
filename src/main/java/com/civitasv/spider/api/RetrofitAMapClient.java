@@ -10,18 +10,18 @@ import java.util.concurrent.TimeUnit;
 /**
  * Retrofit基类
  */
-public class RetrofitClient {
-    private static RetrofitClient instance;
+public class RetrofitAMapClient {
+    private static RetrofitAMapClient instance;
     private static Retrofit retrofit;
     private final static String BASE_URL = "https://restapi.amap.com/v3/";
 
-    public static synchronized RetrofitClient getInstance() {
+    public static synchronized RetrofitAMapClient getInstance() {
         if (instance == null)
-            return new RetrofitClient();
+            return new RetrofitAMapClient();
         return instance;
     }
 
-    private RetrofitClient() {
+    private RetrofitAMapClient() {
         OkHttpClient okHttpClient = new OkHttpClient().newBuilder()
                 .readTimeout(5, TimeUnit.SECONDS)
                 .connectTimeout(5, TimeUnit.SECONDS)

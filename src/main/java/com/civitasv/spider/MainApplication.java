@@ -2,6 +2,7 @@ package com.civitasv.spider;
 
 import com.civitasv.spider.controller.GeocodingController;
 import com.civitasv.spider.controller.LoadingController;
+import com.civitasv.spider.controller.POIController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -23,7 +24,7 @@ public class MainApplication extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("geocoding"));
+        scene = new Scene(loadFXML("poi"));
         scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
         stage.setResizable(false);
         stage.setScene(scene);
@@ -45,6 +46,10 @@ public class MainApplication extends Application {
         Parent root = fxmlLoader.load();
         if (fxmlLoader.getController() instanceof GeocodingController) {
             GeocodingController controller = fxmlLoader.getController();
+            controller.init();
+        }
+        if (fxmlLoader.getController() instanceof POIController) {
+            POIController controller = fxmlLoader.getController();
             controller.init();
         }
         return root;
