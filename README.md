@@ -1,5 +1,7 @@
 ## 概述
 
+受[OSpider](https:/github.com/skytruine/OSpider)启发，使用JavaFX开发高德POI数据获取软件，同时，计划支持GIS常用工具如地理编码、geojson/shp转换等。
+
 version： 0.0.1
 
 功能：POI搜索、地理编码
