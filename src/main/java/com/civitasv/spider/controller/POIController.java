@@ -11,14 +11,22 @@ import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.converter.IntegerStringConverter;
 
 import java.awt.*;
@@ -57,15 +65,13 @@ public class POIController {
     private ExecutorService worker, executorService;
 
     public void init() {
-        this.threadNum.setTextFormatter(getFormatter(4));
-        this.grids.setTextFormatter(getFormatter(4));
-        this.threshold.setTextFormatter(getFormatter(850));
+        this.threadNum.setTextFormatter(getFormatter());
+        this.grids.setTextFormatter(getFormatter());
+        this.threshold.setTextFormatter(getFormatter());
     }
 
-    private TextFormatter<Integer> getFormatter(Integer defaultVal) {
+    private TextFormatter<Integer> getFormatter() {
         return new TextFormatter<>(
-                new IntegerStringConverter(),
-                defaultVal,
                 c -> Pattern.matches("\\d*", c.getText()) ? c : null);
     }
 
@@ -447,5 +453,18 @@ public class POIController {
 
     private void appendMessage(String text) {
         Platform.runLater(() -> messageDetail.appendText("\r\n" + text));
+    }
+
+    public void openGeocoding() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("geocoding.fxml"));
+        Parent root = fxmlLoader.load();
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("地理编码");
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
     }
 }

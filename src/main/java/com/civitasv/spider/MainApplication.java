@@ -28,6 +28,7 @@ public class MainApplication extends Application {
         scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
         stage.setResizable(false);
         stage.setScene(scene);
+        stage.setTitle("POI搜索");
         stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
         stage.show();
     }

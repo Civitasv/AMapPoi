@@ -7,134 +7,141 @@
 <?import javafx.scene.layout.*?>
 
 <VBox fx:id="main" alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.civitasv.spider.controller.POIController">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-    </padding>
-    <Label text="高德key（不同key之间以英文逗号分割）：" />
-    <TextArea fx:id="keys" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="500.0" />
-    <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <Label minHeight="-Infinity" minWidth="-Infinity" prefWidth="100.0" text="POI关键字：" />
-        <TextField fx:id="keywords" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="400.0" promptText="使用逗号分割不同关键字" HBox.hgrow="ALWAYS" />
-      <VBox.margin>
-         <Insets top="10.0" />
-      </VBox.margin>
-    </HBox>
-    <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="345.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <padding>
-            <Insets bottom="10.0" top="10.0" />
-        </padding>
-        <Label prefHeight="18.0" prefWidth="100.0" text="POI类型：" />
-        <TextField fx:id="types" prefWidth="250.0" promptText="使用逗号分割不同类型" HBox.hgrow="ALWAYS" />
-        <Button fx:id="poiType" onMouseClicked="#openPOITypes" prefHeight="25.0" prefWidth="150.0" text="POI分类编码">
-            <HBox.margin>
-                <Insets left="5.0" />
-            </HBox.margin>
-        </Button>
-    </HBox>
-    <TabPane fx:id="tabs" tabClosingPolicy="UNAVAILABLE">
-        <Tab text="行政区">
-            <AnchorPane minHeight="0.0" minWidth="0.0">
-                <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
-                    <Label text="行政区代码：" />
-                    <TextField fx:id="city" prefWidth="210.0" promptText="行政区六位代码" HBox.hgrow="ALWAYS" />
-                    <Button mnemonicParsing="false" onMouseClicked="#chooseAdCode" text="行政区划代码">
-                        <HBox.margin>
-                            <Insets left="5.0" />
-                        </HBox.margin>
-                    </Button>
-                    <padding>
-                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-                    </padding>
-                </HBox>
-            </AnchorPane>
-        </Tab>
-        <Tab text="矩形">
-            <AnchorPane minHeight="0.0" minWidth="0.0">
-                <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
-                    <Label layoutX="14.0" layoutY="14.0" text="矩形：" />
-                    <TextField fx:id="rectangle" layoutX="51.0" layoutY="10.0" prefWidth="300.0" promptText="矩形左上角经纬度#矩形右下角经纬度" HBox.hgrow="ALWAYS" />
-                </HBox>
-                <padding>
-                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-                </padding>
-            </AnchorPane>
-        </Tab>
-        <Tab text="自定义">
-            <AnchorPane minHeight="0.0" minWidth="0.0">
-                <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
-                    <Label layoutX="14.0" layoutY="14.0" text="文件目录：" />
-                    <TextField fx:id="userFile" layoutX="75.0" layoutY="10.0" prefWidth="210.0" promptText="GeoJSO格式边界" HBox.hgrow="ALWAYS" />
-                    <Button layoutX="293.0" layoutY="10.0" mnemonicParsing="false" onMouseClicked="#chooseFile" text="浏览">
-                        <HBox.margin>
-                            <Insets left="5.0" />
-                        </HBox.margin>
-                    </Button>
-                    <padding>
-                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-                    </padding>
-                </HBox>
-            </AnchorPane>
-        </Tab>
-    </TabPane>
-    <HBox alignment="CENTER_LEFT">
-        <Label prefWidth="100.0" text="初始网格数：" />
-        <TextField fx:id="grids" prefHeight="25.0" prefWidth="150.0" text="4" HBox.hgrow="ALWAYS" />
-        <Label alignment="CENTER_RIGHT" prefWidth="100.0" text="阈值：">
-            <HBox.margin>
-                <Insets left="20.0" />
-            </HBox.margin>
-        </Label>
-        <TextField fx:id="threshold" prefHeight="25.0" prefWidth="150.0" text="850" />
+    <MenuBar>
+        <Menu mnemonicParsing="false" text="工具">
+            <MenuItem mnemonicParsing="false" onAction="#openGeocoding" text="地理编码" />
+        </Menu>
+    </MenuBar>
+    <VBox>
         <VBox.margin>
-            <Insets top="5.0" />
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
         </VBox.margin>
-    </HBox>
-    <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <padding>
-            <Insets bottom="10.0" top="10.0" />
-        </padding>
-        <Label prefHeight="18.0" prefWidth="100.0" text="线程数目：" />
-        <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" text="4" HBox.hgrow="ALWAYS" />
-    </HBox>
-    <HBox alignment="CENTER_LEFT">
-        <padding>
-            <Insets bottom="10.0" />
-        </padding>
-        <Label prefHeight="18.0" prefWidth="100.0" text="输出格式：" />
-        <ChoiceBox fx:id="format" prefWidth="150.0" value="geojson">
-            <items>
-                <FXCollections fx:factory="observableArrayList">
-                    <String fx:value="geojson" />
-                    <String fx:value="csv" />
-                    <String fx:value="txt" />
-                </FXCollections>
-            </items>
-        </ChoiceBox>
-    </HBox>
+        <Label text="高德key（不同key之间以英文逗号分割）：" />
+        <TextArea fx:id="keys" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="500.0" />
+        <HBox alignment="CENTER_LEFT">
+            <Label minHeight="-Infinity" minWidth="-Infinity" prefWidth="100.0" text="POI关键字：" />
+            <TextField fx:id="keywords" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="400.0" promptText="使用逗号分割不同关键字" HBox.hgrow="ALWAYS" />
+            <VBox.margin>
+                <Insets top="10.0" />
+            </VBox.margin>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="345.0">
+            <padding>
+                <Insets bottom="10.0" top="10.0" />
+            </padding>
+            <Label prefHeight="18.0" prefWidth="100.0" text="POI类型：" />
+            <TextField fx:id="types" prefWidth="250.0" promptText="使用逗号分割不同类型" HBox.hgrow="ALWAYS" />
+            <Button fx:id="poiType" onMouseClicked="#openPOITypes" prefHeight="25.0" prefWidth="150.0" text="POI分类编码">
+                <HBox.margin>
+                    <Insets left="5.0" />
+                </HBox.margin>
+            </Button>
+        </HBox>
+        <TabPane fx:id="tabs" tabClosingPolicy="UNAVAILABLE">
+            <Tab text="行政区">
+                <AnchorPane minHeight="0.0" minWidth="0.0">
+                    <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
+                        <Label text="行政区代码：" />
+                        <TextField fx:id="city" prefWidth="210.0" promptText="行政区六位代码" HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onMouseClicked="#chooseAdCode" text="行政区划代码">
+                            <HBox.margin>
+                                <Insets left="5.0" />
+                            </HBox.margin>
+                        </Button>
+                        <padding>
+                            <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                        </padding>
+                    </HBox>
+                </AnchorPane>
+            </Tab>
+            <Tab text="矩形">
+                <AnchorPane minHeight="0.0" minWidth="0.0">
+                    <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
+                        <Label layoutX="14.0" layoutY="14.0" text="矩形：" />
+                        <TextField fx:id="rectangle" layoutX="51.0" layoutY="10.0" prefWidth="300.0" promptText="矩形左上角经纬度#矩形右下角经纬度" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                    <padding>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                    </padding>
+                </AnchorPane>
+            </Tab>
+            <Tab text="自定义">
+                <AnchorPane minHeight="0.0" minWidth="0.0">
+                    <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
+                        <Label layoutX="14.0" layoutY="14.0" text="文件目录：" />
+                        <TextField fx:id="userFile" layoutX="75.0" layoutY="10.0" prefWidth="210.0" promptText="GeoJSO格式边界" HBox.hgrow="ALWAYS" />
+                        <Button layoutX="293.0" layoutY="10.0" mnemonicParsing="false" onMouseClicked="#chooseFile" text="浏览">
+                            <HBox.margin>
+                                <Insets left="5.0" />
+                            </HBox.margin>
+                        </Button>
+                        <padding>
+                            <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                        </padding>
+                    </HBox>
+                </AnchorPane>
+            </Tab>
+        </TabPane>
+        <HBox alignment="CENTER_LEFT">
+            <Label prefWidth="100.0" text="初始网格数：" />
+            <TextField fx:id="grids" prefHeight="25.0" prefWidth="150.0" text="4" HBox.hgrow="ALWAYS" />
+            <Label alignment="CENTER_RIGHT" prefWidth="100.0" text="阈值：">
+                <HBox.margin>
+                    <Insets left="20.0" />
+                </HBox.margin>
+            </Label>
+            <TextField fx:id="threshold" prefHeight="25.0" prefWidth="150.0" text="850" />
+            <VBox.margin>
+                <Insets top="5.0" />
+            </VBox.margin>
+        </HBox>
+        <HBox alignment="CENTER_LEFT">
+            <padding>
+                <Insets bottom="10.0" top="10.0" />
+            </padding>
+            <Label prefHeight="18.0" prefWidth="100.0" text="线程数目：" />
+            <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" promptText="建议不大于QPS * keys_num * 0.1" HBox.hgrow="ALWAYS" />
+        </HBox>
+        <HBox alignment="CENTER_LEFT">
+            <padding>
+                <Insets bottom="10.0" />
+            </padding>
+            <Label prefHeight="18.0" prefWidth="100.0" text="输出格式：" />
+            <ChoiceBox fx:id="format" prefWidth="150.0" value="geojson">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="geojson" />
+                        <String fx:value="csv" />
+                        <String fx:value="txt" />
+                    </FXCollections>
+                </items>
+            </ChoiceBox>
+        </HBox>
 
-    <HBox alignment="CENTER_LEFT">
-        <padding>
-            <Insets bottom="10.0" />
-        </padding>
-        <Label prefWidth="100.0" text="输出目录：" />
-        <TextField fx:id="outputDirectory" prefWidth="300.0" HBox.hgrow="ALWAYS" />
-        <Button fx:id="directoryBtn" onMouseClicked="#chooseDirectory" prefWidth="100.0" text="浏览">
-            <HBox.margin>
-                <Insets left="5.0" />
-            </HBox.margin>
-        </Button>
-    </HBox>
-    <HBox>
-        <Button fx:id="execute" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#execute" prefHeight="60.0" prefWidth="400.0" text="执行" HBox.hgrow="ALWAYS" />
-        <Button fx:id="cancel" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#cancel" prefHeight="61.0" prefWidth="200.0" text="取消" HBox.hgrow="ALWAYS">
-            <HBox.margin>
-                <Insets />
-            </HBox.margin>
-        </Button>
-    </HBox>
-    <TextArea fx:id="messageDetail" minWidth="-Infinity" prefWidth="500.0">
-        <VBox.margin>
-            <Insets top="10.0" />
-        </VBox.margin>
-    </TextArea>
+        <HBox alignment="CENTER_LEFT">
+            <padding>
+                <Insets bottom="10.0" />
+            </padding>
+            <Label prefWidth="100.0" text="输出目录：" />
+            <TextField fx:id="outputDirectory" prefWidth="300.0" HBox.hgrow="ALWAYS" />
+            <Button fx:id="directoryBtn" onMouseClicked="#chooseDirectory" prefWidth="100.0" text="浏览">
+                <HBox.margin>
+                    <Insets left="5.0" />
+                </HBox.margin>
+            </Button>
+        </HBox>
+        <HBox>
+            <Button fx:id="execute" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#execute" prefHeight="60.0" prefWidth="400.0" text="执行" HBox.hgrow="ALWAYS" />
+            <Button fx:id="cancel" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#cancel" prefHeight="61.0" prefWidth="200.0" text="取消" HBox.hgrow="ALWAYS">
+                <HBox.margin>
+                    <Insets />
+                </HBox.margin>
+            </Button>
+        </HBox>
+        <TextArea fx:id="messageDetail" minWidth="-Infinity" prefWidth="500.0">
+            <VBox.margin>
+                <Insets top="10.0" />
+            </VBox.margin>
+        </TextArea>
+    </VBox>
 </VBox>

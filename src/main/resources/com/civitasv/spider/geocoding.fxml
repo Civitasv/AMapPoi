@@ -17,15 +17,15 @@
             <Insets bottom="10.0" top="10.0" />
         </padding>
         <Label prefWidth="100.0" text="线程数目：" />
-        <TextField fx:id="threadNum" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+        <TextField fx:id="threadNum" prefWidth="200.0" promptText="建议不大于QPS * keys_num * 0.1" HBox.hgrow="ALWAYS" />
     </HBox>
     <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
         <padding>
             <Insets bottom="10.0" top="10.0" />
         </padding>
         <Label prefWidth="100.0" text="输入文件：" />
-        <TextField fx:id="inputFile" prefWidth="150.0" HBox.hgrow="ALWAYS" />
-        <Button onMouseClicked="#chooseFile" prefWidth="50.0" text="浏览">
+        <TextField fx:id="inputFile" prefWidth="125.0" HBox.hgrow="ALWAYS" />
+        <Button onMouseClicked="#chooseFile" text="浏览">
             <HBox.margin>
                 <Insets left="5.0" />
             </HBox.margin>
@@ -52,8 +52,8 @@
             <Insets bottom="10.0" />
         </padding>
         <Label prefWidth="100.0" text="输出目录：" />
-        <TextField fx:id="outputDirectory" prefWidth="150.0" HBox.hgrow="ALWAYS" />
-        <Button onMouseClicked="#chooseDirectory" prefWidth="50.0" text="浏览">
+        <TextField fx:id="outputDirectory" prefWidth="125.0" HBox.hgrow="ALWAYS" />
+        <Button onMouseClicked="#chooseDirectory" text="浏览">
             <HBox.margin>
                 <Insets left="5.0" />
             </HBox.margin>
