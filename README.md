@@ -6,6 +6,8 @@ version： 0.0.1
 
 功能：POI搜索、地理编码
 
+运行环境：jdk/jre 1.8
+
 ## POI搜索功能
 
 ![img.png](image/poi.png)
