@@ -60,7 +60,6 @@ public class POIController {
     public Button directoryBtn;
     public Button execute;
     public Button poiType;
-    private final Deque<double[]> analysisGrid = new ArrayDeque<>(); // 网格剖分
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
 
@@ -89,26 +88,54 @@ public class POIController {
 
     public void execute() {
         messageDetail.clear();
+        analysis(true);
         if (keys.getText().isEmpty()) {
             // keys为空
             MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "高德key池不能为空！");
+            analysis(false);
             return;
         }
         if (keywords.getText().isEmpty() && types.getText().isEmpty()) {
             // 关键字和类型均为空
             MessageUtil.alert(Alert.AlertType.ERROR, "参数设置", null, "POI关键字和类型两者至少必填其一！");
+            analysis(false);
+            return;
+        }
+        if (grids.getText().isEmpty()) {
+            // 输出文件夹为空
+            MessageUtil.alert(Alert.AlertType.ERROR, "初始网格", null, "初始网格不能为空！");
+            analysis(false);
+            return;
+        }
+        if (threadNum.getText().isEmpty()) {
+            // 输出文件夹为空
+            MessageUtil.alert(Alert.AlertType.ERROR, "线程数目", null, "线程数目不能为空！");
+            analysis(false);
+            return;
+        }
+        if (threshold.getText().isEmpty()) {
+            // 输出文件夹为空
+            MessageUtil.alert(Alert.AlertType.ERROR, "阈值", null, "阈值不能为空！");
+            analysis(false);
             return;
         }
         if (outputDirectory.getText().isEmpty()) {
             // 输出文件夹为空
             MessageUtil.alert(Alert.AlertType.ERROR, "输出文件夹", null, "输出文件夹不能为空！");
+            analysis(false);
             return;
         }
-        analysis(true);
+        appendMessage("读取线程个数中");
         int threadNum = Integer.parseInt(this.threadNum.getText());
+        appendMessage("读取成功");
+        appendMessage("读取初始网格数中");
         int grids = Integer.parseInt(this.grids.getText());
+        appendMessage("读取成功");
+        appendMessage("读取阈值中");
         int threshold = Integer.parseInt(this.threshold.getText());
+        appendMessage("读取成功");
         List<String> keys = new ArrayList<>(Arrays.asList(this.keys.getText().split(",")));
+        appendMessage("读取POI关键字中");
         StringBuilder keywords = new StringBuilder();
         String[] keywordArr = this.keywords.getText().split(",");
         for (int i = 0; i < keywordArr.length; i++) {
@@ -116,6 +143,8 @@ public class POIController {
             if (i != keywordArr.length - 1)
                 keywords.append("|");
         }
+        appendMessage("读取成功");
+        appendMessage("读取POI类型中");
         StringBuilder types = new StringBuilder();
         String[] typeArr = this.types.getText().split(",");
         for (int i = 0; i < typeArr.length; i++) {
@@ -123,6 +152,7 @@ public class POIController {
             if (i != typeArr.length - 1)
                 types.append("|");
         }
+        appendMessage("读取成功");
         double[] boundary;
         switch (tabs.getSelectionModel().getSelectedItem().getText()) {
             case "行政区":
@@ -132,12 +162,14 @@ public class POIController {
                     analysis(false);
                     return;
                 }
+                appendMessage("获取行政区 " + city.getText() + " 区域边界中");
                 boundary = getBoundaryByAdCode(city.getText());
                 if (boundary == null) {
                     MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！");
                     analysis(false);
                     return;
                 }
+                appendMessage("成功获取行政区 " + city.getText() + " 区域边界");
                 getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
                 break;
             case "矩形":
@@ -147,12 +179,14 @@ public class POIController {
                     analysis(false);
                     return;
                 }
+                appendMessage("解析矩形区域中");
                 boundary = getBoundaryByRectangle(rectangle.getText());
                 if (boundary == null) {
                     MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式或稍后重试！");
                     analysis(false);
                     return;
                 }
+                appendMessage("解析矩形区域成功");
                 getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
                 break;
             case "自定义":
@@ -162,12 +196,14 @@ public class POIController {
                     analysis(false);
                     return;
                 }
+                appendMessage("解析用户geojson文件中");
                 boundary = getBoundaryByUserFile(userFile.getText());
                 if (boundary == null) {
                     MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "无法获取边界，请检查GeoJSON格式或稍后重试！");
                     analysis(false);
                     return;
                 }
+                appendMessage("成功解析用户文件");
                 getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
                 break;
         }
@@ -187,6 +223,7 @@ public class POIController {
         outputDirectory.setDisable(isAnalysis);
         directoryBtn.setDisable(isAnalysis);
         poiType.setDisable(isAnalysis);
+        appendMessage(isAnalysis ? "开始POI爬取，请勿操作" : "停止POI爬取");
     }
 
     public void cancel() {
@@ -246,18 +283,23 @@ public class POIController {
         double itemWidth = (right - left) / grids;
         double itemHeight = (top - bottom) / grids;
         // 2. 获取初始切分网格
+        Deque<double[]> analysisGrid = new ArrayDeque<>(); // 网格剖分
+        appendMessage("切分初始网格中");
         for (int i = 0; i < grids; i++) {
             for (int j = 0; j < grids; j++) {
                 analysisGrid.push(new double[]{left + i * itemWidth, bottom + j * itemHeight, left + (i + 1) * itemWidth, bottom + (j + 1) * itemHeight});
             }
         }
+        appendMessage("初始网格切分成功");
         // 3. 开始爬取
+        appendMessage("开始POI爬取，" + (keywords.isEmpty() ? "POI关键字：" + keywords : "") + (types.isEmpty() ? (" POI类型：" + types) : ""));
         worker = Executors.newSingleThreadExecutor();
+        executorService = Executors.newFixedThreadPool(threadNum);
         worker.execute(() -> {
-            appendMessage("开始爬取");
             boolean success = true;
             while (!analysisGrid.isEmpty()) {
-                List<POI.Info> item = getPoi(analysisGrid.pop(), threadNum, threshold, keywords, types, keys);
+                appendMessage("正在爬取，任务队列剩余" + analysisGrid.size() + "个");
+                List<POI.Info> item = getPoi(analysisGrid.pop(), threadNum, threshold, keywords, types, keys, analysisGrid);
                 if (item == null) {
                     success = false;
                     break;
@@ -265,7 +307,8 @@ public class POIController {
                 if (item.size() > 0)
                     res.addAll(item);
             }
-            appendMessage(success ? "爬取完毕" : "未完全爬取");
+            appendMessage(success ? "POI爬取完毕" : "未完全爬取");
+            // 导出res
             // 导出res
             switch (format.getValue()) {
                 case "csv":
@@ -276,11 +319,13 @@ public class POIController {
                     writeToGeoJson(res, tab);
                     break;
             }
+            executorService.shutdown();
+            worker.shutdown();
             analysis(false);
         });
     }
 
-    private List<POI.Info> getPoi(double[] boundary, int threadNum, int threshold, String keywords, String types, List<String> keys) {
+    private List<POI.Info> getPoi(double[] boundary, int threadNum, int threshold, String keywords, String types, List<String> keys, Deque<double[]> analysisGrid) {
         List<POI.Info> res = new ArrayList<>();
         int page = 1, size = 20; // 页码、每页个数
         double left = boundary[0], bottom = boundary[1], right = boundary[2], top = boundary[3];
@@ -290,6 +335,7 @@ public class POIController {
         if (poi.getCount() == 0)
             return res;
         if (poi.getCount() > threshold) { // 第一页用于验证是否超过阈值
+            appendMessage("超出阈值，继续四分");
             // 继续四分
             double itemWidth = (right - left) / 2;
             double itemHeight = (top - bottom) / 2;
@@ -298,11 +344,11 @@ public class POIController {
                     analysisGrid.push(new double[]{left + i * itemWidth, bottom + j * itemHeight, left + (i + 1) * itemWidth, bottom + (j + 1) * itemHeight});
                 }
             }
+            appendMessage("四分完成");
             return res;
         }
         res.addAll(Arrays.asList(poi.getPois()));
         int total = poi.getCount();
-        executorService = Executors.newFixedThreadPool(threadNum);
         for (int i = 2; i <= total / size + 1; i += threadNum) {
             List<Callable<POI>> call = new ArrayList<>();
             for (int j = 0; j < threadNum && (i + j) <= total / size + 1; j++) {
@@ -319,7 +365,6 @@ public class POIController {
                 appendMessage("爬取线程已中断");
             }
         }
-        executorService.shutdown();
         return res;
     }
 
@@ -338,7 +383,7 @@ public class POIController {
         }
         File jsonFile = new File(filename);
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
-            appendMessage("正在写入");
+            appendMessage("正在写入数据，请等待");
             if (format.equals("csv"))
                 writer.write('\ufeff');
             writer.write("name,type,typecode,address,pname,cityname,adname,gcj02_lon,gcj02_lat,wgs84_lon,wgs84_lat\r\n");
@@ -349,7 +394,7 @@ public class POIController {
                     writer.write(info.name + "," + info.type + "," + info.typecode + "," + info.address + "," + info.pname + "," + info.cityname + "," + info.adname + "," + lonlat[0] + "," + lonlat[1] + "," + wgs84[0] + "," + wgs84[1] + "\r\n");
                 }
             }
-            appendMessage("写入成功");
+            appendMessage("写入成功，结果存储于" + jsonFile.getAbsolutePath());
         } catch (IOException e) {
             appendMessage("写入失败");
             appendMessage(e.getMessage());
@@ -404,9 +449,9 @@ public class POIController {
         GeoJSON geoJSON = new GeoJSON(features);
         File jsonFile = new File(filename);
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
-            appendMessage("正在写入");
+            appendMessage("正在写入数据，请等待");
             writer.write(geoJSON.toString());
-            appendMessage("写入成功");
+            appendMessage("写入成功，结果存储于" + jsonFile.getAbsolutePath());
         } catch (IOException e) {
             appendMessage("写入失败");
             appendMessage(e.getMessage());
@@ -452,7 +497,7 @@ public class POIController {
     }
 
     private void appendMessage(String text) {
-        Platform.runLater(() -> messageDetail.appendText("\r\n" + text));
+        Platform.runLater(() -> messageDetail.appendText(text + "\r\n"));
     }
 
     public void openGeocoding() throws IOException {
