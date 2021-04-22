@@ -303,8 +303,8 @@ public class POIController {
         res.addAll(Arrays.asList(poi.getPois()));
         int total = poi.getCount();
         executorService = Executors.newFixedThreadPool(threadNum);
-        List<Callable<POI>> call = new ArrayList<>();
         for (int i = 2; i <= total / size + 1; i += threadNum) {
+            List<Callable<POI>> call = new ArrayList<>();
             for (int j = 0; j < threadNum && (i + j) <= total / size + 1; j++) {
                 int finalPage = i + j;
                 call.add(() -> getPoi(polygon, keywords, types, finalPage, size, keys));
