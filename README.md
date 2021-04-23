@@ -42,7 +42,7 @@ POIKit 目的是提供一套简单易用且稳定的 POI 获取与处理工具�
 |   自定义   |                                        支持用户上传 geojson 边界文件                                        |                     经纬度坐标需要使用**GCJ02 坐标**，类型必须为**MultiPolygon**                      |
 | 初始网格数 |                                              初始网格剖分数目                                               |                                       一般情况按默认值为 4 即可                                       |
 |    阈值    |                                当该网格 POI 数量超出阈值，会对网格进一步四分                                |                                         一般情况下按 850 即可                                         |
-|  线程数目  | 线程数量一般不大于 QPS - keys_num - 0.1，个人开发者最多设为 2，个人认证开发者最多设为 5，网速较快时也应降低 |        [QPS 可以在流量限制说明查看](https://lbs.amap.com/api/webservice/guide/tools/flowlevel)        |
+|  线程数目  | 线程数量一般不大于 QPS - keys_num - 0.1，个人开发者最多设为 2，个人认证开发者最多设为 5，网速较快时也应降低 |        QPS 可以在[流量限制说明](https://lbs.amap.com/api/webservice/guide/tools/flowlevel)查看        |
 |  输出格式  |                                         目前支持 geojson、csv、txt                                          |                结果包含 gcj02 和 wgs84 两种坐标，若输出格式为 geojson，使用 wgs84 坐标                |
 
 **注意：**
