@@ -159,11 +159,11 @@ city,address
   - 线程池运行优化；
   - 添加运行状态提示
 - **v0.0.4-alpha** 2021-04-23
-  - 【POI 搜索】添加 shp 导出功能
-  - 添加 POI 检索[错误码](https://lbs.amap.com/api/webservice/guide/tools/info)说明；
+  - 添加 POI 检索[错误码](https://lbs.amap.com/api/webservice/guide/tools/info)输出；
   - 修改地理编码返回字段;
-  - 添加开发者类型选择；
-  - 解决点击“执行按钮”卡顿 bug
+  - 添加开发者类型选择下拉框，防止过高并发；
+  - 解决点击“执行按钮”卡顿 bug;
+  - **【重要更新】POI 搜索添加导出 shp 功能**
 
 ## License
 
