@@ -1,7 +1,28 @@
 package com.civitasv.spider.util;
 
-import java.io.File;
-import java.io.IOException;
+import org.geotools.data.DataUtilities;
+import org.geotools.data.DefaultTransaction;
+import org.geotools.data.Transaction;
+import org.geotools.data.collection.ListFeatureCollection;
+import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.data.simple.SimpleFeatureStore;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.SchemaException;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.geojson.feature.FeatureJSON;
+import org.geotools.geojson.geom.GeometryJSON;
+import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -49,5 +70,45 @@ public class ParseUtil {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    public static boolean transFormGeoJsonToShp(List<SimpleFeature> features, SimpleFeatureType TYPE, String shpPath) {
+        try {
+            ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
+
+            File shpFile = new File(shpPath);
+            Map<String, Serializable> params = new HashMap<>();
+            params.put("url", shpFile.toURI().toURL());
+            params.put("create spatial index", Boolean.TRUE);
+
+            ShapefileDataStore newDataStore =
+                    (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
+            newDataStore.setCharset(StandardCharsets.UTF_8);
+            newDataStore.createSchema(TYPE);
+
+            Transaction transaction = new DefaultTransaction("create");
+            String typeName = newDataStore.getTypeNames()[0];
+            SimpleFeatureSource featureSource = newDataStore.getFeatureSource(typeName);
+
+            if (featureSource instanceof SimpleFeatureStore) {
+                SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
+                SimpleFeatureCollection collection = new ListFeatureCollection(TYPE, features);
+                featureStore.setTransaction(transaction);
+                try {
+                    featureStore.addFeatures(collection);
+                    transaction.commit();
+                } catch (Exception problem) {
+                    problem.printStackTrace();
+                    transaction.rollback();
+                } finally {
+                    transaction.close();
+                }
+            } else {
+                System.out.println(typeName + " does not support read/write access");
+            }
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
     }
 }

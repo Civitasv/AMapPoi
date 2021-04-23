@@ -60,4 +60,13 @@ public class AMapPoiUtil {
         }
         return success ? new double[]{minLon, minLat, maxLon, maxLat} : null;
     }
+
+    public static String getCrs84() {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("type", "name");
+        JsonObject properties = new JsonObject();
+        properties.addProperty("name", "urn:ogc:def:crs:OGC:1.3:CRS84");
+        jsonObject.add("properties", properties);
+        return jsonObject.toString();
+    }
 }

@@ -21,6 +21,17 @@ import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.geotools.data.DataUtilities;
+import org.geotools.feature.SchemaException;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
 
 import java.awt.*;
 import java.io.BufferedWriter;
@@ -226,25 +237,32 @@ public class POIController {
     }
 
     private void analysis(boolean isAnalysis) {
+        setDisable(isAnalysis);
         if (!start) return;
         start = isAnalysis;
-        execute.setDisable(isAnalysis);
-        threadNum.setDisable(isAnalysis);
-        keys.setDisable(isAnalysis);
-        keywords.setDisable(isAnalysis);
-        types.setDisable(isAnalysis);
-        tabs.setDisable(isAnalysis);
-        grids.setDisable(isAnalysis);
-        threshold.setDisable(isAnalysis);
-        format.setDisable(isAnalysis);
-        outputDirectory.setDisable(isAnalysis);
-        directoryBtn.setDisable(isAnalysis);
-        poiType.setDisable(isAnalysis);
         appendMessage(isAnalysis ? "开始POI爬取，请勿操作" : "停止POI爬取");
         if (!isAnalysis && executorService != null)
             executorService.shutdownNow();
         if (!isAnalysis && worker != null)
             worker.shutdownNow();
+    }
+
+    private void setDisable(boolean isAnalysis) {
+        Platform.runLater(() -> {
+            execute.setDisable(isAnalysis);
+            threadNum.setDisable(isAnalysis);
+            keys.setDisable(isAnalysis);
+            keywords.setDisable(isAnalysis);
+            types.setDisable(isAnalysis);
+            tabs.setDisable(isAnalysis);
+            grids.setDisable(isAnalysis);
+            threshold.setDisable(isAnalysis);
+            format.setDisable(isAnalysis);
+            outputDirectory.setDisable(isAnalysis);
+            directoryBtn.setDisable(isAnalysis);
+            poiType.setDisable(isAnalysis);
+            userType.setDisable(isAnalysis);
+        });
     }
 
     public void cancel() {
@@ -313,7 +331,7 @@ public class POIController {
         appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
         executorService = Executors.newFixedThreadPool(threadNum);
         boolean success = true;
-        while (!analysisGrid.isEmpty()) {
+        while (!analysisGrid.isEmpty() && start) {
             appendMessage("正在爬取，任务队列剩余" + analysisGrid.size() + "个");
             List<POI.Info> item = getPoi(analysisGrid.pop(), threadNum, threshold, keywords, types, keys, analysisGrid);
             if (item == null) {
@@ -324,6 +342,7 @@ public class POIController {
                 res.addAll(item);
         }
         executorService.shutdown();
+        if (!start) return;
         appendMessage(success ? "POI爬取完毕" : "未完全爬取");
         // 导出res
         switch (format.getValue()) {
@@ -334,6 +353,8 @@ public class POIController {
             case "geojson":
                 writeToGeoJson(res, tab);
                 break;
+            case "shp":
+                writeToShp(res, tab);
         }
     }
 
@@ -376,6 +397,7 @@ public class POIController {
                 }
                 for (Future<POI> future : futures) {
                     POI item = future.get();
+                    // 如果第一页获取数据成功，认为后面可能出现null，不一棍子打死
                     if (item != null) res.addAll(Arrays.asList(item.getPois()));
                 }
             } catch (InterruptedException | ExecutionException e) {
@@ -431,6 +453,72 @@ public class POIController {
                 filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".json";
                 break;
         }
+        GeoJSON geoJSON = parseResult(res);
+        File jsonFile = new File(filename);
+        try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
+            appendMessage("正在写入数据，请等待");
+            writer.write(geoJSON.toString());
+            appendMessage("写入成功，结果存储于" + jsonFile.getAbsolutePath());
+        } catch (IOException e) {
+            appendMessage("写入失败");
+            appendMessage(e.getMessage());
+        }
+    }
+
+
+    private void writeToShp(List<POI.Info> res, String tab) {
+        String filename = outputDirectory.getText();
+        switch (tab) {
+            case "行政区":
+                filename = filename + "/解析结果_" + city.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".shp";
+                break;
+            case "矩形":
+                filename = filename + "/解析结果_" + rectangle.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".shp";
+                break;
+            case "自定义":
+                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".shp";
+                break;
+        }
+        try {
+            final SimpleFeatureType type =
+                    DataUtilities.createType(
+                            "Location",
+                            "the_geom:Point:srid=4326,name:String,type:String,typecode:String,address:String,pname:String,cityname:String,adname:String,gcj02_lon:String,gcj02_lat:String,wgs84_lon:String,wgs84_lat:String"
+                    );
+            List<SimpleFeature> features = new ArrayList<>();
+            GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
+            SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(type);
+            for (POI.Info info : res) {
+                String[] lonlat = info.location.toString().split(",");
+                if (lonlat.length == 2) {
+                    double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                    Point point = geometryFactory.createPoint(new Coordinate(wgs84[0], wgs84[1]));
+                    featureBuilder.add(point);
+                    featureBuilder.add(info.name);
+                    featureBuilder.add(info.type);
+                    featureBuilder.add(info.typecode);
+                    featureBuilder.add(info.address != null ? info.address.toString() : "");
+                    featureBuilder.add(info.pname != null ? info.pname.toString() : "");
+                    featureBuilder.add(info.cityname != null ? info.cityname.toString() : "");
+                    featureBuilder.add(info.adname != null ? info.adname.toString() : "");
+                    featureBuilder.add(String.valueOf(lonlat[0]));
+                    featureBuilder.add(String.valueOf(lonlat[1]));
+                    featureBuilder.add(String.valueOf(wgs84[0]));
+                    featureBuilder.add(String.valueOf(wgs84[1]));
+                    SimpleFeature feature = featureBuilder.buildFeature(null);
+                    features.add(feature);
+                }
+            }
+
+            if (ParseUtil.transFormGeoJsonToShp(features, type, filename)) {
+                appendMessage("写入成功，结果存储于" + filename);
+            } else appendMessage("写入失败");
+        } catch (SchemaException e) {
+            appendMessage("写入失败");
+        }
+    }
+
+    private GeoJSON parseResult(List<POI.Info> res) {
         List<Feature> features = new ArrayList<>();
         for (POI.Info info : res) {
             if (info.location == null)
@@ -463,33 +551,26 @@ public class POIController {
                 features.add(feature);
             }
         }
-        GeoJSON geoJSON = new GeoJSON(features);
-        File jsonFile = new File(filename);
-        try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
-            appendMessage("正在写入数据，请等待");
-            writer.write(geoJSON.toString());
-            appendMessage("写入成功，结果存储于" + jsonFile.getAbsolutePath());
-        } catch (IOException e) {
-            appendMessage("写入失败");
-            appendMessage(e.getMessage());
-        }
+        return new GeoJSON(features);
     }
 
     private POI getPoi(String polygon, String keywords, String types, int page, int size, List<String> keys) {
-        if (keys.isEmpty()) {
+        if (start && keys.isEmpty()) {
             appendMessage("key池已耗尽，无法继续获取POI...");
             return null;
         }
         int index = (int) (Math.random() * keys.size());
         POI poi = mapDao.getPoi(keys.get(index), polygon, keywords, types, page, size);
-        if (!"10000".equals(poi.getInfocode())) {
+        if (start && (poi == null || !"10000".equals(poi.getInfocode()))) {
             synchronized (this) {
-                if ("10001".equals(poi.getInfocode())) {
-                    appendMessage("key----" + keys.get(index) + "已经过期");
-                } else if ("10003".equals(poi.getInfocode())) {
-                    appendMessage("key----" + keys.get(index) + "已达调用量上限");
-                } else {
-                    appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
+                if (poi != null) {
+                    if ("10001".equals(poi.getInfocode())) {
+                        appendMessage("key----" + keys.get(index) + "已经过期");
+                    } else if ("10003".equals(poi.getInfocode())) {
+                        appendMessage("key----" + keys.get(index) + "已达调用量上限");
+                    } else {
+                        appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
+                    }
                 }
                 // 去除过期的，使用其它key重新访问
                 keys.remove(index);
@@ -499,6 +580,10 @@ public class POIController {
                     String key = keys.get(index);
                     appendMessage("切换key：" + key);
                     poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
+                    if (poi == null) {
+                        appendMessage("返回数据为空");
+                        continue;
+                    }
                     if ("10000".equals(poi.getInfocode())) {
                         appendMessage("切换key成功");
                         break;
@@ -513,7 +598,7 @@ public class POIController {
                 }
             }
         }
-        return "10000".equals(poi.getInfocode()) ? poi : null;
+        return (poi != null && "10000".equals(poi.getInfocode())) ? poi : null;
     }
 
     private void appendMessage(String text) {

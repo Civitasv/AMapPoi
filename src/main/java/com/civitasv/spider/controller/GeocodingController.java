@@ -69,7 +69,6 @@ public class GeocodingController {
                 messageDetail.clear();
             });
             if (!check()) {
-                worker.shutdown();
                 return;
             }
             analysis(true);
@@ -176,9 +175,9 @@ public class GeocodingController {
         executorService = Executors.newFixedThreadPool(threadNum);
         // 创建线程池执行解析工作
         job:
-        for (int i = 0; i < parseRes.size(); i += threadNum) {
+        for (int i = 0; start && i < parseRes.size(); i += threadNum) {
             List<Callable<Geocodes.Response>> call = new ArrayList<>();
-            for (int j = 0; j < threadNum && (i + j) < parseRes.size(); j++) {
+            for (int j = 0; j < threadNum && i + j < parseRes.size(); j++) {
                 Map<String, String> item = parseRes.get(i + j);
                 if (item.containsKey("address") && item.containsKey("city")) {
                     call.add(() -> geocode(item.get("address"), item.get("city"), amapKeys));
@@ -209,10 +208,10 @@ public class GeocodingController {
                         item.put("province_" + k, info.province);
                         item.put("city_" + k, info.city);
                         item.put("citycode_" + k, info.cityCode);
-                        item.put("district_" + k, info.district.toString());
-                        item.put("adcode_" + k, info.adCode);
-                        item.put("street_" + k, info.street.toString());
-                        item.put("number_" + k, info.number.toString());
+                        item.put("district_" + k, info.district != null ? info.district.toString() : "");
+                        item.put("adcode_" + k, info.adCode != null ? info.adCode : "");
+                        item.put("street_" + k, info.street != null ? info.street.toString() : "");
+                        item.put("number_" + k, info.number != null ? info.number.toString() : "");
                         item.put("level_" + k, info.level);
                         String[] lonlat = info.location.split(",");
                         if (lonlat.length == 2) {
@@ -228,7 +227,8 @@ public class GeocodingController {
                 appendMessage("爬取线程已中断");
             }
         }
-
+        executorService.shutdown();
+        if (!start) return;
         List<String> keys = new ArrayList<>(parseRes.get(0).keySet());
         File file = new File(outputDirectory.getText() + "\\解析结果_" + FileUtil.getFileName(inputFile.getText()) + "." + outputFormat);
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8))) {
@@ -259,7 +259,6 @@ public class GeocodingController {
             appendMessage("写入失败");
             appendMessage(e.getMessage());
         }
-        executorService.shutdown();
     }
 
     private void saveToJson(@NotNull List<Map<String, String>> parseRes, int threadNum, List<String> amapKeys) {
@@ -309,10 +308,10 @@ public class GeocodingController {
                         jsonItem.addProperty("province", info.province);
                         jsonItem.addProperty("city", info.city);
                         jsonItem.addProperty("citycode", info.cityCode);
-                        jsonItem.addProperty("district", info.district.toString());
+                        jsonItem.addProperty("district", info.district != null ? info.district.toString() : "");
                         jsonItem.addProperty("adcode", info.adCode);
-                        jsonItem.addProperty("street", info.street.toString());
-                        jsonItem.addProperty("number", info.number.toString());
+                        jsonItem.addProperty("street", info.street != null ? info.street.toString() : "");
+                        jsonItem.addProperty("number", info.number != null ? info.number.toString() : "");
                         jsonItem.addProperty("level", info.level);
                         String[] lonlat = info.location.split(",");
                         if (lonlat.length == 2) {
@@ -345,13 +344,16 @@ public class GeocodingController {
     }
 
     private void analysis(boolean isAnalysis) {
+        Platform.runLater(() -> {
+            execute.setDisable(isAnalysis);
+            keys.setDisable(isAnalysis);
+            inputFile.setDisable(isAnalysis);
+            format.setDisable(isAnalysis);
+            outputDirectory.setDisable(isAnalysis);
+            userType.setDisable(isAnalysis);
+        });
         if (!start) return;
         start = isAnalysis;
-        execute.setDisable(isAnalysis);
-        keys.setDisable(isAnalysis);
-        inputFile.setDisable(isAnalysis);
-        format.setDisable(isAnalysis);
-        outputDirectory.setDisable(isAnalysis);
         appendMessage(isAnalysis ? "开始地理编码，请勿操作" : "停止地理编码");
         if (!isAnalysis && executorService != null)
             executorService.shutdownNow();
@@ -406,20 +408,22 @@ public class GeocodingController {
     }
 
     private Geocodes.Response geocode(String address, String city, List<String> keys) {
-        if (keys.isEmpty()) {
+        if (start && keys.isEmpty()) {
             appendMessage("key池已耗尽，无法继续获取POI...");
             return null;
         }
         int index = (int) (Math.random() * keys.size());
         Geocodes.Response response = aMapDao.geocoding(keys.get(index), address, city);
-        if (!"10000".equals(response.getInfocode())) {
+        if (start && (response == null || !"10000".equals(response.getInfocode()))) {
             synchronized (this) {
-                if ("10001".equals(response.getInfocode())) {
-                    appendMessage("key----" + keys.get(index) + "已经过期");
-                } else if ("10003".equals(response.getInfocode())) {
-                    appendMessage("key----" + keys.get(index) + "已达调用量上限");
-                } else {
-                    appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
+                if (response != null) {
+                    if ("10001".equals(response.getInfocode())) {
+                        appendMessage("key----" + keys.get(index) + "已经过期");
+                    } else if ("10003".equals(response.getInfocode())) {
+                        appendMessage("key----" + keys.get(index) + "已达调用量上限");
+                    } else {
+                        appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
+                    }
                 }
                 // 去除过期的，使用其它key重新访问
                 keys.remove(index);
@@ -443,6 +447,6 @@ public class GeocodingController {
                 }
             }
         }
-        return "10000".equals(response.getInfocode()) ? response : null;
+        return (response != null && "10000".equals(response.getInfocode())) ? response : null;
     }
 }
