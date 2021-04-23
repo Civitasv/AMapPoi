@@ -356,7 +356,12 @@ public class POIController {
                 call.add(() -> getPoi(polygon, keywords, types, finalPage, size, keys));
             }
             try {
+                long startTime = System.currentTimeMillis();   //获取开始时间
                 List<Future<POI>> futures = executorService.invokeAll(call);
+                long endTime = System.currentTimeMillis(); //获取结束时间
+                if (endTime - startTime < 100) { // 严格控制每次执行100ms
+                    Thread.sleep(100 - (endTime - startTime));
+                }
                 for (Future<POI> future : futures) {
                     POI item = future.get();
                     if (item != null) res.addAll(Arrays.asList(item.getPois()));
@@ -465,13 +470,15 @@ public class POIController {
         }
         int index = (int) (Math.random() * keys.size());
         POI poi = mapDao.getPoi(keys.get(index), polygon, keywords, types, page, size);
-        if ("10001".equals(poi.getInfocode()) || "10003".equals(poi.getInfocode())) {
+        if (!"10000".equals(poi.getInfocode())) {
             synchronized (this) {
                 if ("10001".equals(poi.getInfocode())) {
                     appendMessage("key----" + keys.get(index) + "已经过期");
                 }
                 if ("10003".equals(poi.getInfocode())) {
                     appendMessage("key----" + keys.get(index) + "已达调用量上限");
+                } else {
+                    appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
                 }
                 // 去除过期的，使用其它key重新访问
                 keys.remove(index);
@@ -479,11 +486,13 @@ public class POIController {
                     appendMessage("正在尝试其它key");
                     index = (int) (Math.random() * keys.size());
                     String key = keys.get(index);
+                    appendMessage("切换key：" + key);
                     poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
                     if ("10000".equals(poi.getInfocode())) {
                         appendMessage("切换key成功");
                         break;
                     } else {
+                        appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
                         keys.remove(index);
                     }
                 }

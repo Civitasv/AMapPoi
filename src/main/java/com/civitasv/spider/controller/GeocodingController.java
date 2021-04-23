@@ -181,9 +181,9 @@ public class GeocodingController {
                             item.put("formatted_address_" + k, info.formattedAddress);
                             item.put("country_" + k, info.country);
                             item.put("province_" + k, info.province);
+                            item.put("city_" + k, info.city);
                             item.put("citycode_" + k, info.cityCode);
                             item.put("district_" + k, info.district.toString());
-                            item.put("township_" + k, info.township.toString());
                             item.put("adcode_" + k, info.adCode);
                             item.put("street_" + k, info.street.toString());
                             item.put("number_" + k, info.number.toString());
@@ -277,9 +277,9 @@ public class GeocodingController {
                             jsonItem.addProperty("formatted_address", info.formattedAddress);
                             jsonItem.addProperty("country", info.country);
                             jsonItem.addProperty("province", info.province);
+                            jsonItem.addProperty("city", info.city);
                             jsonItem.addProperty("citycode", info.cityCode);
                             jsonItem.addProperty("district", info.district.toString());
-                            jsonItem.addProperty("township", info.township.toString());
                             jsonItem.addProperty("adcode", info.adCode);
                             jsonItem.addProperty("street", info.street.toString());
                             jsonItem.addProperty("number", info.number.toString());
