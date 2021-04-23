@@ -4,7 +4,6 @@ import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.dao.AMapDao;
 import com.civitasv.spider.dao.impl.AMapDaoImpl;
 import com.civitasv.spider.model.Geocodes;
-import com.civitasv.spider.model.POI;
 import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
