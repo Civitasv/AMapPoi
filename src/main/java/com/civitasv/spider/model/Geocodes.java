@@ -33,8 +33,7 @@ public class Geocodes {
         /**
          * 返回状态码
          */
-        @SerializedName("infocode")
-        private final String infoCode;
+        private final String infocode;
 
         /**
          * 返回结果数目
@@ -46,10 +45,10 @@ public class Geocodes {
          */
         private final Info[] geocodes;
 
-        public Response(Integer status, String info, String infoCode, Integer count, Info[] geocodes) {
+        public Response(Integer status, String info, String infocode, Integer count, Info[] geocodes) {
             this.status = status;
             this.info = info;
-            this.infoCode = infoCode;
+            this.infocode = infocode;
             this.count = count;
             this.geocodes = geocodes;
         }
@@ -71,8 +70,8 @@ public class Geocodes {
         }
 
 
-        public String getInfoCode() {
-            return infoCode;
+        public String getInfocode() {
+            return infocode;
         }
 
         @Override
@@ -80,7 +79,7 @@ public class Geocodes {
             return "Response{" +
                     "status=" + status +
                     ", info='" + info + '\'' +
-                    ", infoCode='" + infoCode + '\'' +
+                    ", infoCode='" + infocode + '\'' +
                     ", count=" + count +
                     ", geocodes=" + Arrays.toString(geocodes) +
                     '}';

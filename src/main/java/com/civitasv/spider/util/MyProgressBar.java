@@ -1,5 +1,6 @@
 package com.civitasv.spider.util;
 
+import javafx.application.Platform;
 import javafx.scene.control.TextArea;
 
 import java.text.DecimalFormat;
@@ -27,10 +28,11 @@ public class MyProgressBar {
         this.maxVal = maxVal;
         this.finishChar = finishChar;
         this.unFinishChar = unFinishChar;
-        init();
+        Platform.runLater(this::init);
     }
 
     private void init() {
+        this.textArea.appendText("\r\n");
         this.textArea.appendText("Progress:");
         this.textArea.appendText(String.format("%3d%%", 0));
         this.textArea.appendText("[");

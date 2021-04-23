@@ -18,6 +18,21 @@
         </VBox.margin>
         <Label text="高德key（不同key之间以英文逗号分割）：" />
         <TextArea fx:id="keys" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="500.0" />
+        <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="345.0">
+            <padding>
+                <Insets bottom="10.0" top="10.0" />
+            </padding>
+            <Label prefHeight="18.0" prefWidth="100.0" text="开发者类型：" />
+            <ChoiceBox fx:id="userType" prefWidth="150.0" value="个人开发者">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="个人开发者" />
+                        <String fx:value="个人认证开发者" />
+                        <String fx:value="企业开发者" />
+                    </FXCollections>
+                </items>
+            </ChoiceBox>
+        </HBox>
         <HBox alignment="CENTER_LEFT">
             <Label minHeight="-Infinity" minWidth="-Infinity" prefWidth="100.0" text="POI关键字：" />
             <TextField fx:id="keywords" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="400.0" promptText="使用逗号分割不同关键字" HBox.hgrow="ALWAYS" />

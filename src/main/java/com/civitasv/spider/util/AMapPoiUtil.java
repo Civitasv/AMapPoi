@@ -5,6 +5,7 @@ import com.civitasv.spider.dao.impl.DataVDaoImpl;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 
 public class AMapPoiUtil {
@@ -17,6 +18,8 @@ public class AMapPoiUtil {
      */
     public static double[] getBoundary(String adCode) {
         DataVDao dao = new DataVDaoImpl();
+        if (dao.getBoundary(adCode) == null)
+            return null;
         return getBoundaryByGeoJson(dao.getBoundary(adCode).toString());
     }
 
@@ -39,13 +42,17 @@ public class AMapPoiUtil {
                     JsonObject geometry = feature.getAsJsonObject("geometry");
                     if (geometry.has("coordinates")) {
                         success = true;
-                        double[][][][] coordinates = gson.fromJson(geometry.get("coordinates"), double[][][][].class);
-                        double[][] lonlats = coordinates[0][0];
-                        for (double[] lonlat : lonlats) {
-                            maxLon = Math.max(maxLon, lonlat[0]);
-                            minLon = Math.min(minLon, lonlat[0]);
-                            maxLat = Math.max(maxLat, lonlat[1]);
-                            minLat = Math.min(minLat, lonlat[1]);
+                        try {
+                            double[][][][] coordinates = gson.fromJson(geometry.get("coordinates"), double[][][][].class);
+                            double[][] lonlats = coordinates[0][0];
+                            for (double[] lonlat : lonlats) {
+                                maxLon = Math.max(maxLon, lonlat[0]);
+                                minLon = Math.min(minLon, lonlat[0]);
+                                maxLat = Math.max(maxLat, lonlat[1]);
+                                minLat = Math.min(minLat, lonlat[1]);
+                            }
+                        } catch (JsonSyntaxException e) {
+                            return null;
                         }
                     }
                 }

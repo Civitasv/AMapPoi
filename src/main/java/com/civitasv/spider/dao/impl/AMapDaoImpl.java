@@ -24,7 +24,6 @@ public class AMapDaoImpl implements AMapDao {
     public Geocodes.Response geocoding(String key, String address, String city) {
         Call<Geocodes.Response> call = RetrofitAMapClient.getInstance().getAMapService().geocoding(key, address, city);
         try {
-            System.out.println(call.request());
             return call.execute().body();
         } catch (IOException e) {
             return null;
