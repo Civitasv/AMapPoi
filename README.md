@@ -1,54 +1,162 @@
-## 概述
+# POIKit
 
-受[OSpider](https:/github.com/skytruine/OSpider)启发，使用JavaFX开发高德POI数据获取软件，同时，计划支持GIS常用工具如地理编码、geojson/shp转换等。
+[![build](https://img.shields.io/badge/build-success-brightgreen)](https://github.com/Civitasv/AMapPoi)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Civitasv/AMapPoi/graphs/commit-activity)
+[![version](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=version&query=tag_name&url=https%3A%2F%2Fapi.github.com%2Frepos%2FCivitasv%2FAMapPoi%2Freleases%2Flatest)](https://github.com/Civitasv/AMapPoi/releases/latest)
 
-version： 0.0.1
+POIKit 目的是提供一套简单易用且稳定的 POI 获取与处理工具套件，方便 GIS 相关从业者。目前软件处于初步构建状态，希望各位多多尝试，多多提问题（The More Questions，The Better）。
 
-功能：POI搜索、地理编码
+## 目录
 
-运行环境：jdk/jre 1.8
+- [功能演示](#功能演示)
 
-## POI搜索功能
+- [安装](#安装)
 
-![img.png](image/poi.png)
+- [技术选型](#技术选型)
 
-高德POI检索功能每次请求最多返回1000个POI信息，为获得全量POI信息，特开发该工具
+- [维护人员](#维护人员)
 
-1. 高德key：支持多key，不同key之间以英文逗号分割；
-2. POI关键字：查询关键字，如KFC、厕所；
-3. POI类型：[POI类型表](https://lbs.amap.com/api/webservice/download)
-4. 区域
-    + 行政区：[行政区六位代码](http://www.mca.gov.cn//article/sj/xzqh/2020/202006/202008310601.shtml)
-    + 矩形：格式为左上角经纬度#右下角经纬度，如133,34#135,30
-    + 自定义：支持geojson格式自定义区域
+- [支持该项目](#支持该项目)
 
-5. 初始网格数：网格剖分数目，一般而言，该值越大，运行越慢，POI数量越大；
-6. 阈值：当网格POI数量超出阈值，会对该网格进一步四分；
-7. 线程数目：支持多线程爬取，线程数量一般不大于QPS * keys_num * 0.1；
-8. 输出格式，支持geojson、csv、txt三种格式；
-9. 输出目录：结果保存路径；
-10. 执行：点击执行，程序将开始爬取POI；
-11. 取消：点击取消，程序将中断爬取POI。
+- [开发路线](#开发路线)
 
-POI检索结果包括gcj02和wgs84两种坐标，若导出为geojson，则使用wgs84坐标。
+- [License](#License)
 
-**重要说明：行政区、矩形和用户自定义文件爬取结果为该区域的外接矩形的POI，因此，除矩形区域检索外，其它方式均需要使用ArcGIS裁切工具将区域外的POI进行筛除！**
+## 功能演示
 
-## 地理编码功能
+### POI 搜索功能
 
-![img.png](image/geocoding.png)
+以行政区为例。POI 类型：餐饮服务；行政区：371723；初始网格数：4；阈值：850；线程数目：2；输出格式：csv，POI 搜索功能如下所示：
 
-1. 高德key：支持多key，不同key之间以英文逗号分割；
-2. 线程数目：支持多线程爬取，线程数量一般不大于QPS * keys_num * 0.1；
-3. 输入文件：输入文件格式必须为csv或txt，且至少包含address字段；
-4. 输出格式，支持json、csv、txt三种格式；
-5. 输出目录：结果保存路径；
-10. 执行：点击执行，程序将开始地理编码；
-11. 取消：点击取消，程序将中断地理编码。
+![POI搜索](image/poi.gif)
 
-地理编码结果包括gcj02和wgs84两种坐标。
+**功能配置参数如下表：**
 
-若遇到任何问题，你可以通过以下方式找到我：
+|    参数    |                                                    说明                                                     |                                                 注意                                                  |
+| :--------: | :---------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------: |
+|  高德 key  |                                软件支持多个 key，不同 key 之间需要用逗号分割                                |                         注意，只能使用**英文逗号**，且不能包含换行符、空格等                          |
+| POI 关键字 |                              搜索关键字，如**KFC**，不同关键字之间使用逗号分割                              |                                         只能使用**英文逗号**                                          |
+|  POI 类型  |                                        搜索类型，可为分类代码或汉字                                         | 若使用汉字，必须严格按照[高德 POI 分类编码](https://lbs.amap.com/api/webservice/download)中的汉字编写 |
+|   行政区   |           [行政区六位代码](http://www.mca.gov.cn//article/sj/xzqh/2020/202006/202008310601.shtml)           |                                                   -                                                   |
+|    矩形    |                         格式严格遵循左上角经纬度#右下角经纬度，如**133,34#135,30**                          |                        经纬度坐标需要使用**GCJ02 坐标**，只能使用**英文逗号**                         |
+|   自定义   |                                        支持用户上传 geojson 边界文件                                        |                     经纬度坐标需要使用**GCJ02 坐标**，类型必须为**MultiPolygon**                      |
+| 初始网格数 |                                              初始网格剖分数目                                               |                                       一般情况按默认值为 4 即可                                       |
+|    阈值    |                                当该网格 POI 数量超出阈值，会对网格进一步四分                                |                                         一般情况下按 850 即可                                         |
+|  线程数目  | 线程数量一般不大于 QPS - keys_num - 0.1，个人开发者最多设为 2，个人认证开发者最多设为 5，网速较快时也应降低 |        [QPS 可以在流量限制说明查看](https://lbs.amap.com/api/webservice/guide/tools/flowlevel)        |
+|  输出格式  |                                         目前支持 geojson、csv、txt                                          |                结果包含 gcj02 和 wgs84 两种坐标，若输出格式为 geojson，使用 wgs84 坐标                |
+
+**注意：**
+
+**行政区、矩形和用户自定义文件爬取结果为该区域的外接矩形的 POI，因此，除矩形区域检索外，其它方式均需要使用 ArcGIS 裁切工具将区域外的 POI 进行筛除！**
+
+**若爬取过程中 key 池额度用尽，软件会停止爬取，但不会删除之前爬取得到的数据，仍会导出。**
+
+**若爬取过程中，用户点击取消，软件会停止爬取，但不会删除之前爬取得到的数据，仍会导出。**
+
+**输出参数说明：**
+
+|   参数    |       说明       |
+| :-------: | :--------------: |
+|   name    |       名称       |
+|   type    |    兴趣点类型    |
+| typecode  |  兴趣点类型编码  |
+|  address  |       地址       |
+|   pname   | POI 所在省份名称 |
+| cityname  |      城市名      |
+|  adname   |     区域名称     |
+| gcj02_lon |    gcj02 经度    |
+| gcj02_lat |    gcj02 纬度    |
+| wgs84_lon |    wgs84 经度    |
+| wgs84_lat |    wgs84 纬度    |
+
+### 地理编码功能
+
+以 txt 文件为例：
+
+```txt
+city,address
+武汉市,武汉大学资源与环境科学学院
+武汉市,珞狮路63号
+武汉市,珞喻路与珞狮路交叉口
+襄阳市,诸葛亮广场水上世界市
+```
+
+运行演示如下：
+
+![地理编码](image/geocoding.gif)
+
+**功能配置参数如下表所示：**
+
+|   参数   |                                                        说明                                                         |                                          注意                                           |
+| :------: | :-----------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------: |
+| 高德 key |                                    软件支持多个 key，不同 key 之间需要用逗号分割                                    |                  注意，只能使用**英文逗号**，且不能包含换行符、空格等                   |
+| 线程数目 | 线程数量一般不大于 QPS - keys_num - 0.1，个人开发者最多设为 2，个人认证开发者最多设为 5，网速较快时也应降低线程数目 | [QPS 可以在流量限制说明查看](https://lbs.amap.com/api/webservice/guide/tools/flowlevel) |
+| 输入文件 |                                              支持 csv 或 txt 格式文件                                               |                               至少需要包含**address**字段                               |
+| 输出目录 |                             结果输出路径，目前地理编码结果包括 gcj02 和 wgs84 两种坐标                              |                                            -                                            |
+
+**注意：**
+
+**若地理编码过程中，用户点击取消，软件会停止爬取，但不会删除之前爬取得到的数据，仍会导出。**
+
+**输出参数说明：**
+
+|       参数        |       说明       |
+| :---------------: | :--------------: |
+| formatted_address |  结构化地址信息  |
+|      country      |       国家       |
+|     province      | 地址所在的省份名 |
+|       city        | 地址所在的省份名 |
+|     citycode      |     城市编码     |
+|     district      |   地址所在的区   |
+|      adcode       |     区域编码     |
+|      street       |       街道       |
+|      number       |       门牌       |
+|       level       |     匹配级别     |
+|     gcj02_lon     |    gcj02 经度    |
+|     gcj02_lat     |    gcj02 纬度    |
+|     wgs84_lon     |    wgs84 经度    |
+|     wgs84_lat     |    wgs84 纬度    |
+
+## 安装
+
+1. 软件基于 Java 环境运行，需要首先安装 jre/jdk（1.8 版本），安装步骤如下：
+   - 下载[JDK8](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html)，选择适合本系统的版本；
+   - 配置环境变量`JAVA_HOME`为安装目录，然后在`Path`中添加`%JAVA_HOME%\bin`；
+   - 打开终端，输入`java -version`，若出现 Java 版本号，则配置成功。
+2. [下载](https://github.com/Civitasv/AMapPoi/releases/latest)最新发布的软件压缩包，以`geospider.zip`为例，解压缩后，双击`geospider.jar`即可使用 jre 运行，若不能直接运行，在该文件夹打开`cmd`，输入`java -jar geospider.jar`即可运行。
+
+## 技术选型
+
+目前软件采用 MVC 软件架构模式，技术选型如下：
+
+- GUI：[JavaFX 8](https://openjfx.io/)；
+- HTTP 请求：[Retrofit](https://square.github.io/retrofit/)
+- Json 转换：[Gson](https://github.com/google/gson)
+
+## 维护人员
+
+[@Civitasv](https://github.com/Civitasv)
+
+## 支持该项目
+
+若遇到任何问题，你可以通过以下方式联系我：
 
 1. 邮箱：sen.hu@whu.edu.cn，我会定时查看邮箱，但不保证实时性；
-2. 提issue：这是我推荐的方式，有问题时，也应该首先查看issue列表是否已有该问题的解答。
+2. 用户 QQ 群：939504570
+3. 提 [issue](https://github.com/Civitasv/AMapPoi/issues)：这是我推荐的方式，有问题时，也应该首先查看 issue 列表是否已有该问题的解答；
+
+若帮助到了您，[Github Star](https://github.com/Civitasv/AMapPoi) 是对我最大的肯定。
+
+## 开发路线
+
+- **v0.0.1** 2021-04-20
+  - 初步实现软件及安装文档；
+- **v0.0.2** 2021-04-22
+  - 修复重复 bug；
+- **v0.0.3** 2021-04-23
+  - 线程池运行优化；
+  - 添加运行状态提示
+
+## License
+
+[MIT](LICENSE) © Civitasv
