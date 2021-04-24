@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+
+    
+    <meta charset="UTF-8">
+
+<!-- Begin Jekyll SEO tag v2.7.1 -->
+<title>Welcome to POIKit! | POIKit</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Welcome to POIKit!" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="POIKit 目的是提供一套简单易用且稳定的 POI 获取与处理工具套件，方便 GIS 相关从业者。" />
+<meta property="og:description" content="POIKit 目的是提供一套简单易用且稳定的 POI 获取与处理工具套件，方便 GIS 相关从业者。" />
+<link rel="canonical" href="http://localhost:4000/AMapPoi/" />
+<meta property="og:url" content="http://localhost:4000/AMapPoi/" />
+<meta property="og:site_name" content="POIKit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-04-24T00:00:00+08:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Welcome to POIKit!" />
+<script type="application/ld+json">
+{"@type":"WebSite","headline":"Welcome to POIKit!","dateModified":"2021-04-24T00:00:00+08:00","datePublished":"2021-04-24T00:00:00+08:00","url":"http://localhost:4000/AMapPoi/","description":"POIKit 目的是提供一套简单易用且稳定的 POI 获取与处理工具套件，方便 GIS 相关从业者。","name":"POIKit","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" as="style" type="text/css" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#157878">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="/AMapPoi/assets/css/style.css?v=f827e9e283e02a88c5273beec5daef93399bdd88">
+  </head>
+  <body>
+
+    <header class="page-header" role="banner">
+      <h1 class="project-name">Welcome to POIKit!</h1>
+      <h2 class="project-tagline">POIKit 目的是提供一套简单易用且稳定的 POI 获取与处理工具套件，方便 GIS 相关从业者。</h2>
+      
+        <a href="https://github.com/Civitasv/AMapPoi" class="btn">View on GitHub</a>
+      
+      
+        <a href="https://github.com/Civitasv/AMapPoi/releases/download/v0.0.4-alpha/POIKit.zip" class="btn">Download</a>
+        <a href="https://gitee.com/simpls/AMapPoi/attach_files/682825/download/POIKit.zip" class="btn">Download2</a>
+      
+    </header>
+
+    <main id="content" class="main-content" role="main">
+      <p><a href="https://github.com/Civitasv/AMapPoi"><img src="https://img.shields.io/badge/build-success-brightgreen" alt="build" /></a>
+<a href="https://github.com/Civitasv/AMapPoi/graphs/commit-activity"><img src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" alt="Maintenance" /></a>
+<a href="https://github.com/Civitasv/AMapPoi/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?color=brightgreen&amp;label=version&amp;query=tag_name&amp;url=https%3A%2F%2Fapi.github.com%2Frepos%2FCivitasv%2FAMapPoi%2Freleases%2Flatest" alt="version" /></a></p>
+
+<p>POIKit 目的是提供一套简单易用且稳定的 POI 获取与处理工具套件，方便 GIS 相关从业者。目前软件处于初步构建状态，希望各位多多尝试，多多提问题（The More Questions，The Better）。</p>
+
+<h2 id="目录">目录</h2>
+
+<ul>
+  <li>
+    <p><a href="#功能演示">功能演示</a></p>
+  </li>
+  <li>
+    <p><a href="#安装">安装</a></p>
+  </li>
+  <li>
+    <p><a href="#技术选型">技术选型</a></p>
+  </li>
+  <li>
+    <p><a href="#维护人员">维护人员</a></p>
+  </li>
+  <li>
+    <p><a href="#支持该项目">支持该项目</a></p>
+  </li>
+  <li>
+    <p><a href="#开发路线">开发路线</a></p>
+  </li>
+  <li>
+    <p><a href="#License">License</a></p>
+  </li>
+</ul>
+
+<h2 id="功能演示">功能演示</h2>
+
+<h3 id="poi-搜索功能">POI 搜索功能</h3>
+
+<p>以行政区为例。POI 类型：餐饮服务；行政区：371723；初始网格数：4；阈值：850；线程数目：2；输出格式：csv，POI 搜索功能如下所示：</p>
+
+<p><img src="/AMapPoi/image/poi.gif" alt="POI搜索" /></p>
+
+<p><strong>功能配置参数如下表：</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">说明</th>
+      <th style="text-align: center">注意</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">高德 key</td>
+      <td style="text-align: center">软件支持多个 key，不同 key 之间需要用逗号分割</td>
+      <td style="text-align: center">注意，只能使用<strong>英文逗号</strong>，且不能包含换行符、空格等</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">开发者类型</td>
+      <td style="text-align: center">个人开发者或个人认证开发者或企业开发者</td>
+      <td style="text-align: center">用于设置 QPS 值，当用户设置线程数大于最大线程数，将强制设为最大线程，防止过高并发</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">POI 关键字</td>
+      <td style="text-align: center">搜索关键字，如<strong>KFC</strong>，不同关键字之间使用逗号分割</td>
+      <td style="text-align: center">只能使用<strong>英文逗号</strong> 分割</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">POI 类型</td>
+      <td style="text-align: center">搜索类型，可为分类代码或汉字</td>
+      <td style="text-align: center">若使用汉字，必须严格按照<a href="https://lbs.amap.com/api/webservice/download">高德 POI 分类编码</a>中的汉字编写</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">行政区</td>
+      <td style="text-align: center"><a href="http://www.mca.gov.cn//article/sj/xzqh/2020/202006/202008310601.shtml">行政区六位代码</a></td>
+      <td style="text-align: center">-</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">矩形</td>
+      <td style="text-align: center">格式严格遵循左上角经纬度#右下角经纬度，如<strong>133,34#135,30</strong></td>
+      <td style="text-align: center">经纬度坐标需要使用<strong>GCJ02 坐标</strong>，只能使用<strong>英文逗号</strong></td>
+    </tr>
+    <tr>
+      <td style="text-align: center">自定义</td>
+      <td style="text-align: center">支持用户上传 s geojson 边界文件</td>
+      <td style="text-align: center">经纬度坐标需要使用<strong>GCJ02 坐标</strong>，类型必须为<strong>MultiPolygon</strong></td>
+    </tr>
+    <tr>
+      <td style="text-align: center">初始网格数</td>
+      <td style="text-align: center">初始网格剖分数目</td>
+      <td style="text-align: center">一般情况按默认值为 4 即可</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">阈值</td>
+      <td style="text-align: center">当该网格 POI 数量超出阈值，会对网格进一步四分</td>
+      <td style="text-align: center">一般情况下按 850 即可</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">线程数目</td>
+      <td style="text-align: center">线程数量一般不大于 QPS - keys_num - 0.1，个人开发者最多设为 2，个人认证开发者最多设为 5，网速较快时也应降低</td>
+      <td style="text-align: center">QPS 可以在<a href="https://lbs.amap.com/api/webservice/guide/tools/flowlevel">流量限制说明</a>查看</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">输出格式</td>
+      <td style="text-align: center">目前支持 geojson、<strong>shp</strong>、csv、txt</td>
+      <td style="text-align: center">结果包含 gcj02 和 wgs84 两种坐标，若输出格式为 geojson 或 shp，使用 wgs84 坐标</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>注意：</strong></p>
+
+<ol>
+  <li>
+    <p><strong>行政区、矩形和用户自定义文件爬取结果为该区域的外接矩形的 POI，因此，除矩形区域检索外，其它方式均需要使用 ArcGIS 裁切工具将区域外的 POI 进行筛除！</strong></p>
+  </li>
+  <li>
+    <p><strong>若爬取过程中 key 池额度用尽，软件会停止爬取，但不会删除之前爬取得到的数据，仍会导出。</strong></p>
+  </li>
+  <li>
+    <p><strong>若爬取过程中，用户点击取消，软件会停止爬取，但不会删除之前爬取得到的数据，仍会导出。</strong></p>
+  </li>
+</ol>
+
+<p><strong>输出参数说明：</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">name</td>
+      <td style="text-align: center">名称</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">type</td>
+      <td style="text-align: center">兴趣点类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">typecode</td>
+      <td style="text-align: center">兴趣点类型编码</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">address</td>
+      <td style="text-align: center">地址</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">pname</td>
+      <td style="text-align: center">POI 所在省份名称</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">cityname</td>
+      <td style="text-align: center">城市名</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">adname</td>
+      <td style="text-align: center">区域名称</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">gcj02_lon</td>
+      <td style="text-align: center">gcj02 经度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">gcj02_lat</td>
+      <td style="text-align: center">gcj02 纬度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">wgs84_lon</td>
+      <td style="text-align: center">wgs84 经度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">wgs84_lat</td>
+      <td style="text-align: center">wgs84 纬度</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="地理编码功能">地理编码功能</h3>
+
+<p>以 txt 文件为例：</p>
+
+<pre><code class="language-txt">city,address
+武汉市,武汉大学资源与环境科学学院
+武汉市,珞狮路63号
+武汉市,珞喻路与珞狮路交叉口
+襄阳市,诸葛亮广场水上世界市
+</code></pre>
+
+<p>运行演示如下：</p>
+
+<p><img src="/AMapPoi/image/geocoding.gif" alt="地理编码" /></p>
+
+<p><strong>功能配置参数如下表所示：</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">说明</th>
+      <th style="text-align: center">注意</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">高德 key</td>
+      <td style="text-align: center">软件支持多个 key，不同 key 之间需要用逗号分割</td>
+      <td style="text-align: center">注意，只能使用<strong>英文逗号</strong>，且不能包含换行符、空格等</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">开发者类型</td>
+      <td style="text-align: center">个人开发者或个人认证开发者或企业开发者</td>
+      <td style="text-align: center">用于设置 QPS 值，当用户设置线程数大于最大线程数，将强制设为最大线程，防止过高并发</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">线程数目</td>
+      <td style="text-align: center">线程数量一般不大于 QPS - keys_num - 0.1，个人开发者最多设为 2，个人认证开发者最多设为 5，网速较快时也应降低线程数目</td>
+      <td style="text-align: center"><a href="https://lbs.amap.com/api/webservice/guide/tools/flowlevel">QPS 可以在流量限制说明查看</a></td>
+    </tr>
+    <tr>
+      <td style="text-align: center">输入文件</td>
+      <td style="text-align: center">支持 csv 或 txt 格式文件</td>
+      <td style="text-align: center">至少需要包含<strong>address</strong>字段</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">输出目录</td>
+      <td style="text-align: center">结果输出路径，目前地理编码结果包括 gcj02 和 wgs84 两种坐标</td>
+      <td style="text-align: center">-</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>注意：</strong></p>
+
+<p><strong>若地理编码过程中，用户点击取消，软件会停止爬取，但不会删除之前爬取得到的数据，仍会导出。</strong></p>
+
+<p><strong>输出参数说明：</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">formatted_address</td>
+      <td style="text-align: center">结构化地址信息</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">country</td>
+      <td style="text-align: center">国家</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">province</td>
+      <td style="text-align: center">地址所在的省份名</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">city</td>
+      <td style="text-align: center">地址所在的省份名</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">citycode</td>
+      <td style="text-align: center">城市编码</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">district</td>
+      <td style="text-align: center">地址所在的区</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">adcode</td>
+      <td style="text-align: center">区域编码</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">street</td>
+      <td style="text-align: center">街道</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">number</td>
+      <td style="text-align: center">门牌</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">level</td>
+      <td style="text-align: center">匹配级别</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">gcj02_lon</td>
+      <td style="text-align: center">gcj02 经度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">gcj02_lat</td>
+      <td style="text-align: center">gcj02 纬度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">wgs84_lon</td>
+      <td style="text-align: center">wgs84 经度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">wgs84_lat</td>
+      <td style="text-align: center">wgs84 纬度</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="安装">安装</h2>
+
+<ol>
+  <li>软件基于 Java 环境运行，需要首先安装 jre/jdk（1.8 版本），安装步骤如下：
+    <ul>
+      <li>下载<a href="https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html">JDK8</a>，选择适合本系统的版本；</li>
+      <li>配置环境变量<code class="language-plaintext highlighter-rouge">JAVA_HOME</code>为安装目录，然后在<code class="language-plaintext highlighter-rouge">Path</code>中添加<code class="language-plaintext highlighter-rouge">%JAVA_HOME%\bin</code>；</li>
+      <li>打开终端，输入<code class="language-plaintext highlighter-rouge">java -version</code>，若出现 Java 版本号，则配置成功。</li>
+    </ul>
+  </li>
+  <li><a href="https://github.com/Civitasv/AMapPoi/releases/latest">下载</a>最新发布的软件压缩包，以<code class="language-plaintext highlighter-rouge">POIKit.zip</code>为例，解压缩后，双击<code class="language-plaintext highlighter-rouge">start.bat</code>即可运行。</li>
+</ol>
+
+<h2 id="技术选型">技术选型</h2>
+
+<p>目前软件采用 MVC 软件架构模式，技术选型如下：</p>
+
+<ul>
+  <li>GUI：<a href="https://openjfx.io/">JavaFX 8</a>；</li>
+  <li>HTTP 请求：<a href="https://square.github.io/retrofit/">Retrofit</a></li>
+  <li>Json 转换：<a href="https://github.com/google/gson">Gson</a></li>
+</ul>
+
+<h2 id="维护人员">维护人员</h2>
+
+<p><a href="https://github.com/Civitasv">@Civitasv</a></p>
+
+<h2 id="支持该项目">支持该项目</h2>
+
+<p>若遇到任何问题，你可以通过以下方式联系我：</p>
+
+<ol>
+  <li>邮箱：sen.hu@whu.edu.cn，我会定时查看邮箱，但不保证实时性；</li>
+  <li>用户 QQ 群：939504570</li>
+  <li>提 <a href="https://github.com/Civitasv/AMapPoi/issues">issue</a>：这是我推荐的方式，有问题时，也应该首先查看 issue 列表是否已有该问题的解答；</li>
+</ol>
+
+<p>若帮助到了您，<a href="https://github.com/Civitasv/AMapPoi">Github Star</a> 是对我最大的肯定。</p>
+
+<h2 id="开发路线">开发路线</h2>
+
+<ul>
+  <li><strong>v0.0.1</strong> 2021-04-20
+    <ul>
+      <li>初步实现软件及安装文档；</li>
+    </ul>
+  </li>
+  <li><strong>v0.0.2</strong> 2021-04-22
+    <ul>
+      <li>修复重复 bug；</li>
+    </ul>
+  </li>
+  <li><strong>v0.0.3</strong> 2021-04-23
+    <ul>
+      <li>线程池运行优化；</li>
+      <li>添加运行状态提示</li>
+    </ul>
+  </li>
+  <li><strong>v0.0.4-alpha</strong> 2021-04-23
+    <ul>
+      <li>添加 POI 检索<a href="https://lbs.amap.com/api/webservice/guide/tools/info">错误码</a>输出；</li>
+      <li>修改地理编码返回字段;</li>
+      <li>添加开发者类型选择下拉框，防止过高并发；</li>
+      <li>解决点击“执行按钮”卡顿 bug;</li>
+      <li><strong>【重要更新】POI 搜索添加导出 shp 功能</strong></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="license">License</h2>
+
+<p><a href="LICENSE">MIT</a> © Civitasv</p>
+
+
+      <footer class="site-footer">
+        
+          <span class="site-footer-owner"><a href="https://github.com/Civitasv/AMapPoi">AMapPoi</a> is maintained by <a href="https://github.com/Civitasv">Civitasv</a>.</span>
+        
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
+      </footer>
+    </main>
+  </body>
+</html>
