@@ -3,7 +3,7 @@ email: sen.hu@whu.edu.cn
 description: >- # this means to ignore newlines until "baseurl:"
   POIKit 目的是提供一套简单易用且稳定的 POI 获取与处理工具套件，方便 GIS 相关从业者。
 baseurl: "/AmapPoi" # the subpath of your site, e.g. /blog
-url: ""
+url: "http://Civitasv.github.io"
 github_username: Civitasv
 
 # Build settings
