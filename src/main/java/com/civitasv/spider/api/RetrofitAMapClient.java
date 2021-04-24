@@ -23,9 +23,11 @@ public class RetrofitAMapClient {
 
     private RetrofitAMapClient() {
         OkHttpClient okHttpClient = new OkHttpClient().newBuilder()
-                .readTimeout(5, TimeUnit.SECONDS)
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .callTimeout(5, TimeUnit.SECONDS)
+                .connectTimeout(1, TimeUnit.DAYS)
+                .readTimeout(1, TimeUnit.DAYS)
+                .writeTimeout(1, TimeUnit.DAYS)
+                .retryOnConnectionFailure(false)
+                .callTimeout(1, TimeUnit.DAYS)
                 .build();
         retrofit = new Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create())
