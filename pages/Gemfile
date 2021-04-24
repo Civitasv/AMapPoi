@@ -1,0 +1,9 @@
+source "https://rubygems.org"
+gem "github-pages", group: :jekyll_plugins
+# 插件
+group :jekyll_plugins do
+  gem "jekyll-feed", "~> 0.12"
+end
+
+# 发布：bundle exec jekyll serve
+# 更新：bundle update
