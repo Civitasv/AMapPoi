@@ -563,14 +563,29 @@ public class POIController {
         POI poi = mapDao.getPoi(keys.get(index), polygon, keywords, types, page, size);
         if (start && (poi == null || !"10000".equals(poi.getInfocode()))) {
             synchronized (this) {
-                if (poi != null) {
-                    if ("10001".equals(poi.getInfocode())) {
-                        appendMessage("key----" + keys.get(index) + "已经过期");
-                    } else if ("10003".equals(poi.getInfocode())) {
-                        appendMessage("key----" + keys.get(index) + "已达调用量上限");
-                    } else {
-                        appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
+                if (poi == null) {
+                    // 如果返回null，重试
+                    appendMessage("数据获取失败，正在重试中...");
+                    for (int i = 0; i < 3; i++) {
+                        appendMessage("重试第" + (i + 1) + "次...");
+                        poi = mapDao.getPoi(keys.get(index), polygon, keywords, types, page, size);
+                        if (poi != null) {
+                            appendMessage("数据获取成功，继续爬取...");
+                            break;
+                        }
                     }
+                }
+                if (poi == null) {
+                    appendMessage("数据获取失败，请检查网络或稍后重试...");
+                    appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
+                    return null;
+                }
+                if ("10001".equals(poi.getInfocode())) {
+                    appendMessage("key----" + keys.get(index) + "已经过期");
+                } else if ("10003".equals(poi.getInfocode())) {
+                    appendMessage("key----" + keys.get(index) + "已达调用量上限");
+                } else {
+                    appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
                 }
                 // 去除过期的，使用其它key重新访问
                 keys.remove(index);
@@ -581,7 +596,20 @@ public class POIController {
                     appendMessage("切换key：" + key);
                     poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
                     if (poi == null) {
-                        appendMessage("返回数据为空");
+                        // 如果返回null，重试
+                        appendMessage("数据获取失败，正在重试中...");
+                        for (int i = 0; i < 3; i++) {
+                            appendMessage("重试第" + (i + 1) + "次...");
+                            poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
+                            if (poi != null) {
+                                appendMessage("数据获取成功，继续爬取...");
+                                break;
+                            }
+                        }
+                    }
+                    if (poi == null) {
+                        appendMessage("数据获取失败，请检查网络或稍后重试...");
+                        appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
                         continue;
                     }
                     if ("10000".equals(poi.getInfocode())) {

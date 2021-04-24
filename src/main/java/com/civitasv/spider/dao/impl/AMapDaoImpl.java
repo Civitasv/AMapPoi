@@ -26,6 +26,7 @@ public class AMapDaoImpl implements AMapDao {
         try {
             return call.execute().body();
         } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -36,6 +37,7 @@ public class AMapDaoImpl implements AMapDao {
         try {
             return call.execute().body();
         } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }

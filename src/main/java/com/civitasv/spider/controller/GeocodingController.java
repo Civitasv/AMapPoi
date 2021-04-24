@@ -415,14 +415,30 @@ public class GeocodingController {
         Geocodes.Response response = aMapDao.geocoding(keys.get(index), address, city);
         if (start && (response == null || !"10000".equals(response.getInfocode()))) {
             synchronized (this) {
-                if (response != null) {
-                    if ("10001".equals(response.getInfocode())) {
-                        appendMessage("key----" + keys.get(index) + "已经过期");
-                    } else if ("10003".equals(response.getInfocode())) {
-                        appendMessage("key----" + keys.get(index) + "已达调用量上限");
-                    } else {
-                        appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
+                if (response == null) {
+                    // 如果返回null，重试
+                    appendMessage("数据获取失败，正在重试中...");
+                    for (int i = 0; i < 3; i++) {
+                        appendMessage("重试第" + (i + 1) + "次...");
+                        response = aMapDao.geocoding(keys.get(index), address, city);
+                        if (response != null) {
+                            appendMessage("数据获取成功，继续爬取...");
+                            break;
+                        }
                     }
+                }
+                if (response == null) {
+                    appendMessage("数据获取失败，请检查网络或稍后重试...");
+                    appendMessage("错误数据---" + address + "--" + city);
+                    return null;
+                }
+
+                if ("10001".equals(response.getInfocode())) {
+                    appendMessage("key----" + keys.get(index) + "已经过期");
+                } else if ("10003".equals(response.getInfocode())) {
+                    appendMessage("key----" + keys.get(index) + "已达调用量上限");
+                } else {
+                    appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
                 }
                 // 去除过期的，使用其它key重新访问
                 keys.remove(index);
@@ -432,6 +448,25 @@ public class GeocodingController {
                     String key = keys.get(index);
                     appendMessage("切换key：" + key);
                     response = aMapDao.geocoding(key, address, city);
+
+                    if (response == null) {
+                        // 如果返回null，重试
+                        appendMessage("数据获取失败，正在重试中...");
+                        for (int i = 0; i < 3; i++) {
+                            appendMessage("重试第" + (i + 1) + "次...");
+                            response = aMapDao.geocoding(key, address, city);
+                            if (response != null) {
+                                appendMessage("数据获取成功，继续爬取...");
+                                break;
+                            }
+                        }
+                    }
+                    if (response == null) {
+                        appendMessage("数据获取失败，请检查网络或稍后重试...");
+                        appendMessage("错误数据---" + address + "--" + city);
+                        return null;
+                    }
+
                     if ("10000".equals(response.getInfocode())) {
                         appendMessage("切换key成功");
                         break;
