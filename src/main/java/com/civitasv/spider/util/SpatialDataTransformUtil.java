@@ -153,7 +153,7 @@ public class SpatialDataTransformUtil {
         }
     }
 
-    public static boolean transformShpToGeoJson(String shpPath, String geojsonPath) throws IOException {
+    public static boolean transformShpToGeoJson(String shpPath, String geojsonPath) {
         try {
             File file = new File(shpPath);
             FileDataStore myData = FileDataStoreFinder.getDataStore(file);
