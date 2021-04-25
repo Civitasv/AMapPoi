@@ -420,7 +420,12 @@ public class POIController {
                 filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + format;
                 break;
         }
-        File jsonFile = new File(filename);
+        File jsonFile = null;
+        try {
+            jsonFile = FileUtil.getNewFile(filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");
             if (format.equals("csv"))
@@ -454,7 +459,12 @@ public class POIController {
                 break;
         }
         GeoJSON geoJSON = parseResult(res);
-        File jsonFile = new File(filename);
+        File jsonFile = null;
+        try {
+            jsonFile = FileUtil.getNewFile(filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");
             writer.write(geoJSON.toString());

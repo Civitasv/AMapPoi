@@ -34,4 +34,58 @@ public class FileUtil {
         }
         return null;
     }
+
+    /**
+     *  根据原始文件路径生成一个不重复的文件路径，如果A.shp不存在，则使用原路径
+     *  如果A.shp已经存在，则使用新路径A(1).shp，如果A（1）.txt已存在，则使用新路径A（2）.txt，依次类推
+     * @param filePath 原路径
+     * @return 新路径
+     * @throws IOException
+     */
+    public static File getNewFile(String filePath) throws IOException {
+        File file = new File(filePath);
+        File parentFile = file.getParentFile();
+        if(!parentFile.exists()){
+            parentFile.mkdirs();
+        }
+        if (!file.exists()) {
+            boolean newFile = file.createNewFile();
+            if (newFile) {
+                return file;
+            }
+        } else {
+            int i = 1;
+            while (true) {
+                String[] split = file.getPath().split("\\.");
+                String nameFilePath = split[0] + "(" + i + ")" + "." + split[1];
+                File newFile = new File(nameFilePath);
+                if (!newFile.exists()) {
+                    boolean b = newFile.createNewFile();
+                    if (b) {
+                        return newFile;
+                    }
+                }
+                i++;
+            }
+        }
+        return null;
+    }
+
+    public static void saveCpgFile(String filePath, Charset charset) throws IOException {
+        File file = new File(filePath);
+        if(!file.exists()){
+            return;
+        }
+        String[] split = file.getPath().split("\\.");
+        String cpgFilePath = split[0] + ".cpg";
+        File cpgFile = new File(cpgFilePath);
+        if(cpgFile.exists()){
+            return;
+        }
+        boolean newFile = cpgFile.createNewFile();
+        if(newFile){
+            // 默认使用UTF-8编码
+            Files.write(cpgFile.toPath(),charset.toString().getBytes(charset));
+        }
+    }
 }

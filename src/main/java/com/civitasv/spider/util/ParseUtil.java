@@ -30,8 +30,8 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class ParseUtil {
-    public static List<Map<String, String>> parseTxtOrCsv(String path) {
-        File file = new File(path);
+    public static List<Map<String, String>> parseTxtOrCsv(String path) throws IOException {
+        File file = FileUtil.getNewFile(path);
         List<Map<String, String>> res = new ArrayList<>();
         if (file.exists()) {
             try {
@@ -76,7 +76,7 @@ public class ParseUtil {
         try {
             ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
 
-            File shpFile = new File(shpPath);
+            File shpFile = FileUtil.getNewFile(shpPath);
             Map<String, Serializable> params = new HashMap<>();
             params.put("url", shpFile.toURI().toURL());
             params.put("create spatial index", Boolean.TRUE);
@@ -96,6 +96,7 @@ public class ParseUtil {
                 featureStore.setTransaction(transaction);
                 try {
                     featureStore.addFeatures(collection);
+                    FileUtil.saveCpgFile(shpPath, StandardCharsets.UTF_8);
                     transaction.commit();
                 } catch (Exception problem) {
                     problem.printStackTrace();
@@ -111,4 +112,6 @@ public class ParseUtil {
         }
         return true;
     }
+
+
 }
