@@ -96,7 +96,7 @@ public class ParseUtil {
                 featureStore.setTransaction(transaction);
                 try {
                     featureStore.addFeatures(collection);
-                    FileUtil.saveCpgFile(shpPath, StandardCharsets.UTF_8);
+                    FileUtil.saveCpgFile(shpFile.toString(), StandardCharsets.UTF_8);
                     transaction.commit();
                 } catch (Exception problem) {
                     problem.printStackTrace();

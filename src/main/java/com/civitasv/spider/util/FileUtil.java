@@ -45,14 +45,13 @@ public class FileUtil {
     public static File getNewFile(String filePath) throws IOException {
         File file = new File(filePath);
         File parentFile = file.getParentFile();
+        // 如果文件夹不存在则生成文件夹
         if(!parentFile.exists()){
             parentFile.mkdirs();
         }
+        // 如果文件存在则
         if (!file.exists()) {
-            boolean newFile = file.createNewFile();
-            if (newFile) {
-                return file;
-            }
+            return file;
         } else {
             int i = 1;
             while (true) {
@@ -60,15 +59,11 @@ public class FileUtil {
                 String nameFilePath = split[0] + "(" + i + ")" + "." + split[1];
                 File newFile = new File(nameFilePath);
                 if (!newFile.exists()) {
-                    boolean b = newFile.createNewFile();
-                    if (b) {
-                        return newFile;
-                    }
+                   return newFile;
                 }
                 i++;
             }
         }
-        return null;
     }
 
     public static void saveCpgFile(String filePath, Charset charset) throws IOException {
@@ -84,7 +79,6 @@ public class FileUtil {
         }
         boolean newFile = cpgFile.createNewFile();
         if(newFile){
-            // 默认使用UTF-8编码
             Files.write(cpgFile.toPath(),charset.toString().getBytes(charset));
         }
     }

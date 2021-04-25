@@ -1,6 +1,6 @@
 .idea
 src/test
-geospider.iml
 target
 out
 latest
+spider.iml
