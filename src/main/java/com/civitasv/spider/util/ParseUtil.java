@@ -30,6 +30,12 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class ParseUtil {
+    /**
+     * 解析csv或txt
+     *
+     * @param path 解析文件路径
+     * @return 解析结果
+     */
     public static List<Map<String, String>> parseTxtOrCsv(String path) {
         File file = new File(path);
         List<Map<String, String>> res = new ArrayList<>();
@@ -64,51 +70,17 @@ public class ParseUtil {
         return res;
     }
 
+    /**
+     * 解析字符串至数值
+     *
+     * @param text 字符串
+     * @return int整型
+     */
     public static Integer tryParse(String text) {
         try {
             return Integer.parseInt(text);
         } catch (NumberFormatException e) {
             return null;
         }
-    }
-
-    public static boolean transFormGeoJsonToShp(List<SimpleFeature> features, SimpleFeatureType TYPE, String shpPath) {
-        try {
-            ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-
-            File shpFile = new File(shpPath);
-            Map<String, Serializable> params = new HashMap<>();
-            params.put("url", shpFile.toURI().toURL());
-            params.put("create spatial index", Boolean.TRUE);
-
-            ShapefileDataStore newDataStore =
-                    (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
-            newDataStore.setCharset(StandardCharsets.UTF_8);
-            newDataStore.createSchema(TYPE);
-
-            Transaction transaction = new DefaultTransaction("create");
-            String typeName = newDataStore.getTypeNames()[0];
-            SimpleFeatureSource featureSource = newDataStore.getFeatureSource(typeName);
-
-            if (featureSource instanceof SimpleFeatureStore) {
-                SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
-                SimpleFeatureCollection collection = new ListFeatureCollection(TYPE, features);
-                featureStore.setTransaction(transaction);
-                try {
-                    featureStore.addFeatures(collection);
-                    transaction.commit();
-                } catch (Exception problem) {
-                    problem.printStackTrace();
-                    transaction.rollback();
-                } finally {
-                    transaction.close();
-                }
-            } else {
-                System.out.println(typeName + " does not support read/write access");
-            }
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
     }
 }

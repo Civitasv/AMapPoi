@@ -24,9 +24,7 @@ import javafx.stage.Stage;
 import org.geotools.data.DataUtilities;
 import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -287,11 +285,11 @@ public class POIController {
     }
 
     private double[] getBoundaryByAdCode(String adCode) {
-        return AMapPoiUtil.getBoundary(adCode);
+        return BoundaryUtil.getBoundary(adCode);
     }
 
     private double[] getBoundaryByUserFile(String path) {
-        return AMapPoiUtil.getBoundaryByGeoJson(FileUtil.readFile(path));
+        return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path));
     }
 
     private double[] getBoundaryByRectangle(String text) {
@@ -429,7 +427,7 @@ public class POIController {
             for (POI.Info info : res) {
                 String[] lonlat = info.location.toString().split(",");
                 if (lonlat.length == 2) {
-                    double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                    double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                     writer.write(info.name + "," + info.type + "," + info.typecode + "," + info.address + "," + info.pname + "," + info.cityname + "," + info.adname + "," + lonlat[0] + "," + lonlat[1] + "," + wgs84[0] + "," + wgs84[1] + "\r\n");
                 }
             }
@@ -492,7 +490,7 @@ public class POIController {
             for (POI.Info info : res) {
                 String[] lonlat = info.location.toString().split(",");
                 if (lonlat.length == 2) {
-                    double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                    double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                     Point point = geometryFactory.createPoint(new Coordinate(wgs84[0], wgs84[1]));
                     featureBuilder.add(point);
                     featureBuilder.add(info.name);
@@ -511,7 +509,7 @@ public class POIController {
                 }
             }
 
-            if (ParseUtil.transFormGeoJsonToShp(features, type, filename)) {
+            if (SpatialDataTransformUtil.saveFeaturesToShp(features, type, filename)) {
                 appendMessage("写入成功，结果存储于" + filename);
             } else appendMessage("写入失败");
         } catch (SchemaException e) {
@@ -526,7 +524,7 @@ public class POIController {
                 continue;
             String[] lonlat = info.location.toString().split(",");
             if (lonlat.length == 2) {
-                double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                 JsonObject geometry = new JsonObject();
                 geometry.addProperty("type", "Point");
                 JsonArray coordinates = new JsonArray();

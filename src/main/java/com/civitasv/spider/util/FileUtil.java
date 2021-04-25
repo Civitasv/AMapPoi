@@ -7,11 +7,23 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class FileUtil {
+    /**
+     * 获取文件名后缀
+     *
+     * @param path 文件完整路径
+     * @return 文件名后缀
+     */
     public static String getExtension(String path) {
         int i = path.lastIndexOf('.');
         return i > 0 ? path.substring(i + 1) : null;
     }
 
+    /**
+     * 获取文件名
+     *
+     * @param path 文件完整路径
+     * @return 文件名
+     */
     public static String getFileName(String path) {
         path = path.trim();
         String[] temp = path.split("\\\\");
@@ -20,6 +32,12 @@ public class FileUtil {
         return arr[0];
     }
 
+    /**
+     * 读取数据为字符串
+     *
+     * @param path 文件完整路径
+     * @return 文件字符串数据
+     */
     public static String readFile(String path) {
         File file = new File(path);
         if (file.exists()) {

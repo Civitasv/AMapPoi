@@ -1,8 +1,5 @@
 package com.civitasv.spider.model;
 
-import com.civitasv.spider.util.AMapPoiUtil;
-import com.google.gson.JsonObject;
-
 import java.util.List;
 
 public class GeoJSON {
