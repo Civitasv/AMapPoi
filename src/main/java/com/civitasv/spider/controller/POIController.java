@@ -479,6 +479,7 @@ public class POIController {
                 filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".shp";
                 break;
         }
+        appendMessage("正在写入数据，请等待");
         try {
             final SimpleFeatureType type =
                     DataUtilities.createType(
