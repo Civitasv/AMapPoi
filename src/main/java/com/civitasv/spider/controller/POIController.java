@@ -63,6 +63,8 @@ public class POIController {
     public Button execute;
     public Button poiType;
     public ChoiceBox<String> userType;
+    public ChoiceBox<String> coordinateType;
+    public ChoiceBox<String> coordinateType2;
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
     private boolean start = false;
@@ -199,9 +201,10 @@ public class POIController {
                         analysis(false);
                         return;
                     }
-
+                    // 获取坐标类型
+                    String rectangleCoordinateType = coordinateType.getValue();
                     appendMessage("解析矩形区域中");
-                    boundary = getBoundaryByRectangle(rectangle.getText());
+                    boundary = getBoundaryByRectangle(rectangle.getText(), rectangleCoordinateType);
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式或稍后重试！"));
                         analysis(false);
@@ -220,7 +223,8 @@ public class POIController {
                     }
 
                     appendMessage("解析用户geojson文件中");
-                    boundary = getBoundaryByUserFile(userFile.getText());
+                    String userCoordinateType = coordinateType.getValue();
+                    boundary = getBoundaryByUserFile(userFile.getText(), userCoordinateType);
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "无法获取边界，请检查GeoJSON格式或稍后重试！"));
                         analysis(false);
@@ -289,18 +293,24 @@ public class POIController {
         return BoundaryUtil.getBoundary(adCode);
     }
 
-    private double[] getBoundaryByUserFile(String path) {
-        return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path));
+    private double[] getBoundaryByUserFile(String path, String type) {
+        return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path), type);
     }
 
-    private double[] getBoundaryByRectangle(String text) {
+    private double[] getBoundaryByRectangle(String text, String type) {
         String[] str = text.split("#");
         if (str.length == 2) {
             String[] leftTop = str[0].split(",");
             String[] rightBottom = str[1].split(",");
+            double[] leftTopLonlat = new double[]{Double.parseDouble(leftTop[0]), Double.parseDouble(leftTop[1])};
+            double[] rightBottomLonlat = new double[]{Double.parseDouble(rightBottom[0]), Double.parseDouble(rightBottom[1])};
+            if ("wgs84".equals(type)) {
+                leftTopLonlat = CoordinateTransformUtil.transformWGS84ToGCJ02(leftTopLonlat[0], leftTopLonlat[1]);
+                rightBottomLonlat = CoordinateTransformUtil.transformWGS84ToGCJ02(rightBottomLonlat[0], rightBottomLonlat[1]);
+            }
             if (leftTop.length == 2 && rightBottom.length == 2) {
                 try {
-                    return new double[]{Double.parseDouble(leftTop[0]), Double.parseDouble(rightBottom[1]), Double.parseDouble(rightBottom[0]), Double.parseDouble(leftTop[1])};
+                    return new double[]{leftTopLonlat[0], rightBottomLonlat[1], rightBottomLonlat[0], leftTopLonlat[1]};
                 } catch (NumberFormatException e) {
                     return null;
                 }
