@@ -42,6 +42,14 @@ public class BoundaryUtil {
         return getRealBoundaryByGeoJson(boundaryJson.toString(), "gcj02");
     }
 
+    public static String getAdName(String adCode) {
+        DataVDao dao = new DataVDaoImpl();
+        JsonObject boundaryJson = dao.getBoundary(adCode);
+        if (boundaryJson == null)
+            return null;
+        return getAdNameFromAdGeoJson(boundaryJson.toString());
+    }
+
     /**
      * 使用geojson字符串获取城市外接矩形区域范围
      *
@@ -87,12 +95,7 @@ public class BoundaryUtil {
         return success ? new double[]{minLon, minLat, maxLon, maxLat} : null;
     }
 
-    /**
-     * 使用geojson字符串获取城市外接矩形区域范围
-     *
-     * @param geojson geojson字符串
-     * @return 城市矩形区域范围
-     */
+
     public static Geometry getRealBoundaryByGeoJson(String geojson, String type) {
         FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = null;
         try {
@@ -140,8 +143,23 @@ public class BoundaryUtil {
                 Polygon polygon = geometryFactory.createPolygon(gcj02Coos);
                 polygons[i] = polygon;
             }
-            return geometryFactory.createMultiPolygon(polygons);
+            geometryFactory.createMultiPolygon(polygons);
         }
         return null;
+    }
+
+    public static String getAdNameFromAdGeoJson(String geojson) {
+        FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = null;
+        try {
+            featureCollection = SpatialDataTransformUtil.geojsonStr2FeatureCollection(geojson);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        FeatureIterator<SimpleFeature> featureIterator = featureCollection.features();
+        SimpleFeature boundary = null;
+        while(featureIterator.hasNext()){
+            boundary = featureIterator.next();
+        }
+        return (String) boundary.getAttribute("name");
     }
 }

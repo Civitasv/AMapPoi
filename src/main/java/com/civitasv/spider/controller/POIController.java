@@ -41,6 +41,7 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -187,7 +188,7 @@ public class POIController {
 
                     appendMessage("获取行政区 " + city.getText() + " 区域边界中");
                     boundary = getBoundaryByAdCode(city.getText());
-                    realBoundary = getRealBoundaryByAdCode(city.getText());
+                    String adname = getAdNameByAdCode(city.getText());
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！"));
                         analysis(false);
@@ -195,8 +196,7 @@ public class POIController {
                     }
                     appendMessage("成功获取行政区 " + city.getText() + " 区域边界");
 
-//                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
-                    getPoiDataByRealBoundry(realBoundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+                    getPoiDataByAdName(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), adname);
                     break;
                 case "矩形":
                     if (rectangle.getText().isEmpty()) {
@@ -216,7 +216,7 @@ public class POIController {
                     }
                     appendMessage("解析矩形区域成功");
 
-                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(),__->true);
 
                     break;
                 case "自定义":
@@ -238,8 +238,7 @@ public class POIController {
                     }
                     appendMessage("成功解析用户文件");
 
-//                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
-                    getPoiDataByRealBoundry(realBoundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+                    getPoiDataByRealBoundary(realBoundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
                     break;
             }
             analysis(false);
@@ -304,6 +303,10 @@ public class POIController {
         return BoundaryUtil.getRealBoundary(adCode);
     }
 
+    private String getAdNameByAdCode(String adCode) {
+        return BoundaryUtil.getAdName(adCode);
+    }
+
     private double[] getBoundaryByUserFile(String path, String type) {
         return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path), type);
     }
@@ -334,7 +337,7 @@ public class POIController {
         return null;
     }
 
-    public void getPoiDataByRectangle(double[] boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab) {
+    public void getPoiDataByRectangle(double[] boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, Predicate<? super POI.Info> filter) {
         List<POI.Info> res = new ArrayList<>();
         // 1. 获取边界
         double left = boundary[0], bottom = boundary[1], right = boundary[2], top = boundary[3];
@@ -366,6 +369,9 @@ public class POIController {
                 res.addAll(item);
         }
         executorService.shutdown();
+
+        res = res.stream().filter(filter).collect(Collectors.toList());
+
         if (!start) return;
         appendMessage(success ? "POI爬取完毕" : "未完全爬取");
         // 导出res
@@ -382,64 +388,24 @@ public class POIController {
         }
     }
 
-    public void getPoiDataByRealBoundry(Geometry realBoundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab) {
+    public void getPoiDataByRealBoundary(Geometry realBoundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab) {
         Envelope envelopeInternal = realBoundary.getEnvelopeInternal();
-        List<POI.Info> res = new ArrayList<>();
-        // 1. 获取边界
+
         double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
                 right =envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
-        double itemWidth = (right - left) / grids;
-        double itemHeight = (top - bottom) / grids;
-        // 2. 获取初始切分网格
-        Deque<double[]> analysisGrid = new ArrayDeque<>(); // 网格剖分
 
-        appendMessage("切分初始网格中");
-        for (int i = 0; i < grids; i++) {
-            for (int j = 0; j < grids; j++) {
-                analysisGrid.push(new double[]{left + i * itemWidth, bottom + j * itemHeight, left + (i + 1) * itemWidth, bottom + (j + 1) * itemHeight});
-            }
-        }
-        appendMessage("初始网格切分成功");
-
-        // 3. 开始爬取
-        appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
-        executorService = Executors.newFixedThreadPool(threadNum);
-        boolean success = true;
-        while (!analysisGrid.isEmpty() && start) {
-            appendMessage("正在爬取，任务队列剩余" + analysisGrid.size() + "个");
-            List<POI.Info> item = getPoi(analysisGrid.pop(), threadNum, threshold, keywords, types, keys, analysisGrid);
-            if (item == null) {
-                success = false;
-                break;
-            }
-            if (item.size() > 0)
-                res.addAll(item);
-        }
-        executorService.shutdown();
-
-        res = res.stream().filter(info -> {
+        getPoiDataByRectangle(new double[]{left,bottom,right,top},grids,threadNum,threshold,keywords,types,keys,tab,info->{
             String[] lonlat = info.location.toString().split(",");
             if (lonlat.length != 2) {
                 return false;
             }
             Coordinate coordinate = new Coordinate(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
             return realBoundary.intersects(geometryFactory.createPoint(coordinate));
-        }).collect(Collectors.toList());
+        });
+    }
 
-        if (!start) return;
-        appendMessage(success ? "POI爬取完毕" : "未完全爬取");
-        // 导出res
-        switch (format.getValue()) {
-            case "csv":
-            case "txt":
-                writeToCsvOrTxt(res, format.getValue(), tab);
-                break;
-            case "geojson":
-                writeToGeoJson(res, tab);
-                break;
-            case "shp":
-                writeToShp(res, tab);
-        }
+    public void getPoiDataByAdName(double[] boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, String adname) {
+        getPoiDataByRectangle(boundary,grids,threadNum,threshold,keywords,types,keys,tab,info-> info.adname.equals(adname));
     }
 
     private List<POI.Info> getPoi(double[] boundary, int threadNum, int threshold, String keywords, String types, List<String> keys, Deque<double[]> analysisGrid) {
