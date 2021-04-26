@@ -64,9 +64,7 @@ public class GeocodingController {
     public void execute() {
         worker = Executors.newSingleThreadExecutor();
         worker.execute(() -> {
-            Platform.runLater(() -> {
-                messageDetail.clear();
-            });
+            Platform.runLater(() -> messageDetail.clear());
             if (!check()) {
                 return;
             }
@@ -109,12 +107,7 @@ public class GeocodingController {
 
             // 解析输入文件
             appendMessage("解析输入文件中");
-            List<Map<String, String>> parseRes = null;
-            try {
-                parseRes = ParseUtil.parseTxtOrCsv(inputFile.getText());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            List<Map<String, String>> parseRes = ParseUtil.parseTxtOrCsv(inputFile.getText());
             if (parseRes == null) {
                 appendMessage("输入文件解析失败，请检查文件");
                 analysis(false);
@@ -174,7 +167,7 @@ public class GeocodingController {
             outputDirectory.setText(file.getAbsolutePath());
     }
 
-    private void saveToCsvOrTxt(@NotNull List<Map<String, String>> parseRes, String outputFormat, int threadNum, List<String> amapKeys){
+    private void saveToCsvOrTxt(@NotNull List<Map<String, String>> parseRes, String outputFormat, int threadNum, List<String> amapKeys) {
         // 创建工作线程执行保存文件工作
         executorService = Executors.newFixedThreadPool(threadNum);
         // 创建线程池执行解析工作
@@ -234,11 +227,10 @@ public class GeocodingController {
         executorService.shutdown();
         if (!start) return;
         List<String> keys = new ArrayList<>(parseRes.get(0).keySet());
-        File file = null;
-        try {
-            file = FileUtil.getNewFile(outputDirectory.getText() + "\\解析结果_" + FileUtil.getFileName(inputFile.getText()) + "." + outputFormat);
-        } catch (IOException e) {
-            e.printStackTrace();
+        File file = FileUtil.getNewFile(outputDirectory.getText() + "\\解析结果_" + FileUtil.getFileName(inputFile.getText()) + "." + outputFormat);
+        if (file == null) {
+            appendMessage("输出路径有误，请检查后重试！");
+            return;
         }
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");
@@ -341,11 +333,10 @@ public class GeocodingController {
         }
         executorService.shutdown();
         String json = jsonArray.toString();
-        File jsonFile = null;
-        try {
-            jsonFile = FileUtil.getNewFile(outputDirectory.getText() + "\\解析结果_" + FileUtil.getFileName(inputFile.getText()) + ".json");
-        } catch (IOException e) {
-            e.printStackTrace();
+        File jsonFile = FileUtil.getNewFile(outputDirectory.getText() + "\\解析结果_" + FileUtil.getFileName(inputFile.getText()) + ".json");
+        if (jsonFile == null) {
+            appendMessage("输出路径有误，请检查后重试！");
+            return;
         }
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");

@@ -10,7 +10,6 @@ import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -429,11 +428,10 @@ public class POIController {
                 filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + format;
                 break;
         }
-        File jsonFile = null;
-        try {
-            jsonFile = FileUtil.getNewFile(filename);
-        } catch (IOException e) {
-            e.printStackTrace();
+        File jsonFile = FileUtil.getNewFile(filename);
+        if (jsonFile == null) {
+            appendMessage("输出路径有误，请检查后重试！");
+            return;
         }
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");
@@ -468,11 +466,10 @@ public class POIController {
                 break;
         }
         GeoJSON geoJSON = parseResult(res);
-        File jsonFile = null;
-        try {
-            jsonFile = FileUtil.getNewFile(filename);
-        } catch (IOException e) {
-            e.printStackTrace();
+        File jsonFile = FileUtil.getNewFile(filename);
+        if (jsonFile == null) {
+            appendMessage("输出路径有误，请检查后重试！");
+            return;
         }
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");

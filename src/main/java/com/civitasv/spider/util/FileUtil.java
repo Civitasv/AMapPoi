@@ -54,18 +54,18 @@ public class FileUtil {
     }
 
     /**
-     *  根据原始文件路径生成一个不重复的文件路径，如果A.shp不存在，则使用原路径
-     *  如果A.shp已经存在，则使用新路径A(1).shp，如果A（1）.txt已存在，则使用新路径A（2）.txt，依次类推
-     * @param filePath 原路径
+     * 根据原始文件路径生成一个不重复的文件路径，如果A.shp不存在，则使用原路径
+     * 如果A.shp已经存在，则使用新路径A(1).shp，如果A（1）.txt已存在，则使用新路径A（2）.txt，依次类推
+     *
+     * @param filePath 文件完整路径
      * @return 新路径
-     * @throws IOException
      */
-    public static File getNewFile(String filePath) throws IOException {
+    public static File getNewFile(String filePath) {
         File file = new File(filePath);
         File parentFile = file.getParentFile();
         // 如果文件夹不存在则生成文件夹
-        if(!parentFile.exists()){
-            parentFile.mkdirs();
+        if (!parentFile.exists()) {
+            if (!parentFile.mkdirs()) return null;
         }
         // 如果文件存在则
         if (!file.exists()) {
@@ -77,27 +77,40 @@ public class FileUtil {
                 String nameFilePath = split[0] + "(" + i + ")" + "." + split[1];
                 File newFile = new File(nameFilePath);
                 if (!newFile.exists()) {
-                   return newFile;
+                    return newFile;
                 }
                 i++;
             }
         }
     }
 
-    public static void saveCpgFile(String filePath, Charset charset) throws IOException {
-        File file = new File(filePath);
-        if(!file.exists()){
-            return;
-        }
-        String[] split = file.getPath().split("\\.");
-        String cpgFilePath = split[0] + ".cpg";
-        File cpgFile = new File(cpgFilePath);
-        if(cpgFile.exists()){
-            return;
-        }
-        boolean newFile = cpgFile.createNewFile();
-        if(newFile){
-            Files.write(cpgFile.toPath(),charset.toString().getBytes(charset));
+    /**
+     * 生成cpg文件
+     *
+     * @param filePath 文件完整路径
+     * @param charset  文件编码
+     * @return 是否生成成功
+     */
+    public static boolean generateCpgFile(String filePath, Charset charset) {
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                return false;
+            }
+            String[] split = file.getPath().split("\\.");
+            String cpgFilePath = split[0] + ".cpg";
+            File cpgFile = new File(cpgFilePath);
+            if (cpgFile.exists()) {
+                return true;
+            }
+            boolean newFile = cpgFile.createNewFile();
+            if (newFile) {
+                Files.write(cpgFile.toPath(), charset.toString().getBytes(charset));
+            }
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }
