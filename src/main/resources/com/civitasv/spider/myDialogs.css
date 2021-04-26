@@ -1,0 +1,30 @@
+.myDialog {
+    -fx-background-color: #393e46;
+}
+
+.myDialog > *.button-bar > *.container {
+    -fx-background-color: #393e46;
+}
+
+.myDialog > .button-bar > .container > .details-button {
+    -fx-font-weight: bold;
+    -fx-background-color: #393e46;
+}
+
+.myDialog > .button-bar > .container > .details-button.more {
+    -fx-background-color: #393e46;
+}
+
+.myDialog > .button-bar > .container > .details-button.less {
+    -fx-background-color: #393e46;
+}
+
+.myDialog > .button-bar > .container > .details-button:hover {
+    -fx-underline: true;
+}
+
+.myDialog > *.label.content {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #eeeeee;
+}
