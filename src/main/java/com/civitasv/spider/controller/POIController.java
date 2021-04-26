@@ -10,10 +10,13 @@ import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.*;
@@ -65,6 +68,8 @@ public class POIController {
     public ChoiceBox<String> userType;
     public ChoiceBox<String> coordinateType;
     public ChoiceBox<String> coordinateType2;
+    public MenuItem wechat;
+    public MenuItem joinQQ;
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
     private boolean start = false;
@@ -76,6 +81,20 @@ public class POIController {
         this.grids.setTextFormatter(getFormatter());
         this.threshold.setTextFormatter(getFormatter());
         this.city.setTextFormatter(getFormatter());
+        wechat.setOnAction(event -> {
+            try {
+                openAbout(false);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        joinQQ.setOnAction(event -> {
+            try {
+                openAbout(true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private TextFormatter<Integer> getFormatter() {
@@ -757,5 +776,26 @@ public class POIController {
         stage.setScene(scene);
         stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
         stage.show();
+    }
+
+    public void openAbout(boolean isQQ) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("about.fxml"));
+        Parent root = fxmlLoader.load();
+        if (fxmlLoader.getController() instanceof AboutController) {
+            AboutController controller = fxmlLoader.getController();
+            controller.init(isQQ);
+        }
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle(isQQ ? "加入用户群" : "关注公众号");
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
+
+    public void starsMe() throws URISyntaxException, IOException {
+        Desktop.getDesktop().browse(new URI("https://github.com/Civitasv/AMapPoi"));
     }
 }

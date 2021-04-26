@@ -23,6 +23,11 @@
             <MenuItem mnemonicParsing="false" onAction="#openGeocoding" text="地理编码" />
             <MenuItem mnemonicParsing="false" onAction="#openSpatialTransform" text="格式转换" />
         </Menu>
+        <Menu mnemonicParsing="false" text="关于">
+            <MenuItem fx:id="joinQQ" mnemonicParsing="false" text="加入用户群" />
+            <MenuItem fx:id="wechat" mnemonicParsing="false" text="关注公众号" />
+            <MenuItem mnemonicParsing="false" onAction="#starsMe" text="star支持" />
+        </Menu>
     </MenuBar>
     <VBox>
         <VBox.margin>
@@ -63,9 +68,9 @@
                     <Insets left="5.0" />
                 </HBox.margin>
             </Button>
-         <VBox.margin>
-            <Insets bottom="10.0" />
-         </VBox.margin>
+            <VBox.margin>
+                <Insets bottom="10.0" />
+            </VBox.margin>
         </HBox>
         <TabPane fx:id="tabs" tabClosingPolicy="UNAVAILABLE">
             <Tab text="行政区">
