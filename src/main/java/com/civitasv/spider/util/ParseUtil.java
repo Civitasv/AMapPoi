@@ -30,8 +30,14 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class ParseUtil {
-    public static List<Map<String, String>> parseTxtOrCsv(String path) throws IOException {
-        File file = FileUtil.getNewFile(path);
+    /**
+     * 解析csv或txt
+     *
+     * @param path 解析文件路径
+     * @return 解析结果
+     */
+    public static List<Map<String, String>> parseTxtOrCsv(String path) {
+        File file = new File(path);
         List<Map<String, String>> res = new ArrayList<>();
         if (file.exists()) {
             try {
@@ -64,6 +70,12 @@ public class ParseUtil {
         return res;
     }
 
+    /**
+     * 解析字符串至数值
+     *
+     * @param text 字符串
+     * @return int整型
+     */
     public static Integer tryParse(String text) {
         try {
             return Integer.parseInt(text);
@@ -76,7 +88,7 @@ public class ParseUtil {
         try {
             ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
 
-            File shpFile = FileUtil.getNewFile(shpPath);
+            File shpFile = new File(shpPath);
             Map<String, Serializable> params = new HashMap<>();
             params.put("url", shpFile.toURI().toURL());
             params.put("create spatial index", Boolean.TRUE);
@@ -96,7 +108,6 @@ public class ParseUtil {
                 featureStore.setTransaction(transaction);
                 try {
                     featureStore.addFeatures(collection);
-                    FileUtil.saveCpgFile(shpFile.toString(), StandardCharsets.UTF_8);
                     transaction.commit();
                 } catch (Exception problem) {
                     problem.printStackTrace();
@@ -112,6 +123,4 @@ public class ParseUtil {
         }
         return true;
     }
-
-
 }

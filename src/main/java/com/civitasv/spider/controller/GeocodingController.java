@@ -221,7 +221,7 @@ public class GeocodingController {
                         if (lonlat.length == 2) {
                             item.put("gcj02_lon_" + k, lonlat[0]);
                             item.put("gcj02_lat_" + k, lonlat[1]);
-                            double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                            double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                             item.put("wgs84_lon_" + k, String.valueOf(wgs84[0]));
                             item.put("wgs84_lat_" + k, String.valueOf(wgs84[1]));
                         }
@@ -326,7 +326,7 @@ public class GeocodingController {
                         if (lonlat.length == 2) {
                             jsonItem.addProperty("gcj02_lon", lonlat[0]);
                             jsonItem.addProperty("gcj02_lat", lonlat[1]);
-                            double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                            double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                             jsonItem.addProperty("wgs84_lon", wgs84[0]);
                             jsonItem.addProperty("wgs84_lat", wgs84[1]);
                         }

@@ -5,6 +5,9 @@ import javafx.scene.control.TextArea;
 
 import java.text.DecimalFormat;
 
+/**
+ * 进度条
+ */
 public class MyProgressBar {
     // 最大值，当达到最大值时，进度条达到总长度
     private final int maxVal;

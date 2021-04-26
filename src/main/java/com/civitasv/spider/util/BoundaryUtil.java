@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
 
-public class AMapPoiUtil {
+public class BoundaryUtil {
 
     /**
      * 获取城市外接矩形区域范围
@@ -20,7 +20,7 @@ public class AMapPoiUtil {
         DataVDao dao = new DataVDaoImpl();
         if (dao.getBoundary(adCode) == null)
             return null;
-        return getBoundaryByGeoJson(dao.getBoundary(adCode).toString());
+        return getBoundaryByGeoJson(dao.getBoundary(adCode).toString(), "gcj02");
     }
 
     /**
@@ -29,7 +29,7 @@ public class AMapPoiUtil {
      * @param geojson geojson字符串
      * @return 城市矩形区域范围
      */
-    public static double[] getBoundaryByGeoJson(String geojson) {
+    public static double[] getBoundaryByGeoJson(String geojson, String type) {
         boolean success = false;
         double maxLon = -180, minLon = 180, maxLat = -90, minLat = 90;
         Gson gson = new Gson();
@@ -46,6 +46,9 @@ public class AMapPoiUtil {
                             double[][][][] coordinates = gson.fromJson(geometry.get("coordinates"), double[][][][].class);
                             double[][] lonlats = coordinates[0][0];
                             for (double[] lonlat : lonlats) {
+                                if ("wgs84".equals(type)) {
+                                    lonlat = CoordinateTransformUtil.transformBD09ToGCJ02(lonlat[0], lonlat[1]);
+                                }
                                 maxLon = Math.max(maxLon, lonlat[0]);
                                 minLon = Math.min(minLon, lonlat[0]);
                                 maxLat = Math.max(maxLat, lonlat[1]);
@@ -59,14 +62,5 @@ public class AMapPoiUtil {
             }
         }
         return success ? new double[]{minLon, minLat, maxLon, maxLat} : null;
-    }
-
-    public static String getCrs84() {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("type", "name");
-        JsonObject properties = new JsonObject();
-        properties.addProperty("name", "urn:ogc:def:crs:OGC:1.3:CRS84");
-        jsonObject.add("properties", properties);
-        return jsonObject.toString();
     }
 }

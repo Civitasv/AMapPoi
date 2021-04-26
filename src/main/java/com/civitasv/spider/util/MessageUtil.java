@@ -12,6 +12,13 @@ import java.awt.*;
  * 消息提示
  */
 public class MessageUtil {
+    /**
+     * 信息提示框
+     * @param type {@link Alert.AlertType}
+     * @param title
+     * @param header
+     * @param content
+     */
     public static void alert(Alert.AlertType type, String title, String header, String content) {
         Alert alert = new Alert(type);
         alert.setTitle(title);

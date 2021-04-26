@@ -4,17 +4,20 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.civitasv.spider.controller.LoadingController">
+<VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
+      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.civitasv.spider.controller.LoadingController">
     <ProgressIndicator fx:id="progress" prefHeight="60.0" prefWidth="60.0" progress="0.0">
         <opaqueInsets>
-            <Insets />
+            <Insets/>
         </opaqueInsets>
     </ProgressIndicator>
     <AnchorPane>
-        <Button fx:id="cancel" mnemonicParsing="false" prefWidth="160.0" text="取消" />
-        <Button fx:id="message" mnemonicParsing="false" onMouseClicked="#close" prefWidth="160.0" text="解析完成" visible="false" />
+        <Button fx:id="cancel" mnemonicParsing="false" prefWidth="160.0" text="取消"/>
+        <Button fx:id="message" mnemonicParsing="false" onMouseClicked="#close" prefWidth="160.0" text="解析完成"
+                visible="false"/>
     </AnchorPane>
     <padding>
-        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
     </padding>
 </VBox>

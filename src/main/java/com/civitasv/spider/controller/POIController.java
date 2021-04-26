@@ -10,6 +10,7 @@ import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -24,9 +25,7 @@ import javafx.stage.Stage;
 import org.geotools.data.DataUtilities;
 import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -64,6 +63,8 @@ public class POIController {
     public Button execute;
     public Button poiType;
     public ChoiceBox<String> userType;
+    public ChoiceBox<String> coordinateType;
+    public ChoiceBox<String> coordinateType2;
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
     private boolean start = false;
@@ -200,9 +201,10 @@ public class POIController {
                         analysis(false);
                         return;
                     }
-
+                    // 获取坐标类型
+                    String rectangleCoordinateType = coordinateType.getValue();
                     appendMessage("解析矩形区域中");
-                    boundary = getBoundaryByRectangle(rectangle.getText());
+                    boundary = getBoundaryByRectangle(rectangle.getText(), rectangleCoordinateType);
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式或稍后重试！"));
                         analysis(false);
@@ -221,7 +223,8 @@ public class POIController {
                     }
 
                     appendMessage("解析用户geojson文件中");
-                    boundary = getBoundaryByUserFile(userFile.getText());
+                    String userCoordinateType = coordinateType.getValue();
+                    boundary = getBoundaryByUserFile(userFile.getText(), userCoordinateType);
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "无法获取边界，请检查GeoJSON格式或稍后重试！"));
                         analysis(false);
@@ -287,21 +290,27 @@ public class POIController {
     }
 
     private double[] getBoundaryByAdCode(String adCode) {
-        return AMapPoiUtil.getBoundary(adCode);
+        return BoundaryUtil.getBoundary(adCode);
     }
 
-    private double[] getBoundaryByUserFile(String path) {
-        return AMapPoiUtil.getBoundaryByGeoJson(FileUtil.readFile(path));
+    private double[] getBoundaryByUserFile(String path, String type) {
+        return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path), type);
     }
 
-    private double[] getBoundaryByRectangle(String text) {
+    private double[] getBoundaryByRectangle(String text, String type) {
         String[] str = text.split("#");
         if (str.length == 2) {
             String[] leftTop = str[0].split(",");
             String[] rightBottom = str[1].split(",");
+            double[] leftTopLonlat = new double[]{Double.parseDouble(leftTop[0]), Double.parseDouble(leftTop[1])};
+            double[] rightBottomLonlat = new double[]{Double.parseDouble(rightBottom[0]), Double.parseDouble(rightBottom[1])};
+            if ("wgs84".equals(type)) {
+                leftTopLonlat = CoordinateTransformUtil.transformWGS84ToGCJ02(leftTopLonlat[0], leftTopLonlat[1]);
+                rightBottomLonlat = CoordinateTransformUtil.transformWGS84ToGCJ02(rightBottomLonlat[0], rightBottomLonlat[1]);
+            }
             if (leftTop.length == 2 && rightBottom.length == 2) {
                 try {
-                    return new double[]{Double.parseDouble(leftTop[0]), Double.parseDouble(rightBottom[1]), Double.parseDouble(rightBottom[0]), Double.parseDouble(leftTop[1])};
+                    return new double[]{leftTopLonlat[0], rightBottomLonlat[1], rightBottomLonlat[0], leftTopLonlat[1]};
                 } catch (NumberFormatException e) {
                     return null;
                 }
@@ -434,7 +443,7 @@ public class POIController {
             for (POI.Info info : res) {
                 String[] lonlat = info.location.toString().split(",");
                 if (lonlat.length == 2) {
-                    double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                    double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                     writer.write(info.name + "," + info.type + "," + info.typecode + "," + info.address + "," + info.pname + "," + info.cityname + "," + info.adname + "," + lonlat[0] + "," + lonlat[1] + "," + wgs84[0] + "," + wgs84[1] + "\r\n");
                 }
             }
@@ -502,7 +511,7 @@ public class POIController {
             for (POI.Info info : res) {
                 String[] lonlat = info.location.toString().split(",");
                 if (lonlat.length == 2) {
-                    double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                    double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                     Point point = geometryFactory.createPoint(new Coordinate(wgs84[0], wgs84[1]));
                     featureBuilder.add(point);
                     featureBuilder.add(info.name);
@@ -521,7 +530,7 @@ public class POIController {
                 }
             }
 
-            if (ParseUtil.transFormGeoJsonToShp(features, type, filename)) {
+            if (SpatialDataTransformUtil.saveFeaturesToShp(features, type, filename)) {
                 appendMessage("写入成功，结果存储于" + filename);
             } else appendMessage("写入失败");
         } catch (SchemaException e) {
@@ -536,7 +545,7 @@ public class POIController {
                 continue;
             String[] lonlat = info.location.toString().split(",");
             if (lonlat.length == 2) {
-                double[] wgs84 = TransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                 JsonObject geometry = new JsonObject();
                 geometry.addProperty("type", "Point");
                 JsonArray coordinates = new JsonArray();
@@ -681,9 +690,30 @@ public class POIController {
     public void openGeocoding() throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("geocoding.fxml"));
         Parent root = fxmlLoader.load();
+        if (fxmlLoader.getController() instanceof GeocodingController) {
+            GeocodingController controller = fxmlLoader.getController();
+            controller.init();
+        }
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("地理编码");
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
+
+    public void openSpatialTransform() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform_spatial_data.fxml"));
+        Parent root = fxmlLoader.load();
+        if (fxmlLoader.getController() instanceof SpatialDataTransformController) {
+            SpatialDataTransformController controller = fxmlLoader.getController();
+            controller.init();
+        }
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("格式转换");
         Scene scene = new Scene(root);
         scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
         stage.setScene(scene);
