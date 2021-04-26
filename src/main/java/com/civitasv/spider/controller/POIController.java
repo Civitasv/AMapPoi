@@ -753,4 +753,8 @@ public class POIController {
         stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
         stage.show();
     }
+
+    public void starsMe() throws URISyntaxException, IOException {
+        Desktop.getDesktop().browse(new URI("https://github.com/Civitasv/AMapPoi"));
+    }
 }
