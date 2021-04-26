@@ -122,7 +122,8 @@ public class SpatialDataTransformUtil {
 
             // 使用geomType创建gt
             GeometryTypeImpl gt = new GeometryTypeImpl(new NameImpl("the_geom"), geomType.getBinding(),
-                    DefaultGeographicCRS.WGS84, geomType.isIdentified(), geomType.isAbstract(), geomType.getRestrictions(),
+                    geom.getCoordinateReferenceSystem() == null ? DefaultGeographicCRS.WGS84 : geom.getCoordinateReferenceSystem(), // 用户未指定则默认为wgs84
+                    geomType.isIdentified(), geomType.isAbstract(), geomType.getRestrictions(),
                     geomType.getSuper(), geomType.getDescription());
 
             // 创建识别符
@@ -169,7 +170,10 @@ public class SpatialDataTransformUtil {
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(geojson.toPath(), StandardCharsets.UTF_8))) {
-                writer.write("{\"type\":\"FeatureCollection\",\"features\":");
+                writer.write("{\"type\":\"FeatureCollection\",\"crs\":");
+                fjson.writeCRS(schema.getCoordinateReferenceSystem(), writer);
+                writer.write(",");
+                writer.write("\"features\":");
                 writer.write("[");
                 while (featureIterator.hasNext()) {
                     SimpleFeature feature = featureIterator.next();

@@ -10,6 +10,7 @@ import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -669,9 +670,30 @@ public class POIController {
     public void openGeocoding() throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("geocoding.fxml"));
         Parent root = fxmlLoader.load();
+        if (fxmlLoader.getController() instanceof GeocodingController) {
+            GeocodingController controller = fxmlLoader.getController();
+            controller.init();
+        }
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("地理编码");
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
+
+    public void openSpatialTransform() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform_spatial_data.fxml"));
+        Parent root = fxmlLoader.load();
+        if (fxmlLoader.getController() instanceof SpatialDataTransformController) {
+            SpatialDataTransformController controller = fxmlLoader.getController();
+            controller.init();
+        }
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("格式转换");
         Scene scene = new Scene(root);
         scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
         stage.setScene(scene);

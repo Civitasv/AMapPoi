@@ -7,11 +7,12 @@
 <?import javafx.scene.layout.*?>
 
 <VBox fx:id="main" alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"
-      minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      minWidth="-Infinity" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.civitasv.spider.controller.POIController">
     <MenuBar>
         <Menu mnemonicParsing="false" text="工具">
             <MenuItem mnemonicParsing="false" onAction="#openGeocoding" text="地理编码"/>
+            <MenuItem mnemonicParsing="false" onAction="#openSpatialTransform" text="格式转换"/>
         </Menu>
     </MenuBar>
     <VBox>
