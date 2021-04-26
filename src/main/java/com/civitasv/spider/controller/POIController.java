@@ -25,8 +25,7 @@ import org.geotools.data.DataUtilities;
 import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.Point;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -43,6 +42,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class POIController {
     public TextField threadNum;
@@ -67,6 +67,8 @@ public class POIController {
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
     private boolean start = false;
+
+    private static final GeometryFactory geometryFactory = new GeometryFactory();
 
     public void init() {
         this.threadNum.setTextFormatter(getFormatter());
@@ -173,6 +175,7 @@ public class POIController {
             }
 
             double[] boundary;
+            Geometry realBoundary = null;
             switch (tabs.getSelectionModel().getSelectedItem().getText()) {
                 case "行政区":
                     if (city.getText().isEmpty()) {
@@ -184,6 +187,7 @@ public class POIController {
 
                     appendMessage("获取行政区 " + city.getText() + " 区域边界中");
                     boundary = getBoundaryByAdCode(city.getText());
+                    realBoundary = getRealBoundaryByAdCode(city.getText());
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！"));
                         analysis(false);
@@ -191,7 +195,8 @@ public class POIController {
                     }
                     appendMessage("成功获取行政区 " + city.getText() + " 区域边界");
 
-                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+//                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+                    getPoiDataByRealBoundry(realBoundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
                     break;
                 case "矩形":
                     if (rectangle.getText().isEmpty()) {
@@ -212,6 +217,7 @@ public class POIController {
                     appendMessage("解析矩形区域成功");
 
                     getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+
                     break;
                 case "自定义":
                     if (userFile.getText().isEmpty()) {
@@ -224,6 +230,7 @@ public class POIController {
                     appendMessage("解析用户geojson文件中");
                     String userCoordinateType = coordinateType.getValue();
                     boundary = getBoundaryByUserFile(userFile.getText(), userCoordinateType);
+                    realBoundary = getRealBoundaryByUserFile(userFile.getText(), userCoordinateType);
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "无法获取边界，请检查GeoJSON格式或稍后重试！"));
                         analysis(false);
@@ -231,7 +238,8 @@ public class POIController {
                     }
                     appendMessage("成功解析用户文件");
 
-                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+//                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+                    getPoiDataByRealBoundry(realBoundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
                     break;
             }
             analysis(false);
@@ -292,8 +300,16 @@ public class POIController {
         return BoundaryUtil.getBoundary(adCode);
     }
 
+    private Geometry getRealBoundaryByAdCode(String adCode) {
+        return BoundaryUtil.getRealBoundary(adCode);
+    }
+
     private double[] getBoundaryByUserFile(String path, String type) {
         return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path), type);
+    }
+
+    private Geometry getRealBoundaryByUserFile(String path, String type) {
+        return BoundaryUtil.getRealBoundaryByGeoJson(FileUtil.readFile(path), type);
     }
 
     private double[] getBoundaryByRectangle(String text, String type) {
@@ -350,6 +366,66 @@ public class POIController {
                 res.addAll(item);
         }
         executorService.shutdown();
+        if (!start) return;
+        appendMessage(success ? "POI爬取完毕" : "未完全爬取");
+        // 导出res
+        switch (format.getValue()) {
+            case "csv":
+            case "txt":
+                writeToCsvOrTxt(res, format.getValue(), tab);
+                break;
+            case "geojson":
+                writeToGeoJson(res, tab);
+                break;
+            case "shp":
+                writeToShp(res, tab);
+        }
+    }
+
+    public void getPoiDataByRealBoundry(Geometry realBoundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab) {
+        Envelope envelopeInternal = realBoundary.getEnvelopeInternal();
+        List<POI.Info> res = new ArrayList<>();
+        // 1. 获取边界
+        double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
+                right =envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
+        double itemWidth = (right - left) / grids;
+        double itemHeight = (top - bottom) / grids;
+        // 2. 获取初始切分网格
+        Deque<double[]> analysisGrid = new ArrayDeque<>(); // 网格剖分
+
+        appendMessage("切分初始网格中");
+        for (int i = 0; i < grids; i++) {
+            for (int j = 0; j < grids; j++) {
+                analysisGrid.push(new double[]{left + i * itemWidth, bottom + j * itemHeight, left + (i + 1) * itemWidth, bottom + (j + 1) * itemHeight});
+            }
+        }
+        appendMessage("初始网格切分成功");
+
+        // 3. 开始爬取
+        appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
+        executorService = Executors.newFixedThreadPool(threadNum);
+        boolean success = true;
+        while (!analysisGrid.isEmpty() && start) {
+            appendMessage("正在爬取，任务队列剩余" + analysisGrid.size() + "个");
+            List<POI.Info> item = getPoi(analysisGrid.pop(), threadNum, threshold, keywords, types, keys, analysisGrid);
+            if (item == null) {
+                success = false;
+                break;
+            }
+            if (item.size() > 0)
+                res.addAll(item);
+        }
+        executorService.shutdown();
+
+        res = res.stream().filter(info -> {
+            String[] lonlat = info.location.toString().split(",");
+            if (lonlat.length != 2) {
+                return false;
+            }
+            Coordinate coordinate = new Coordinate(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+            return realBoundary.intersects(geometryFactory.createPoint(coordinate));
+        }).collect(Collectors.toList());
+
         if (!start) return;
         appendMessage(success ? "POI爬取完毕" : "未完全爬取");
         // 导出res
@@ -526,7 +602,6 @@ public class POIController {
                     features.add(feature);
                 }
             }
-
             if (SpatialDataTransformUtil.saveFeaturesToShp(features, type, filename)) {
                 appendMessage("写入成功，结果存储于" + filename);
             } else appendMessage("写入失败");

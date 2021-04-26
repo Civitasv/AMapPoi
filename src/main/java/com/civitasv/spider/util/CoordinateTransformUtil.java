@@ -1,5 +1,7 @@
 package com.civitasv.spider.util;
 
+import org.locationtech.jts.geom.Coordinate;
+
 /**
  * 坐标转换工具类
  */
@@ -26,6 +28,11 @@ public class CoordinateTransformUtil {
         return new double[]{gcj02Lng, gcj02Lat};
     }
 
+    public static Coordinate transformBD09ToGCJ02(Coordinate coordinate) {
+        double[] doubles = transformBD09ToGCJ02(coordinate.x, coordinate.y);
+        return new Coordinate(doubles[0],doubles[1]);
+    }
+
     /**
      * 高德GCJ02 to 百度BD09
      *
@@ -39,6 +46,11 @@ public class CoordinateTransformUtil {
         double bd09Lng = z * Math.cos(theta) + 0.0065;
         double bd09Lat = z * Math.sin(theta) + 0.006;
         return new double[]{bd09Lng, bd09Lat};
+    }
+
+    public static Coordinate transformGCJ02ToBD09(Coordinate coordinate) {
+        double[] doubles = transformGCJ02ToBD09(coordinate.x, coordinate.y);
+        return new Coordinate(doubles[0],doubles[1]);
     }
 
     /**
@@ -66,6 +78,11 @@ public class CoordinateTransformUtil {
         }
     }
 
+    public static Coordinate transformGCJ02ToWGS84(Coordinate coordinate) {
+        double[] doubles = transformGCJ02ToWGS84(coordinate.x, coordinate.y);
+        return new Coordinate(doubles[0],doubles[1]);
+    }
+
     /**
      * wgs84 to 高德GCJ02
      *
@@ -91,6 +108,11 @@ public class CoordinateTransformUtil {
         }
     }
 
+    public static Coordinate transformWGS84ToGCJ02(Coordinate coordinate) {
+        double[] doubles = transformWGS84ToGCJ02(coordinate.x, coordinate.y);
+        return new Coordinate(doubles[0],doubles[1]);
+    }
+
     /**
      * 百度bd09 to wgs84
      *
@@ -103,6 +125,11 @@ public class CoordinateTransformUtil {
         return transformGCJ02ToWGS84(lngLat[0], lngLat[1]);
     }
 
+    public static Coordinate transformBD09ToWGS84(Coordinate coordinate) {
+        double[] doubles = transformBD09ToWGS84(coordinate.x, coordinate.y);
+        return new Coordinate(doubles[0],doubles[1]);
+    }
+
     /**
      * wgs84 to 百度bd09
      *
@@ -113,6 +140,11 @@ public class CoordinateTransformUtil {
     public static double[] transformWGS84ToBD09(double lng, double lat) {
         double[] lngLat = transformWGS84ToGCJ02(lng, lat);
         return transformGCJ02ToBD09(lngLat[0], lngLat[1]);
+    }
+
+    public static Coordinate transformWGS84ToBD09(Coordinate coordinate) {
+        double[] doubles = transformWGS84ToBD09(coordinate.x, coordinate.y);
+        return new Coordinate(doubles[0],doubles[1]);
     }
 
     private static double transformLat(double lng, double lat) {

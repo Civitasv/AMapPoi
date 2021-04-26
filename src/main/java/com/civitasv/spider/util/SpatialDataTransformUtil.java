@@ -18,6 +18,7 @@ import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.util.URLs;
+import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -39,6 +40,16 @@ import java.util.Map;
  * csv shp geojson
  */
 public class SpatialDataTransformUtil {
+
+    public static FeatureCollection<SimpleFeatureType, SimpleFeature> geojsonStr2FeatureCollection(String geojsonStr) throws IOException {
+        // open geojson
+        InputStream in = new ByteArrayInputStream(geojsonStr.getBytes());
+        GeometryJSON gjson = new GeometryJSON();
+        FeatureJSON fjson = new FeatureJSON(gjson);
+        return fjson.readFeatureCollection(in);
+    }
+
+
     /**
      * 保存features为shp格式
      *
@@ -50,7 +61,7 @@ public class SpatialDataTransformUtil {
     public static boolean saveFeaturesToShp(List<SimpleFeature> features, SimpleFeatureType TYPE, String shpPath) {
         try {
             ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-            File shpFile = new File(shpPath);
+            File shpFile = FileUtil.getNewFile(shpPath);
             Map<String, Serializable> params = new HashMap<>();
             params.put("url", shpFile.toURI().toURL());
             params.put("create spatial index", Boolean.TRUE);
@@ -167,7 +178,7 @@ public class SpatialDataTransformUtil {
 
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
             FeatureJSON fjson = new FeatureJSON();
-            File geojson = new File(geojsonPath);
+            File geojson = FileUtil.getNewFile(geojsonPath);
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(geojson.toPath(), StandardCharsets.UTF_8))) {
@@ -205,7 +216,7 @@ public class SpatialDataTransformUtil {
             Query query = new Query(schema.getTypeName());
 
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
-            File csvFile = new File(csvPath);
+            File csvFile = FileUtil.getNewFile(csvPath);
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(csvFile.toPath(), StandardCharsets.UTF_8))) {

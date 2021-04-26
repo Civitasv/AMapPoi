@@ -1,5 +1,6 @@
 package com.civitasv.spider.model;
 
+import java.awt.*;
 import java.util.Arrays;
 
 public class POI {
