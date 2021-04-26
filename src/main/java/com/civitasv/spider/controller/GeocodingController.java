@@ -245,7 +245,7 @@ public class GeocodingController {
             parseRes.forEach(item -> {
                 try {
                     for (int i = 0; i < keys.size(); i++) {
-                        writer.write(item.get(keys.get(i)));
+                        writer.write("\"" + item.get(keys.get(i)) + "\"");
                         if (i != keys.size() - 1)
                             writer.write(",");
                     }

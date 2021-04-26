@@ -442,7 +442,7 @@ public class POIController {
                 String[] lonlat = info.location.toString().split(",");
                 if (lonlat.length == 2) {
                     double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
-                    writer.write(info.name + "," + info.type + "," + info.typecode + "," + info.address + "," + info.pname + "," + info.cityname + "," + info.adname + "," + lonlat[0] + "," + lonlat[1] + "," + wgs84[0] + "," + wgs84[1] + "\r\n");
+                    writer.write("\"" + info.name + "\"," + "\"" + info.type + "\"," + "\"" + info.typecode + "\"," + "\"" + info.address + "\"," + "\"" + info.pname + "\"," + "\"" + info.cityname + "\"," + "\"" + info.adname + "\"," + "\"" + lonlat[0] + "\"," + "\"" + lonlat[1] + "\"," + "\"" + wgs84[0] + "\"," + "\"" + wgs84[1] + "\"\r\n");
                 }
             }
             appendMessage("写入成功，结果存储于" + jsonFile.getAbsolutePath());
