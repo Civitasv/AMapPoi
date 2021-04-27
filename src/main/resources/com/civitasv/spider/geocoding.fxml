@@ -40,7 +40,7 @@
             <Insets bottom="10.0" top="10.0"/>
         </padding>
         <Label prefWidth="100.0" text="线程数目："/>
-        <TextField fx:id="threadNum" prefWidth="200.0" promptText="建议不大于QPS * keys_num * 0.1" HBox.hgrow="ALWAYS"/>
+        <TextField fx:id="threadNum" prefWidth="200.0" promptText="建议不大于QPS * keys_num" HBox.hgrow="ALWAYS"/>
     </HBox>
     <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
         <padding>

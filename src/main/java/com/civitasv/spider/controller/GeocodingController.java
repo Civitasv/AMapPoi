@@ -8,10 +8,15 @@ import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,7 +30,7 @@ import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
 public class GeocodingController {
-
+    private static Scene scene;
     // 输入文件
     public TextField inputFile;
     // 输出文件夹
@@ -49,8 +54,24 @@ public class GeocodingController {
     private ExecutorService worker, executorService;
     private MyProgressBar progressBar;
     private boolean start = false;
+    private int perExecuteTime;
 
-    public void init() {
+    public void show() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("geocoding.fxml"));
+        Parent root = fxmlLoader.load();
+        GeocodingController controller = fxmlLoader.getController();
+        controller.init();
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("地理编码");
+        scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
+
+    private void init() {
         TextFormatter<Integer> formatter = new TextFormatter<>(
                 new IntegerStringConverter(),
                 4,
@@ -72,7 +93,7 @@ public class GeocodingController {
             start = true;
 
             appendMessage("读取高德key中");
-            List<String> keys = new ArrayList<>(Arrays.asList(this.keys.getText().split(",")));
+            Queue<String> keys = new ArrayDeque<>(Arrays.asList(this.keys.getText().split(",")));
             appendMessage("高德key读取成功");
 
             appendMessage("读取线程数目中");
@@ -98,12 +119,13 @@ public class GeocodingController {
                     qps = 1000;
                     break;
             }
-            if (threadNum > (int) (qps * 0.1 * keys.size())) {
-                int val = (int) (qps * 0.1 * keys.size());
+            if (threadNum > qps * keys.size()) {
+                int val = qps * keys.size();
                 appendMessage(userType.getValue() + "线程数不能超过" + val);
                 threadNum = val;
                 appendMessage("设置线程数目为" + threadNum);
             }
+            perExecuteTime = getPerExecuteTime(threadNum, qps, keys.size());
 
             // 解析输入文件
             appendMessage("解析输入文件中");
@@ -142,6 +164,18 @@ public class GeocodingController {
     }
 
     /**
+     * 根据线程数、key数目和QPS设置每次运行时间
+     *
+     * @param threadNum 线程数目
+     * @param qps       用户qps
+     * @param keysNum   key数量
+     * @return 每次运行时间 ms
+     */
+    private int getPerExecuteTime(int threadNum, int qps, int keysNum) {
+        return (int) (1000 * (threadNum * 1.0 / (qps * keysNum)));
+    }
+
+    /**
      * 选择文件
      */
     public void chooseFile() {
@@ -151,7 +185,7 @@ public class GeocodingController {
                 new FileChooser.ExtensionFilter("csv", "*.csv"),
                 new FileChooser.ExtensionFilter("txt", "*.txt")
         );
-        File file = fileChooser.showOpenDialog(MainApplication.getScene().getWindow());
+        File file = fileChooser.showOpenDialog(scene.getWindow());
         if (file != null)
             inputFile.setText(file.getAbsolutePath());
     }
@@ -162,12 +196,12 @@ public class GeocodingController {
     public void chooseDirectory() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("选择输出文件夹");
-        File file = directoryChooser.showDialog(MainApplication.getScene().getWindow());
+        File file = directoryChooser.showDialog(scene.getWindow());
         if (file != null)
             outputDirectory.setText(file.getAbsolutePath());
     }
 
-    private void saveToCsvOrTxt(@NotNull List<Map<String, String>> parseRes, String outputFormat, int threadNum, List<String> amapKeys) {
+    private void saveToCsvOrTxt(@NotNull List<Map<String, String>> parseRes, String outputFormat, int threadNum, Queue<String> amapKeys) {
         // 创建工作线程执行保存文件工作
         executorService = Executors.newFixedThreadPool(threadNum);
         // 创建线程池执行解析工作
@@ -262,7 +296,7 @@ public class GeocodingController {
         }
     }
 
-    private void saveToJson(@NotNull List<Map<String, String>> parseRes, int threadNum, List<String> amapKeys) {
+    private void saveToJson(@NotNull List<Map<String, String>> parseRes, int threadNum, Queue<String> amapKeys) {
         // 创建工作线程执行保存文件工作
         executorService = Executors.newFixedThreadPool(threadNum);
         // 创建线程池执行解析工作
@@ -282,8 +316,8 @@ public class GeocodingController {
                 long startTime = System.currentTimeMillis();   //获取开始时间
                 List<Future<Geocodes.Response>> futures = executorService.invokeAll(call);
                 long endTime = System.currentTimeMillis(); //获取结束时间
-                if (endTime - startTime < 100) { // 严格控制每次执行100ms
-                    TimeUnit.MILLISECONDS.sleep(100 - (endTime - startTime));
+                if (endTime - startTime < perExecuteTime) { // 严格控制每次执行perExecuteTime
+                    TimeUnit.MILLISECONDS.sleep(perExecuteTime - (endTime - startTime));
                 }
                 for (int j = 0; j < futures.size(); j++) {
                     Future<Geocodes.Response> future = futures.get(j);
@@ -412,13 +446,19 @@ public class GeocodingController {
         Platform.runLater(() -> messageDetail.appendText(text + "\r\n"));
     }
 
-    private Geocodes.Response geocode(String address, String city, List<String> keys) {
+    private synchronized String getKey(Queue<String> keys) {
+        String key = keys.poll();
+        keys.offer(key);
+        return key;
+    }
+
+    private Geocodes.Response geocode(String address, String city, Queue<String> keys) {
         if (start && keys.isEmpty()) {
             appendMessage("key池已耗尽，无法继续获取POI...");
             return null;
         }
-        int index = (int) (Math.random() * keys.size());
-        Geocodes.Response response = aMapDao.geocoding(keys.get(index), address, city);
+        String key = getKey(keys);
+        Geocodes.Response response = aMapDao.geocoding(key, address, city);
         if (start && (response == null || !"10000".equals(response.getInfocode()))) {
             synchronized (this) {
                 if (response == null) {
@@ -426,7 +466,7 @@ public class GeocodingController {
                     appendMessage("数据获取失败，正在重试中...");
                     for (int i = 0; i < 3; i++) {
                         appendMessage("重试第" + (i + 1) + "次...");
-                        response = aMapDao.geocoding(keys.get(index), address, city);
+                        response = aMapDao.geocoding(key, address, city);
                         if (response != null) {
                             appendMessage("数据获取成功，继续爬取...");
                             break;
@@ -440,18 +480,17 @@ public class GeocodingController {
                 }
 
                 if ("10001".equals(response.getInfocode())) {
-                    appendMessage("key----" + keys.get(index) + "已经过期");
+                    appendMessage("key----" + key + "已经过期");
                 } else if ("10003".equals(response.getInfocode())) {
-                    appendMessage("key----" + keys.get(index) + "已达调用量上限");
+                    appendMessage("key----" + key + "已达调用量上限");
                 } else {
                     appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
                 }
                 // 去除过期的，使用其它key重新访问
-                keys.remove(index);
+                keys.poll();
                 while (!keys.isEmpty()) {
                     appendMessage("正在尝试其它key");
-                    index = (int) (Math.random() * keys.size());
-                    String key = keys.get(index);
+                    key = getKey(keys);
                     appendMessage("切换key：" + key);
                     response = aMapDao.geocoding(key, address, city);
 
@@ -478,7 +517,7 @@ public class GeocodingController {
                         break;
                     } else {
                         appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
-                        keys.remove(index);
+                        keys.poll();
                     }
                 }
                 if (keys.isEmpty()) {
