@@ -74,6 +74,7 @@ public class SpatialDataTransformController {
     }
 
     public void execute() {
+        messageDetail.clear();
         worker = Executors.newSingleThreadExecutor();
         worker.execute(() -> {
             // 检查输入文件、输出文件夹是否指定
@@ -84,25 +85,40 @@ public class SpatialDataTransformController {
             String outPutFormat = format.getValue();
             if ("geojson".equals(inputFormat) || "json".equals(inputFormat)) {
                 if ("shp".equals(outPutFormat)) {
-                    String shpPath = outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2shp" + ".shp";
-                    if (SpatialDataTransformUtil.transformGeoJsonToShp(inputFile.getText(), shpPath)) {
-                        appendMessage("格式转换成功，保存文件路径为" + shpPath);
+                    File shpFile = FileUtil.getNewFile(outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2shp" + ".shp");
+                    if (shpFile == null) {
+                        appendMessage("文件无法创建，写入失败！");
+                        analysis(false);
+                        return;
+                    }
+                    if (SpatialDataTransformUtil.transformGeoJsonToShp(inputFile.getText(), shpFile.getAbsolutePath())) {
+                        appendMessage("格式转换成功，保存文件路径为" + shpFile.getAbsolutePath());
                     } else {
                         appendMessage("格式转换失败，请检查后重试");
                     }
                 }
             } else if ("shp".equals(inputFormat)) {
                 if ("json".equals(outPutFormat)) {
-                    String geojsonPath = outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2geojson" + ".json";
-                    if (SpatialDataTransformUtil.transformShpToGeoJson(inputFile.getText(), geojsonPath)) {
-                        appendMessage("格式转换成功，保存文件路径为" + geojsonPath);
+                    File geojsonFile = FileUtil.getNewFile(outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2geojson" + ".json");
+                    if (geojsonFile == null) {
+                        appendMessage("文件无法创建，写入失败！");
+                        analysis(false);
+                        return;
+                    }
+                    if (SpatialDataTransformUtil.transformShpToGeoJson(inputFile.getText(), geojsonFile.getAbsolutePath())) {
+                        appendMessage("格式转换成功，保存文件路径为" + geojsonFile.getAbsolutePath());
                     } else {
                         appendMessage("格式转换失败，请检查后重试");
                     }
                 } else if ("csv".equals(outPutFormat)) {
-                    String csvPath = outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2csv" + ".csv";
-                    if (SpatialDataTransformUtil.transformShpToCsv(inputFile.getText(), csvPath)) {
-                        appendMessage("格式转换成功，保存文件路径为" + csvPath);
+                    File csvFile = FileUtil.getNewFile(outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2csv" + ".csv");
+                    if (csvFile == null) {
+                        appendMessage("文件无法创建，写入失败！");
+                        analysis(false);
+                        return;
+                    }
+                    if (SpatialDataTransformUtil.transformShpToCsv(inputFile.getText(), csvFile.getAbsolutePath())) {
+                        appendMessage("格式转换成功，保存文件路径为" + csvFile.getAbsolutePath());
                     } else {
                         appendMessage("格式转换失败，请检查后重试");
                     }
@@ -156,7 +172,8 @@ public class SpatialDataTransformController {
     }
 
     public void cancel() {
-
+        analysis(false);
+        messageDetail.clear();
     }
 
     private void appendMessage(String text) {

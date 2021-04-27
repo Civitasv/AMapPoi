@@ -2,7 +2,6 @@ package com.civitasv.spider.util;
 
 import org.geotools.data.*;
 import org.geotools.data.collection.ListFeatureCollection;
-import org.geotools.data.geojson.GeoJSONDataStoreFactory;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -17,16 +16,15 @@ import org.geotools.feature.type.GeometryTypeImpl;
 import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.geotools.util.URLs;
-import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.feature.type.*;
+import org.opengis.feature.type.AttributeDescriptor;
+import org.opengis.feature.type.AttributeType;
+import org.opengis.feature.type.GeometryDescriptor;
+import org.opengis.feature.type.GeometryType;
 
 import java.io.*;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -41,12 +39,50 @@ import java.util.Map;
  */
 public class SpatialDataTransformUtil {
 
-    public static FeatureCollection<SimpleFeatureType, SimpleFeature> geojsonStr2FeatureCollection(String geojsonStr) throws IOException {
-        // open geojson
-        InputStream in = new ByteArrayInputStream(geojsonStr.getBytes());
-        GeometryJSON gjson = new GeometryJSON();
-        FeatureJSON fjson = new FeatureJSON(gjson);
-        return fjson.readFeatureCollection(in);
+    /**
+     * 解析geojson字符串为featureCollection
+     *
+     * @param geojsonStr geojson字符串
+     * @return 若可以解析，则返回featureCollection，否则返回null
+     */
+    public static FeatureCollection<SimpleFeatureType, SimpleFeature> geojsonStr2FeatureCollection(String geojsonStr) {
+        try (InputStream in = new ByteArrayInputStream(geojsonStr.getBytes())) {
+            GeometryJSON gjson = new GeometryJSON();
+            FeatureJSON fjson = new FeatureJSON(gjson);
+            return fjson.readFeatureCollection(in);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * 解析featureCollection为geojson字符串
+     *
+     * @param featureCollection features
+     * @return 若可以解析，则返回geojson字符串，否则返回null
+     */
+    public static String featureCollection2GeoJson(FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection) {
+        FeatureJSON fjson = new FeatureJSON();
+        try (FeatureIterator<SimpleFeature> featureIterator = featureCollection.features();
+             StringWriter writer = new StringWriter()) {
+            writer.write("{\"type\":\"FeatureCollection\",\"crs\":");
+            fjson.writeCRS(featureCollection.getSchema().getCoordinateReferenceSystem(), writer);
+            writer.write(",");
+            writer.write("\"features\":");
+            writer.write("[");
+            while (featureIterator.hasNext()) {
+                SimpleFeature feature = featureIterator.next();
+                fjson.writeFeature(feature, writer);
+                if (featureIterator.hasNext())
+                    writer.write(",");
+            }
+            writer.write("]");
+            writer.write("}");
+            return writer.toString();
+        } catch (IOException e) {
+            return null;
+        }
     }
 
 
@@ -61,7 +97,7 @@ public class SpatialDataTransformUtil {
     public static boolean saveFeaturesToShp(List<SimpleFeature> features, SimpleFeatureType TYPE, String shpPath) {
         try {
             ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-            File shpFile = FileUtil.getNewFile(shpPath);
+            File shpFile = new File(shpPath);
             Map<String, Serializable> params = new HashMap<>();
             params.put("url", shpFile.toURI().toURL());
             params.put("create spatial index", Boolean.TRUE);
@@ -91,12 +127,79 @@ public class SpatialDataTransformUtil {
                     transaction.close();
                 }
             } else {
-                System.out.println(typeName + " does not support read/write access");
+                System.out.println(typeName + " 不支持读或写！");
             }
         } catch (IOException e) {
+            e.printStackTrace();
             return false;
         }
         return true;
+    }
+
+    /**
+     * GeoJson字符串-> shpPath
+     *
+     * @param geojsonStr GeoJson字符串
+     * @param shpPath    shp保存路径
+     * @return 是否保存成功
+     */
+    public static boolean transformGeoJsonStrToShp(String geojsonStr, String shpPath) {
+        try (InputStream in = new ByteArrayInputStream(geojsonStr.getBytes())) {
+            // open geojson
+            GeometryJSON gjson = new GeometryJSON();
+            FeatureJSON fjson = new FeatureJSON(gjson);
+            FeatureCollection<SimpleFeatureType, SimpleFeature> features = fjson.readFeatureCollection(in);
+            // convert schema for shapefile
+            SimpleFeatureType schema = features.getSchema();
+            GeometryDescriptor geom = schema.getGeometryDescriptor();
+            // geojson文件属性
+            List<AttributeDescriptor> attributes = schema.getAttributeDescriptors();
+            // geojson文件空间类型（必须在第一个）
+            GeometryType geomType = null;
+            List<AttributeDescriptor> attribs = new ArrayList<>();
+            for (AttributeDescriptor attrib : attributes) {
+                AttributeType type = attrib.getType();
+                if (type instanceof GeometryType) {
+                    geomType = (GeometryType) type;
+                } else {
+                    attribs.add(attrib);
+                }
+            }
+            if (geomType == null)
+                return false;
+
+            // 使用geomType创建gt
+            GeometryTypeImpl gt = new GeometryTypeImpl(new NameImpl("the_geom"), geomType.getBinding(),
+                    geom.getCoordinateReferenceSystem() == null ? DefaultGeographicCRS.WGS84 : geom.getCoordinateReferenceSystem(), // 用户未指定则默认为wgs84
+                    geomType.isIdentified(), geomType.isAbstract(), geomType.getRestrictions(),
+                    geomType.getSuper(), geomType.getDescription());
+
+            // 创建识别符
+            GeometryDescriptor geomDesc = new GeometryDescriptorImpl(gt, new NameImpl("the_geom"), geom.getMinOccurs(),
+                    geom.getMaxOccurs(), geom.isNillable(), geom.getDefaultValue());
+
+            // the_geom 属性必须在第一个
+            attribs.add(0, geomDesc);
+
+            SimpleFeatureType outSchema = new SimpleFeatureTypeImpl(schema.getName(), attribs, geomDesc, schema.isAbstract(),
+                    schema.getRestrictions(), schema.getSuper(), schema.getDescription());
+            List<SimpleFeature> outFeatures = new ArrayList<>();
+            try (FeatureIterator<SimpleFeature> features2 = features.features()) {
+                while (features2.hasNext()) {
+                    SimpleFeature f = features2.next();
+                    SimpleFeature reType = DataUtilities.reType(outSchema, f, true);
+
+                    reType.setAttribute(outSchema.getGeometryDescriptor().getName(),
+                            f.getAttribute(schema.getGeometryDescriptor().getName()));
+
+                    outFeatures.add(reType);
+                }
+            }
+            return saveFeaturesToShp(outFeatures, outSchema, shpPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -107,9 +210,8 @@ public class SpatialDataTransformUtil {
      * @return 转换是否成功
      */
     public static boolean transformGeoJsonToShp(String geojsonPath, String shpPath) {
-        try {
+        try (InputStream in = new FileInputStream(geojsonPath)) {
             // open geojson
-            InputStream in = new FileInputStream(geojsonPath);
             GeometryJSON gjson = new GeometryJSON();
             FeatureJSON fjson = new FeatureJSON(gjson);
             FeatureCollection<SimpleFeatureType, SimpleFeature> features = fjson.readFeatureCollection(in);
@@ -178,7 +280,7 @@ public class SpatialDataTransformUtil {
 
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
             FeatureJSON fjson = new FeatureJSON();
-            File geojson = FileUtil.getNewFile(geojsonPath);
+            File geojson = new File(geojsonPath);
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(geojson.toPath(), StandardCharsets.UTF_8))) {
@@ -216,7 +318,7 @@ public class SpatialDataTransformUtil {
             Query query = new Query(schema.getTypeName());
 
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
-            File csvFile = FileUtil.getNewFile(csvPath);
+            File csvFile = new File(csvPath);
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(csvFile.toPath(), StandardCharsets.UTF_8))) {

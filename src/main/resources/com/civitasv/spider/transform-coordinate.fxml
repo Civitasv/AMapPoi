@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.collections.FXCollections?>
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" styleClass="main"
+      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.civitasv.spider.controller.CoordinateTransformController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <padding>
+            <Insets bottom="10.0" top="10.0"/>
+        </padding>
+        <Label prefWidth="100.0" text="输入文件："/>
+        <TextField fx:id="inputFile" prefHeight="30.0" prefWidth="125.0" HBox.hgrow="ALWAYS"/>
+        <Button onMouseClicked="#chooseInputFile" prefHeight="30.0" text="浏览">
+            <HBox.margin>
+                <Insets left="5.0"/>
+            </HBox.margin>
+        </Button>
+    </HBox>
+    <HBox alignment="CENTER_LEFT">
+        <padding>
+            <Insets bottom="10.0"/>
+        </padding>
+        <Label prefWidth="100.0" text="输入坐标格式："/>
+        <ChoiceBox fx:id="inputCoordinateType" prefWidth="150.0" value="wgs84">
+            <items>
+                <FXCollections fx:factory="observableArrayList">
+                    <String fx:value="wgs84"/>
+                    <String fx:value="gcj02"/>
+                    <String fx:value="bd09"/>
+                </FXCollections>
+            </items>
+        </ChoiceBox>
+    </HBox>
+
+    <HBox alignment="CENTER_LEFT">
+        <padding>
+            <Insets bottom="10.0"/>
+        </padding>
+        <Label prefWidth="100.0" text="输出目录："/>
+        <TextField fx:id="outputDirectory" prefHeight="30.0" prefWidth="125.0" HBox.hgrow="ALWAYS"/>
+        <Button onMouseClicked="#chooseDirectory" prefHeight="30.0" text="浏览">
+            <HBox.margin>
+                <Insets left="5.0"/>
+            </HBox.margin>
+        </Button>
+    </HBox>
+    <HBox alignment="CENTER_LEFT">
+        <padding>
+            <Insets bottom="10.0"/>
+        </padding>
+        <Label prefWidth="100.0" text="输出坐标格式："/>
+        <ChoiceBox fx:id="outputCoordinateType" prefWidth="150.0" value="wgs84">
+            <items>
+                <FXCollections fx:factory="observableArrayList">
+                    <String fx:value="wgs84"/>
+                    <String fx:value="gcj02"/>
+                    <String fx:value="bd09"/>
+                </FXCollections>
+            </items>
+        </ChoiceBox>
+    </HBox>
+    <HBox>
+        <Button fx:id="execute" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#execute" prefHeight="60.0"
+                prefWidth="250.0" styleClass="execute" text="执行" HBox.hgrow="ALWAYS"/>
+        <Button fx:id="cancel" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#cancel" prefHeight="60.0"
+                prefWidth="150.0" styleClass="cancel" text="取消" HBox.hgrow="ALWAYS">
+            <HBox.margin>
+                <Insets left="10.0"/>
+            </HBox.margin>
+        </Button>
+    </HBox>
+    <TextArea fx:id="messageDetail" prefWidth="400.0">
+        <VBox.margin>
+            <Insets top="10.0"/>
+        </VBox.margin>
+    </TextArea>
+</VBox>
