@@ -11,8 +11,8 @@ theme: jekyll-theme-cayman
 plugins:
   - jekyll-feed
 github:
-  github_url: https://github.com/Civitasv/AMapPoi/releases/download/v0.0.4-alpha/POIKit.zip
-  gitee_url: https://gitee.com/simpls/AMapPoi/attach_files/682825/download/POIKit.zip
+  github_url: https://github.com/Civitasv/AMapPoi/releases/download/v0.0.5/POIKit-0.0.5.zip
+  gitee_url: https://gitee.com/simpls/AMapPoi/attach_files/687606/download/POIKit-0.0.5.zip
 show_downloads: true
 # Exclude from processing.
 # The following items will not be processed, by default.
