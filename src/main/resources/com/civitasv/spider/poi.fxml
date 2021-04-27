@@ -166,7 +166,7 @@
                 <Insets bottom="10.0" top="10.0"/>
             </padding>
             <Label prefHeight="18.0" prefWidth="100.0" text="线程数目："/>
-            <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" promptText="建议不大于QPS * keys_num * 0.2"
+            <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" promptText="建议不大于QPS * keys_num"
                        HBox.hgrow="ALWAYS"/>
         </HBox>
         <HBox alignment="CENTER_LEFT">
