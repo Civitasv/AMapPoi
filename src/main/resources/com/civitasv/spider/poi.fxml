@@ -135,6 +135,7 @@
                                 <FXCollections fx:factory="observableArrayList">
                                     <String fx:value="wgs84"/>
                                     <String fx:value="gcj02"/>
+                                    <String fx:value="bd09"/>
                                 </FXCollections>
                             </items>
                             <HBox.margin>

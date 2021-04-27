@@ -263,7 +263,7 @@ public class POIController {
                     }
 
                     appendMessage("解析用户geojson文件中");
-                    String userCoordinateType = coordinateType.getValue();
+                    String userCoordinateType = coordinateType2.getValue();
                     boundary = getBoundaryByUserFile(userFile.getText(), userCoordinateType);
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "geojson文件解析失败"));
