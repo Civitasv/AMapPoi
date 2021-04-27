@@ -74,6 +74,7 @@ public class POIController {
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
     private boolean start = false;
+    private int perExecuteTime;
     private static final GeometryFactory geometryFactory = new GeometryFactory();
 
     public void show() throws IOException {
@@ -165,7 +166,7 @@ public class POIController {
             appendMessage("阈值读取成功");
 
             appendMessage("读取高德key中");
-            List<String> keys = new ArrayList<>(Arrays.asList(this.keys.getText().split(",")));
+            Queue<String> keys = new ArrayDeque<>(Arrays.asList(this.keys.getText().split(",")));
             appendMessage("高德key读取成功");
 
             appendMessage("读取POI关键字中");
@@ -202,14 +203,15 @@ public class POIController {
                     qps = 300;
                     break;
             }
-            if (threadNum > (int) (qps * 0.1 * keys.size())) {
-                int val = (int) (qps * 0.1 * keys.size());
+            if (threadNum > qps * keys.size()) {
+                int val = qps * keys.size();
                 appendMessage(userType.getValue() + "线程数不能超过" + val);
                 threadNum = val;
                 appendMessage("设置线程数目为" + threadNum);
             }
+            perExecuteTime = getPerExecuteTime(threadNum, qps, keys.size());
 
-            Geometry boundary = null;
+            Geometry boundary;
             switch (tabs.getSelectionModel().getSelectedItem().getText()) {
                 case "行政区":
                     if (city.getText().isEmpty()) {
@@ -274,6 +276,19 @@ public class POIController {
             }
             analysis(false);
         });
+    }
+
+
+    /**
+     * 根据线程数、key数目和QPS设置每次运行时间
+     *
+     * @param threadNum 线程数目
+     * @param qps       用户qps
+     * @param keysNum   key数量
+     * @return 每次运行时间 ms
+     */
+    private int getPerExecuteTime(int threadNum, int qps, int keysNum) {
+        return (int) (1000 * (threadNum * 1.0 / (qps * keysNum)));
     }
 
     private void analysis(boolean isAnalysis) {
@@ -359,7 +374,7 @@ public class POIController {
         return null;
     }
 
-    private void getPoiDataByRectangle(double[] boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, Predicate<? super POI.Info> filter) {
+    private void getPoiDataByRectangle(double[] boundary, int grids, int threadNum, int threshold, String keywords, String types, Queue<String> keys, String tab, Predicate<? super POI.Info> filter) {
         List<POI.Info> res = new ArrayList<>();
         // 1. 获取边界
         double left = boundary[0], bottom = boundary[1], right = boundary[2], top = boundary[3];
@@ -410,7 +425,7 @@ public class POIController {
         }
     }
 
-    private void getPoiDataByBoundary(Geometry boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab) {
+    private void getPoiDataByBoundary(Geometry boundary, int grids, int threadNum, int threshold, String keywords, String types, Queue<String> keys, String tab) {
         Envelope envelopeInternal = boundary.getEnvelopeInternal();
 
         double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
@@ -427,7 +442,7 @@ public class POIController {
         });
     }
 
-    private void getPoiDataByAdName(Geometry boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, String adCode, String adname) {
+    private void getPoiDataByAdName(Geometry boundary, int grids, int threadNum, int threshold, String keywords, String types, Queue<String> keys, String tab, String adCode, String adname) {
         Envelope envelopeInternal = boundary.getEnvelopeInternal();
 
         double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
@@ -454,7 +469,7 @@ public class POIController {
         } else return 3; // 县/区
     }
 
-    private List<POI.Info> getPoi(double[] boundary, int threadNum, int threshold, String keywords, String types, List<String> keys, Deque<double[]> analysisGrid) {
+    private List<POI.Info> getPoi(double[] boundary, int threadNum, int threshold, String keywords, String types, Queue<String> keys, Deque<double[]> analysisGrid) {
         List<POI.Info> res = new ArrayList<>();
         int page = 1, size = 20; // 页码、每页个数
         double left = boundary[0], bottom = boundary[1], right = boundary[2], top = boundary[3];
@@ -488,8 +503,8 @@ public class POIController {
                 long startTime = System.currentTimeMillis();   //获取开始时间
                 List<Future<POI>> futures = executorService.invokeAll(call);
                 long endTime = System.currentTimeMillis(); //获取结束时间
-                if (endTime - startTime < 100) { // 严格控制每次执行100ms
-                    TimeUnit.MILLISECONDS.sleep(100 - (endTime - startTime));
+                if (endTime - startTime < perExecuteTime) { // 严格控制每次执行perExecuteTime
+                    TimeUnit.MILLISECONDS.sleep(perExecuteTime - (endTime - startTime));
                 }
                 for (Future<POI> future : futures) {
                     POI item = future.get();
@@ -663,13 +678,19 @@ public class POIController {
         return new GeoJSON(features);
     }
 
-    private POI getPoi(String polygon, String keywords, String types, int page, int size, List<String> keys) {
+    private synchronized String getKey(Queue<String> keys) {
+        String key = keys.poll();
+        keys.offer(key);
+        return key;
+    }
+
+    private POI getPoi(String polygon, String keywords, String types, int page, int size, Queue<String> keys) {
         if (start && keys.isEmpty()) {
             appendMessage("key池已耗尽，无法继续获取POI...");
             return null;
         }
-        int index = (int) (Math.random() * keys.size());
-        POI poi = mapDao.getPoi(keys.get(index), polygon, keywords, types, page, size);
+        String key = getKey(keys);
+        POI poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
         if (start && (poi == null || !"10000".equals(poi.getInfocode()))) {
             synchronized (this) {
                 if (poi == null) {
@@ -677,7 +698,7 @@ public class POIController {
                     appendMessage("数据获取失败，正在重试中...");
                     for (int i = 0; i < 3; i++) {
                         appendMessage("重试第" + (i + 1) + "次...");
-                        poi = mapDao.getPoi(keys.get(index), polygon, keywords, types, page, size);
+                        poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
                         if (poi != null) {
                             appendMessage("数据获取成功，继续爬取...");
                             break;
@@ -690,18 +711,17 @@ public class POIController {
                     return null;
                 }
                 if ("10001".equals(poi.getInfocode())) {
-                    appendMessage("key----" + keys.get(index) + "已经过期");
+                    appendMessage("key----" + key + "已经过期");
                 } else if ("10003".equals(poi.getInfocode())) {
-                    appendMessage("key----" + keys.get(index) + "已达调用量上限");
+                    appendMessage("key----" + key + "已达调用量上限");
                 } else {
                     appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
                 }
                 // 去除过期的，使用其它key重新访问
-                keys.remove(index);
+                keys.poll();
                 while (!keys.isEmpty()) {
                     appendMessage("正在尝试其它key");
-                    index = (int) (Math.random() * keys.size());
-                    String key = keys.get(index);
+                    key = getKey(keys);
                     appendMessage("切换key：" + key);
                     poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
                     if (poi == null) {
@@ -726,7 +746,7 @@ public class POIController {
                         break;
                     } else {
                         appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
-                        keys.remove(index);
+                        keys.poll();
                     }
                 }
                 if (keys.isEmpty()) {

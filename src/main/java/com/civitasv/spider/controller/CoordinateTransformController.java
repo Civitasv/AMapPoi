@@ -73,9 +73,9 @@ public class CoordinateTransformController {
     }
 
     public void execute() {
-        messageDetail.clear();
         worker = Executors.newSingleThreadExecutor();
         worker.execute(() -> {
+            messageDetail.clear();
             // 检查输入文件、输出文件夹是否指定
             if (!check()) return;
             analysis(true);
@@ -147,7 +147,7 @@ public class CoordinateTransformController {
                 transformFeatureCollection(featureCollection, inputCoordinateType, outputCoordinateType);
                 String outputGeoJson = SpatialDataTransformUtil.featureCollection2GeoJson(featureCollection);
                 if (outputGeoJson == null) {
-                    appendMessage("保存失败");
+                    appendMessage("格式转换失败");
                     analysis(false);
                     return;
                 }
