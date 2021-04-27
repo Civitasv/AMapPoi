@@ -1,19 +1,18 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.util.CoordinateTransformUtil;
-import com.civitasv.spider.util.FileUtil;
-import com.civitasv.spider.util.MessageUtil;
-import com.civitasv.spider.util.SpatialDataTransformUtil;
+import com.civitasv.spider.util.*;
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import org.geotools.data.DataUtilities;
+import javafx.stage.Stage;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
-import org.geotools.geometry.jts.LiteCoordinateSequenceFactory;
 import org.locationtech.jts.geom.*;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -23,14 +22,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class CoordinateTransformController {
+    private static Scene scene;
+
     public TextField inputFile;
     public TextField outputDirectory;
     public ChoiceBox<String> inputCoordinateType;
@@ -39,6 +38,18 @@ public class CoordinateTransformController {
     public Button execute, cancel;
     private ExecutorService worker;
 
+    public void show() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-coordinate.fxml"));
+        Parent root = fxmlLoader.load();
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("坐标转换");
+        scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
 
     public void chooseInputFile() {
         FileChooser fileChooser = new FileChooser();
@@ -48,7 +59,7 @@ public class CoordinateTransformController {
                 new FileChooser.ExtensionFilter("json", "*.json"),
                 new FileChooser.ExtensionFilter("shp", "*.shp")
         );
-        File file = fileChooser.showOpenDialog(MainApplication.getScene().getWindow());
+        File file = fileChooser.showOpenDialog(scene.getWindow());
         if (file != null)
             inputFile.setText(file.getAbsolutePath());
     }
@@ -56,7 +67,7 @@ public class CoordinateTransformController {
     public void chooseDirectory() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("选择输出文件夹");
-        File file = directoryChooser.showDialog(MainApplication.getScene().getWindow());
+        File file = directoryChooser.showDialog(scene.getWindow());
         if (file != null)
             outputDirectory.setText(file.getAbsolutePath());
     }

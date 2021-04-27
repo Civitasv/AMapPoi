@@ -1,18 +1,25 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
+import com.civitasv.spider.util.FXMLUtil;
 import com.civitasv.spider.util.FileUtil;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.util.SpatialDataTransformUtil;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -24,7 +31,7 @@ import java.util.concurrent.Executors;
  * csv shp geojson 互相转换
  */
 public class SpatialDataTransformController {
-
+    private static Scene scene;
     public TextField inputFile;
     public ChoiceBox<String> format;
     public TextField outputDirectory;
@@ -32,7 +39,22 @@ public class SpatialDataTransformController {
     public Button execute, cancel;
     private ExecutorService worker;
 
-    public void init() {
+    public void show() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-spatial-data.fxml"));
+        Parent root = fxmlLoader.load();
+        SpatialDataTransformController controller = fxmlLoader.getController();
+        controller.init();
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("格式转换");
+        scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
+
+    private void init() {
         inputFile.textProperty().addListener((observable, oldValue, newValue) -> {
             String inputFormat = FileUtil.getExtension(inputFile.getText());
             if (inputFormat == null) return;
@@ -60,7 +82,7 @@ public class SpatialDataTransformController {
                 new FileChooser.ExtensionFilter("json", "*.json"),
                 new FileChooser.ExtensionFilter("shp", "*.shp")
         );
-        File file = fileChooser.showOpenDialog(MainApplication.getScene().getWindow());
+        File file = fileChooser.showOpenDialog(scene.getWindow());
         if (file != null)
             inputFile.setText(file.getAbsolutePath());
     }
@@ -68,7 +90,7 @@ public class SpatialDataTransformController {
     public void chooseDirectory() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("选择输出文件夹");
-        File file = directoryChooser.showDialog(MainApplication.getScene().getWindow());
+        File file = directoryChooser.showDialog(scene.getWindow());
         if (file != null)
             outputDirectory.setText(file.getAbsolutePath());
     }

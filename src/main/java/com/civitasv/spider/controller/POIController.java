@@ -11,6 +11,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -37,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
@@ -47,6 +49,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class POIController {
+    private static Scene scene;
     public TextField threadNum;
     public TextField keywords;
     public TextArea keys;
@@ -71,10 +74,24 @@ public class POIController {
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
     private boolean start = false;
-
     private static final GeometryFactory geometryFactory = new GeometryFactory();
 
-    public void init() {
+    public void show() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("poi.fxml"));
+        Parent root = fxmlLoader.load();
+        POIController controller = fxmlLoader.getController();
+        controller.init();
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("POIKit");
+        scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
+
+    private void init() {
         this.threadNum.setTextFormatter(getFormatter());
         this.grids.setTextFormatter(getFormatter());
         this.threshold.setTextFormatter(getFormatter());
@@ -107,7 +124,7 @@ public class POIController {
     public void chooseDirectory() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("选择输出文件夹");
-        File file = directoryChooser.showDialog(MainApplication.getScene().getWindow());
+        File file = directoryChooser.showDialog(scene.getWindow());
         if (file != null)
             outputDirectory.setText(file.getAbsolutePath());
     }
@@ -304,7 +321,7 @@ public class POIController {
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("geojson", "*.json")
         );
-        File file = fileChooser.showOpenDialog(MainApplication.getScene().getWindow());
+        File file = fileChooser.showOpenDialog(scene.getWindow());
         if (file != null)
             userFile.setText(file.getAbsolutePath());
     }
@@ -760,67 +777,23 @@ public class POIController {
     }
 
     public void openGeocoding() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("geocoding.fxml"));
-        Parent root = fxmlLoader.load();
-        if (fxmlLoader.getController() instanceof GeocodingController) {
-            GeocodingController controller = fxmlLoader.getController();
-            controller.init();
-        }
-        Stage stage = new Stage();
-        stage.setResizable(false);
-        stage.setTitle("地理编码");
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
-        stage.show();
+        GeocodingController controller = new GeocodingController();
+        controller.show();
     }
 
     public void openSpatialTransform() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-spatial-data.fxml"));
-        Parent root = fxmlLoader.load();
-        if (fxmlLoader.getController() instanceof SpatialDataTransformController) {
-            SpatialDataTransformController controller = fxmlLoader.getController();
-            controller.init();
-        }
-        Stage stage = new Stage();
-        stage.setResizable(false);
-        stage.setTitle("格式转换");
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
-        stage.show();
+        SpatialDataTransformController controller = new SpatialDataTransformController();
+        controller.show();
     }
 
     public void openCoordinateTransform() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-coordinate.fxml"));
-        Parent root = fxmlLoader.load();
-        Stage stage = new Stage();
-        stage.setResizable(false);
-        stage.setTitle("坐标转换");
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
-        stage.show();
+        CoordinateTransformController controller = new CoordinateTransformController();
+        controller.show();
     }
 
     public void openAbout(boolean isQQ) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("about.fxml"));
-        Parent root = fxmlLoader.load();
-        if (fxmlLoader.getController() instanceof AboutController) {
-            AboutController controller = fxmlLoader.getController();
-            controller.init(isQQ);
-        }
-        Stage stage = new Stage();
-        stage.setResizable(false);
-        stage.setTitle(isQQ ? "加入用户群" : "关注公众号");
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
-        stage.show();
+        AboutController controller = new AboutController();
+        controller.show(isQQ);
     }
 
     public void starsMe() throws URISyntaxException, IOException {

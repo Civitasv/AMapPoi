@@ -8,10 +8,15 @@ import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,7 +30,7 @@ import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
 public class GeocodingController {
-
+    private static Scene scene;
     // 输入文件
     public TextField inputFile;
     // 输出文件夹
@@ -50,7 +55,22 @@ public class GeocodingController {
     private MyProgressBar progressBar;
     private boolean start = false;
 
-    public void init() {
+    public void show() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("geocoding.fxml"));
+        Parent root = fxmlLoader.load();
+        GeocodingController controller = fxmlLoader.getController();
+        controller.init();
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("地理编码");
+        scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
+
+    private void init() {
         TextFormatter<Integer> formatter = new TextFormatter<>(
                 new IntegerStringConverter(),
                 4,
@@ -151,7 +171,7 @@ public class GeocodingController {
                 new FileChooser.ExtensionFilter("csv", "*.csv"),
                 new FileChooser.ExtensionFilter("txt", "*.txt")
         );
-        File file = fileChooser.showOpenDialog(MainApplication.getScene().getWindow());
+        File file = fileChooser.showOpenDialog(scene.getWindow());
         if (file != null)
             inputFile.setText(file.getAbsolutePath());
     }
@@ -162,7 +182,7 @@ public class GeocodingController {
     public void chooseDirectory() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("选择输出文件夹");
-        File file = directoryChooser.showDialog(MainApplication.getScene().getWindow());
+        File file = directoryChooser.showDialog(scene.getWindow());
         if (file != null)
             outputDirectory.setText(file.getAbsolutePath());
     }
