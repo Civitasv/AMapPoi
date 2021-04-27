@@ -46,8 +46,7 @@ public class SpatialDataTransformUtil {
      * @return 若可以解析，则返回featureCollection，否则返回null
      */
     public static FeatureCollection<SimpleFeatureType, SimpleFeature> geojsonStr2FeatureCollection(String geojsonStr) {
-        try {
-            InputStream in = new ByteArrayInputStream(geojsonStr.getBytes());
+        try (InputStream in = new ByteArrayInputStream(geojsonStr.getBytes())) {
             GeometryJSON gjson = new GeometryJSON();
             FeatureJSON fjson = new FeatureJSON(gjson);
             return fjson.readFeatureCollection(in);
@@ -69,8 +68,7 @@ public class SpatialDataTransformUtil {
     public static boolean saveFeaturesToShp(List<SimpleFeature> features, SimpleFeatureType TYPE, String shpPath) {
         try {
             ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-            File shpFile = FileUtil.getNewFile(shpPath);
-            if (shpFile == null) return false;
+            File shpFile = new File(shpPath);
             Map<String, Serializable> params = new HashMap<>();
             params.put("url", shpFile.toURI().toURL());
             params.put("create spatial index", Boolean.TRUE);
@@ -117,9 +115,8 @@ public class SpatialDataTransformUtil {
      * @return 转换是否成功
      */
     public static boolean transformGeoJsonToShp(String geojsonPath, String shpPath) {
-        try {
+        try (InputStream in = new FileInputStream(geojsonPath)) {
             // open geojson
-            InputStream in = new FileInputStream(geojsonPath);
             GeometryJSON gjson = new GeometryJSON();
             FeatureJSON fjson = new FeatureJSON(gjson);
             FeatureCollection<SimpleFeatureType, SimpleFeature> features = fjson.readFeatureCollection(in);
@@ -188,8 +185,7 @@ public class SpatialDataTransformUtil {
 
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
             FeatureJSON fjson = new FeatureJSON();
-            File geojson = FileUtil.getNewFile(geojsonPath);
-            if (geojson == null) return false;
+            File geojson = new File(geojsonPath);
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(geojson.toPath(), StandardCharsets.UTF_8))) {
@@ -227,8 +223,7 @@ public class SpatialDataTransformUtil {
             Query query = new Query(schema.getTypeName());
 
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
-            File csvFile = FileUtil.getNewFile(csvPath);
-            if (csvFile == null) return false;
+            File csvFile = new File(csvPath);
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(csvFile.toPath(), StandardCharsets.UTF_8))) {

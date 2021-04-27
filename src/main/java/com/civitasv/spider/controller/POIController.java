@@ -212,7 +212,7 @@ public class POIController {
                         return;
                     }
                     appendMessage("成功获取行政区 " + city.getText() + " 区域边界");
-                    getPoiDataByAdName(geometry, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), adname);
+                    getPoiDataByAdName(geometry, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), city.getText(), adname);
                     break;
                 case "矩形":
                     if (rectangle.getText().isEmpty()) {
@@ -410,12 +410,31 @@ public class POIController {
         });
     }
 
-    private void getPoiDataByAdName(Geometry boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, String adname) {
+    private void getPoiDataByAdName(Geometry boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, String adCode, String adname) {
         Envelope envelopeInternal = boundary.getEnvelopeInternal();
 
         double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
                 right = envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
-        getPoiDataByRectangle(new double[]{left, bottom, right, top}, grids, threadNum, threshold, keywords, types, keys, tab, info -> info.adname.equals(adname));
+        getPoiDataByRectangle(new double[]{left, bottom, right, top}, grids, threadNum, threshold, keywords, types, keys, tab, info -> {
+            int level = getLevel(adCode);
+            if (level == 0)
+                return "中华人民共和国".equals(adname);
+            else if (level == 1)
+                return info.pname.equals(adname);
+            else if (level == 2)
+                return info.cityname.equals(adname);
+            else return info.adname.equals(adname);
+        });
+    }
+
+    private int getLevel(String adCode) {
+        if ("100000".equals(adCode)) {
+            return 0; // country
+        } else if ("0000".equals(adCode.substring(2))) {
+            return 1; // 省份
+        } else if ("00".equals(adCode.substring(4))) {
+            return 2; // 城市
+        } else return 3; // 县/区
     }
 
     private List<POI.Info> getPoi(double[] boundary, int threadNum, int threshold, String keywords, String types, List<String> keys, Deque<double[]> analysisGrid) {
@@ -477,15 +496,15 @@ public class POIController {
                 filename = filename + "/解析结果_" + rectangle.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + "." + format;
                 break;
             case "自定义":
-                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + format;
+                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + "." + format;
                 break;
         }
-        File jsonFile = FileUtil.getNewFile(filename);
-        if (jsonFile == null) {
+        File csvFile = FileUtil.getNewFile(filename);
+        if (csvFile == null) {
             appendMessage("输出路径有误，请检查后重试！");
             return;
         }
-        try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
+        try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(csvFile.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");
             if (format.equals("csv"))
                 writer.write('\ufeff');
@@ -497,7 +516,7 @@ public class POIController {
                     writer.write("\"" + info.name + "\"," + "\"" + info.type + "\"," + "\"" + info.typecode + "\"," + "\"" + info.address + "\"," + "\"" + info.pname + "\"," + "\"" + info.cityname + "\"," + "\"" + info.adname + "\"," + "\"" + lonlat[0] + "\"," + "\"" + lonlat[1] + "\"," + "\"" + wgs84[0] + "\"," + "\"" + wgs84[1] + "\"\r\n");
                 }
             }
-            appendMessage("写入成功，结果存储于" + jsonFile.getAbsolutePath());
+            appendMessage("写入成功，结果存储于" + csvFile.getAbsolutePath());
         } catch (IOException e) {
             appendMessage("写入失败");
             appendMessage(e.getMessage());
@@ -578,8 +597,13 @@ public class POIController {
                     features.add(feature);
                 }
             }
-            if (SpatialDataTransformUtil.saveFeaturesToShp(features, type, filename)) {
-                appendMessage("写入成功，结果存储于" + filename);
+            File shpFile = FileUtil.getNewFile(filename);
+            if (shpFile == null) {
+                appendMessage("文件无法创建，写入失败！");
+                return;
+            }
+            if (SpatialDataTransformUtil.saveFeaturesToShp(features, type, shpFile.getAbsolutePath())) {
+                appendMessage("写入成功，结果存储于" + shpFile.getAbsolutePath());
             } else appendMessage("写入失败");
         } catch (SchemaException e) {
             appendMessage("写入失败");
