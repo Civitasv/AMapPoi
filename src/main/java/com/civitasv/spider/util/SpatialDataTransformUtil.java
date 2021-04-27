@@ -2,7 +2,6 @@ package com.civitasv.spider.util;
 
 import org.geotools.data.*;
 import org.geotools.data.collection.ListFeatureCollection;
-import org.geotools.data.geojson.GeoJSONDataStoreFactory;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -17,16 +16,15 @@ import org.geotools.feature.type.GeometryTypeImpl;
 import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.geotools.util.URLs;
-import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.feature.type.*;
+import org.opengis.feature.type.AttributeDescriptor;
+import org.opengis.feature.type.AttributeType;
+import org.opengis.feature.type.GeometryDescriptor;
+import org.opengis.feature.type.GeometryType;
 
 import java.io.*;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -41,12 +39,22 @@ import java.util.Map;
  */
 public class SpatialDataTransformUtil {
 
-    public static FeatureCollection<SimpleFeatureType, SimpleFeature> geojsonStr2FeatureCollection(String geojsonStr) throws IOException {
-        // open geojson
-        InputStream in = new ByteArrayInputStream(geojsonStr.getBytes());
-        GeometryJSON gjson = new GeometryJSON();
-        FeatureJSON fjson = new FeatureJSON(gjson);
-        return fjson.readFeatureCollection(in);
+    /**
+     * 解析geojson字符串为featureCollection
+     *
+     * @param geojsonStr geojson字符串
+     * @return 若可以解析，则返回featureCollection，否则返回null
+     */
+    public static FeatureCollection<SimpleFeatureType, SimpleFeature> geojsonStr2FeatureCollection(String geojsonStr) {
+        try {
+            InputStream in = new ByteArrayInputStream(geojsonStr.getBytes());
+            GeometryJSON gjson = new GeometryJSON();
+            FeatureJSON fjson = new FeatureJSON(gjson);
+            return fjson.readFeatureCollection(in);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 
@@ -62,6 +70,7 @@ public class SpatialDataTransformUtil {
         try {
             ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
             File shpFile = FileUtil.getNewFile(shpPath);
+            if (shpFile == null) return false;
             Map<String, Serializable> params = new HashMap<>();
             params.put("url", shpFile.toURI().toURL());
             params.put("create spatial index", Boolean.TRUE);
@@ -91,9 +100,10 @@ public class SpatialDataTransformUtil {
                     transaction.close();
                 }
             } else {
-                System.out.println(typeName + " does not support read/write access");
+                System.out.println(typeName + " 不支持读或写！");
             }
         } catch (IOException e) {
+            e.printStackTrace();
             return false;
         }
         return true;
@@ -179,6 +189,7 @@ public class SpatialDataTransformUtil {
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
             FeatureJSON fjson = new FeatureJSON();
             File geojson = FileUtil.getNewFile(geojsonPath);
+            if (geojson == null) return false;
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(geojson.toPath(), StandardCharsets.UTF_8))) {
@@ -217,6 +228,7 @@ public class SpatialDataTransformUtil {
 
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
             File csvFile = FileUtil.getNewFile(csvPath);
+            if (csvFile == null) return false;
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
                  BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(csvFile.toPath(), StandardCharsets.UTF_8))) {

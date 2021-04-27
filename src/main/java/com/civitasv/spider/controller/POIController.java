@@ -10,8 +10,6 @@ import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -28,8 +26,8 @@ import org.geotools.data.DataUtilities;
 import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.*;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
@@ -194,8 +192,7 @@ public class POIController {
                 appendMessage("设置线程数目为" + threadNum);
             }
 
-            double[] boundary;
-            Geometry realBoundary = null;
+            Geometry boundary = null;
             switch (tabs.getSelectionModel().getSelectedItem().getText()) {
                 case "行政区":
                     if (city.getText().isEmpty()) {
@@ -206,16 +203,15 @@ public class POIController {
                     }
                     appendMessage("获取行政区 " + city.getText() + " 区域边界中");
                     // 获取完整边界和边界名
-                    Map<String, Object> realBoundaryMap = getRealBoundaryByAdCode(city.getText());
-                    String adname = (String) realBoundaryMap.get("adname");
-                    Geometry geometry = (Geometry) realBoundaryMap.get("geometry");
+                    Map<String, Object> boundaryMap = getBoundaryByAdCode(city.getText());
+                    String adname = (String) boundaryMap.get("adname");
+                    Geometry geometry = (Geometry) boundaryMap.get("geometry");
                     if (geometry == null || adname == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！"));
                         analysis(false);
                         return;
                     }
                     appendMessage("成功获取行政区 " + city.getText() + " 区域边界");
-
                     getPoiDataByAdName(geometry, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), adname);
                     break;
                 case "矩形":
@@ -228,15 +224,15 @@ public class POIController {
                     // 获取坐标类型
                     String rectangleCoordinateType = coordinateType.getValue();
                     appendMessage("解析矩形区域中");
-                    boundary = getBoundaryByRectangle(rectangle.getText(), rectangleCoordinateType);
-                    if (boundary == null) {
+                    double[] rectangleBoundary = getBoundaryByRectangle(rectangle.getText(), rectangleCoordinateType);
+                    if (rectangleBoundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式或稍后重试！"));
                         analysis(false);
                         return;
                     }
                     appendMessage("解析矩形区域成功");
 
-                    getPoiDataByRectangle(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(),__->true);
+                    getPoiDataByRectangle(rectangleBoundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), __ -> true);
 
                     break;
                 case "自定义":
@@ -249,15 +245,14 @@ public class POIController {
 
                     appendMessage("解析用户geojson文件中");
                     String userCoordinateType = coordinateType.getValue();
-                    realBoundary = getRealBoundaryByUserFile(userFile.getText(), userCoordinateType);
-                    if (realBoundary == null) {
+                    boundary = getBoundaryByUserFile(userFile.getText(), userCoordinateType);
+                    if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "geojson文件解析失败"));
                         analysis(false);
                         return;
                     }
                     appendMessage("成功解析用户文件");
-
-                    getPoiDataByRealBoundary(realBoundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
+                    getPoiDataByBoundary(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText());
                     break;
             }
             analysis(false);
@@ -314,20 +309,12 @@ public class POIController {
             userFile.setText(file.getAbsolutePath());
     }
 
-    private double[] getBoundaryByAdCode(String adCode) {
-        return BoundaryUtil.getBoundary(adCode);
+    private Map<String, Object> getBoundaryByAdCode(String adCode) {
+        return BoundaryUtil.getBoundaryAndAdNameByAdCode(adCode);
     }
 
-    private double[] getBoundaryByUserFile(String path, String type) {
+    private Geometry getBoundaryByUserFile(String path, String type) {
         return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path), type);
-    }
-
-    private Map<String, Object> getRealBoundaryByAdCode(String adCode) {
-        return BoundaryUtil.getRealBoundary(adCode);
-    }
-
-    private Geometry getRealBoundaryByUserFile(String path, String type) {
-        return BoundaryUtil.getRealBoundaryByGeoJson(FileUtil.readFile(path), type);
     }
 
     private double[] getBoundaryByRectangle(String text, String type) {
@@ -340,6 +327,9 @@ public class POIController {
             if ("wgs84".equals(type)) {
                 leftTopLonlat = CoordinateTransformUtil.transformWGS84ToGCJ02(leftTopLonlat[0], leftTopLonlat[1]);
                 rightBottomLonlat = CoordinateTransformUtil.transformWGS84ToGCJ02(rightBottomLonlat[0], rightBottomLonlat[1]);
+            } else if ("bd09".equals(type)) {
+                leftTopLonlat = CoordinateTransformUtil.transformBD09ToGCJ02(leftTopLonlat[0], leftTopLonlat[1]);
+                rightBottomLonlat = CoordinateTransformUtil.transformBD09ToGCJ02(rightBottomLonlat[0], rightBottomLonlat[1]);
             }
             if (leftTop.length == 2 && rightBottom.length == 2) {
                 try {
@@ -352,7 +342,7 @@ public class POIController {
         return null;
     }
 
-    public void getPoiDataByRectangle(double[] boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, Predicate<? super POI.Info> filter) {
+    private void getPoiDataByRectangle(double[] boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, Predicate<? super POI.Info> filter) {
         List<POI.Info> res = new ArrayList<>();
         // 1. 获取边界
         double left = boundary[0], bottom = boundary[1], right = boundary[2], top = boundary[3];
@@ -403,28 +393,29 @@ public class POIController {
         }
     }
 
-    public void getPoiDataByRealBoundary(Geometry realBoundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab) {
-        Envelope envelopeInternal = realBoundary.getEnvelopeInternal();
+    private void getPoiDataByBoundary(Geometry boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab) {
+        Envelope envelopeInternal = boundary.getEnvelopeInternal();
 
         double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
-                right =envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
+                right = envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
 
-        getPoiDataByRectangle(new double[]{left,bottom,right,top},grids,threadNum,threshold,keywords,types,keys,tab,info->{
+        getPoiDataByRectangle(new double[]{left, bottom, right, top}, grids, threadNum, threshold, keywords, types, keys, tab, info -> {
+            if (info.location == null) return false;
             String[] lonlat = info.location.toString().split(",");
             if (lonlat.length != 2) {
                 return false;
             }
             Coordinate coordinate = new Coordinate(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
-            return realBoundary.intersects(geometryFactory.createPoint(coordinate));
+            return boundary.intersects(geometryFactory.createPoint(coordinate));
         });
     }
 
-    public void getPoiDataByAdName(Geometry realBoundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, String adname) {
-        Envelope envelopeInternal = realBoundary.getEnvelopeInternal();
+    private void getPoiDataByAdName(Geometry boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, String adname) {
+        Envelope envelopeInternal = boundary.getEnvelopeInternal();
 
         double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
-                right =envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
-        getPoiDataByRectangle(new double[]{left,bottom,right,top},grids,threadNum,threshold,keywords,types,keys,tab,info-> info.adname.equals(adname));
+                right = envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
+        getPoiDataByRectangle(new double[]{left, bottom, right, top}, grids, threadNum, threshold, keywords, types, keys, tab, info -> info.adname.equals(adname));
     }
 
     private List<POI.Info> getPoi(double[] boundary, int threadNum, int threshold, String keywords, String types, List<String> keys, Deque<double[]> analysisGrid) {
