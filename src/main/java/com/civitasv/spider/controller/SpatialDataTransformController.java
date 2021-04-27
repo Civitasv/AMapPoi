@@ -74,6 +74,7 @@ public class SpatialDataTransformController {
     }
 
     public void execute() {
+        messageDetail.clear();
         worker = Executors.newSingleThreadExecutor();
         worker.execute(() -> {
             // 检查输入文件、输出文件夹是否指定
@@ -87,6 +88,7 @@ public class SpatialDataTransformController {
                     File shpFile = FileUtil.getNewFile(outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2shp" + ".shp");
                     if (shpFile == null) {
                         appendMessage("文件无法创建，写入失败！");
+                        analysis(false);
                         return;
                     }
                     if (SpatialDataTransformUtil.transformGeoJsonToShp(inputFile.getText(), shpFile.getAbsolutePath())) {
@@ -100,6 +102,7 @@ public class SpatialDataTransformController {
                     File geojsonFile = FileUtil.getNewFile(outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2geojson" + ".json");
                     if (geojsonFile == null) {
                         appendMessage("文件无法创建，写入失败！");
+                        analysis(false);
                         return;
                     }
                     if (SpatialDataTransformUtil.transformShpToGeoJson(inputFile.getText(), geojsonFile.getAbsolutePath())) {
@@ -111,6 +114,7 @@ public class SpatialDataTransformController {
                     File csvFile = FileUtil.getNewFile(outputDirectory.getText() + "/" + FileUtil.getFileName(inputFile.getText()) + "_transform2csv" + ".csv");
                     if (csvFile == null) {
                         appendMessage("文件无法创建，写入失败！");
+                        analysis(false);
                         return;
                     }
                     if (SpatialDataTransformUtil.transformShpToCsv(inputFile.getText(), csvFile.getAbsolutePath())) {
@@ -168,7 +172,8 @@ public class SpatialDataTransformController {
     }
 
     public void cancel() {
-
+        analysis(false);
+        messageDetail.clear();
     }
 
     private void appendMessage(String text) {

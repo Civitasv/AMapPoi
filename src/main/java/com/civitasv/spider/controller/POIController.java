@@ -777,7 +777,7 @@ public class POIController {
     }
 
     public void openSpatialTransform() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform_spatial_data.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-spatial-data.fxml"));
         Parent root = fxmlLoader.load();
         if (fxmlLoader.getController() instanceof SpatialDataTransformController) {
             SpatialDataTransformController controller = fxmlLoader.getController();
@@ -786,6 +786,19 @@ public class POIController {
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("格式转换");
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.show();
+    }
+
+    public void openCoordinateTransform() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-coordinate.fxml"));
+        Parent root = fxmlLoader.load();
+        Stage stage = new Stage();
+        stage.setResizable(false);
+        stage.setTitle("坐标转换");
         Scene scene = new Scene(root);
         scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
         stage.setScene(scene);

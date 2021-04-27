@@ -24,6 +24,7 @@
         <Menu mnemonicParsing="false" text="工具">
             <MenuItem mnemonicParsing="false" onAction="#openGeocoding" text="地理编码"/>
             <MenuItem mnemonicParsing="false" onAction="#openSpatialTransform" text="格式转换"/>
+            <MenuItem mnemonicParsing="false" onAction="#openCoordinateTransform" text="坐标转换"/>
         </Menu>
         <Menu mnemonicParsing="false" text="关于">
             <MenuItem fx:id="joinQQ" mnemonicParsing="false" text="加入用户群"/>
