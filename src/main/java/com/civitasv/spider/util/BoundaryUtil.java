@@ -14,6 +14,8 @@ import org.opengis.feature.simple.SimpleFeatureType;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class BoundaryUtil {
@@ -34,12 +36,17 @@ public class BoundaryUtil {
         return getBoundaryByGeoJson(boundaryJson.toString(), "gcj02");
     }
 
-    public static Geometry getRealBoundary(String adCode) {
+    public static Map<String, Object> getRealBoundary(String adCode) {
         DataVDao dao = new DataVDaoImpl();
         JsonObject boundaryJson = dao.getBoundary(adCode);
         if (boundaryJson == null)
             return null;
-        return getRealBoundaryByGeoJson(boundaryJson.toString(), "gcj02");
+        Geometry gcj02 = getRealBoundaryByGeoJson(boundaryJson.toString(), "gcj02");
+        String adName = getAdNameFromAdGeoJson(boundaryJson.toString());
+        HashMap<String, Object> message = new HashMap<>();
+        message.put("geometry", gcj02);
+        message.put("adname", adName);
+        return message;
     }
 
     public static String getAdName(String adCode) {
@@ -143,7 +150,7 @@ public class BoundaryUtil {
                 Polygon polygon = geometryFactory.createPolygon(gcj02Coos);
                 polygons[i] = polygon;
             }
-            geometryFactory.createMultiPolygon(polygons);
+            return geometryFactory.createMultiPolygon(polygons);
         }
         return null;
     }

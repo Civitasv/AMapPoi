@@ -204,18 +204,19 @@ public class POIController {
                         analysis(false);
                         return;
                     }
-
                     appendMessage("获取行政区 " + city.getText() + " 区域边界中");
-                    boundary = getBoundaryByAdCode(city.getText());
-                    String adname = getAdNameByAdCode(city.getText());
-                    if (boundary == null) {
+                    // 获取完整边界和边界名
+                    Map<String, Object> realBoundaryMap = getRealBoundaryByAdCode(city.getText());
+                    String adname = (String) realBoundaryMap.get("adname");
+                    Geometry geometry = (Geometry) realBoundaryMap.get("geometry");
+                    if (geometry == null || adname == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！"));
                         analysis(false);
                         return;
                     }
                     appendMessage("成功获取行政区 " + city.getText() + " 区域边界");
 
-                    getPoiDataByAdName(boundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), adname);
+                    getPoiDataByAdName(geometry, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), adname);
                     break;
                 case "矩形":
                     if (rectangle.getText().isEmpty()) {
@@ -248,10 +249,9 @@ public class POIController {
 
                     appendMessage("解析用户geojson文件中");
                     String userCoordinateType = coordinateType.getValue();
-                    boundary = getBoundaryByUserFile(userFile.getText(), userCoordinateType);
                     realBoundary = getRealBoundaryByUserFile(userFile.getText(), userCoordinateType);
-                    if (boundary == null) {
-                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "无法获取边界，请检查GeoJSON格式或稍后重试！"));
+                    if (realBoundary == null) {
+                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "geojson文件解析失败"));
                         analysis(false);
                         return;
                     }
@@ -318,16 +318,12 @@ public class POIController {
         return BoundaryUtil.getBoundary(adCode);
     }
 
-    private Geometry getRealBoundaryByAdCode(String adCode) {
-        return BoundaryUtil.getRealBoundary(adCode);
-    }
-
-    private String getAdNameByAdCode(String adCode) {
-        return BoundaryUtil.getAdName(adCode);
-    }
-
     private double[] getBoundaryByUserFile(String path, String type) {
         return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path), type);
+    }
+
+    private Map<String, Object> getRealBoundaryByAdCode(String adCode) {
+        return BoundaryUtil.getRealBoundary(adCode);
     }
 
     private Geometry getRealBoundaryByUserFile(String path, String type) {
@@ -423,8 +419,12 @@ public class POIController {
         });
     }
 
-    public void getPoiDataByAdName(double[] boundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, String adname) {
-        getPoiDataByRectangle(boundary,grids,threadNum,threshold,keywords,types,keys,tab,info-> info.adname.equals(adname));
+    public void getPoiDataByAdName(Geometry realBoundary, int grids, int threadNum, int threshold, String keywords, String types, List<String> keys, String tab, String adname) {
+        Envelope envelopeInternal = realBoundary.getEnvelopeInternal();
+
+        double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
+                right =envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
+        getPoiDataByRectangle(new double[]{left,bottom,right,top},grids,threadNum,threshold,keywords,types,keys,tab,info-> info.adname.equals(adname));
     }
 
     private List<POI.Info> getPoi(double[] boundary, int threadNum, int threshold, String keywords, String types, List<String> keys, Deque<double[]> analysisGrid) {
