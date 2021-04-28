@@ -16,6 +16,7 @@ public class DataVDaoImpl implements DataVDao {
         try {
             return call.execute().body();
         } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }
