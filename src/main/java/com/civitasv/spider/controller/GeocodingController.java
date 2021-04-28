@@ -447,17 +447,21 @@ public class GeocodingController {
     }
 
     private synchronized String getKey(Queue<String> keys) {
+        if (keys.isEmpty()) {
+            return null;
+        }
         String key = keys.poll();
         keys.offer(key);
         return key;
     }
 
     private Geocodes.Response geocode(String address, String city, Queue<String> keys) {
-        if (start && keys.isEmpty()) {
+        if (!start) return null;
+        String key = getKey(keys);
+        if (key == null) {
             appendMessage("key池已耗尽，无法继续获取POI...");
             return null;
         }
-        String key = getKey(keys);
         Geocodes.Response response = aMapDao.geocoding(key, address, city);
         if (start && (response == null || !"10000".equals(response.getInfocode()))) {
             synchronized (this) {

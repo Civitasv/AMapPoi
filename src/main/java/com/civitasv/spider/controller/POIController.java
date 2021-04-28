@@ -679,17 +679,21 @@ public class POIController {
     }
 
     private synchronized String getKey(Queue<String> keys) {
+        if (keys.isEmpty()) {
+            return null;
+        }
         String key = keys.poll();
         keys.offer(key);
         return key;
     }
 
     private POI getPoi(String polygon, String keywords, String types, int page, int size, Queue<String> keys) {
-        if (start && keys.isEmpty()) {
+        if (!start) return null;
+        String key = getKey(keys);
+        if (key == null) {
             appendMessage("key池已耗尽，无法继续获取POI...");
             return null;
         }
-        String key = getKey(keys);
         POI poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
         if (start && (poi == null || !"10000".equals(poi.getInfocode()))) {
             synchronized (this) {
