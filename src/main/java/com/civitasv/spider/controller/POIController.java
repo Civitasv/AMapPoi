@@ -218,7 +218,7 @@ public class POIController {
                     appendMessage("获取行政区 " + city.getText() + " 区域边界中");
                     // 获取完整边界和边界名
                     Map<String, Object> boundaryMap = getBoundaryByAdCode(city.getText());
-                    if(boundaryMap == null){
+                    if (boundaryMap == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！"));
                         analysis(false);
                         return;
@@ -499,12 +499,11 @@ public class POIController {
         try {
             for (int j = 1; j < taskNum; j++) {
                 POI item = poiExecutorCompletionService.take().get();
-                // 如果第一页获取数据成功，认为后面可能出现null，不一棍子打死
                 if (item != null) {
                     res.addAll(Arrays.asList(item.getPois()));
-                }else {
+                } else {
                     return null;
-                };
+                }
             }
         } catch (InterruptedException | ExecutionException e) {
             appendMessage("爬取线程已中断");
@@ -707,7 +706,7 @@ public class POIController {
                 if (poi == null) {
                     appendMessage("数据获取失败");
                     appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
-                }else {
+                } else {
                     if ("10001".equals(poi.getInfocode())) {
                         appendMessage("key----" + key + "已经过期");
                     } else if ("10003".equals(poi.getInfocode())) {
@@ -758,7 +757,7 @@ public class POIController {
         return (poi != null && "10000".equals(poi.getInfocode())) ? poi : null;
     }
 
-    private Queue<String> parseKeyText(){
+    private Queue<String> parseKeyText() {
         List<String> keyList = Arrays.asList(this.keys.getText().split(","));
         String pattern = "^[A-Za-z0-9]+$";
         for (String key : keyList) {
@@ -781,7 +780,7 @@ public class POIController {
             return false;
         }
         Queue<String> keysQueue = parseKeyText();
-        if(keysQueue == null){
+        if (keysQueue == null) {
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "请检查key的格式！"));
             return false;
         }
