@@ -118,7 +118,7 @@ public class SpatialDataTransformUtil {
                 featureStore.setTransaction(transaction);
                 try {
                     featureStore.addFeatures(collection);
-                    FileUtil.generateCpgFile(shpPath, StandardCharsets.UTF_8);
+                    FileUtil.generateCpgFile(shpFile.toString(), StandardCharsets.UTF_8);
                     transaction.commit();
                 } catch (Exception problem) {
                     problem.printStackTrace();
