@@ -150,13 +150,12 @@
             </Tab>
         </TabPane>
         <HBox alignment="CENTER_LEFT">
-            <Label prefWidth="100.0" text="初始网格数："/>
-            <TextField fx:id="grids" prefHeight="25.0" prefWidth="150.0" text="4" HBox.hgrow="ALWAYS"/>
-            <Label alignment="CENTER_RIGHT" prefWidth="100.0" text="阈值：">
-                <HBox.margin>
-                    <Insets left="20.0"/>
-                </HBox.margin>
-            </Label>
+<!--            <Label prefWidth="100.0" text="初始网格数："/>-->
+<!--            <TextField fx:id="grids" prefHeight="25.0" prefWidth="150.0" text="4" HBox.hgrow="ALWAYS"/>-->
+            <padding>
+                <Insets bottom="10.0"/>
+            </padding>
+            <Label prefWidth="100.0" text="切分阈值："/>
             <TextField fx:id="threshold" prefHeight="25.0" prefWidth="150.0" text="850"/>
             <VBox.margin>
                 <Insets top="10.0"/>
@@ -164,7 +163,7 @@
         </HBox>
         <HBox alignment="CENTER_LEFT">
             <padding>
-                <Insets bottom="10.0" top="10.0"/>
+                <Insets bottom="10.0"/>
             </padding>
             <Label prefHeight="18.0" prefWidth="100.0" text="线程数目："/>
             <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" promptText="建议不大于QPS * keys_num"
