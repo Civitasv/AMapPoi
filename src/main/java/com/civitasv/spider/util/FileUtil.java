@@ -47,6 +47,7 @@ public class FileUtil {
                         .forEach(res::append);
                 return res.toString();
             } catch (IOException e) {
+                e.printStackTrace();
                 return null;
             }
         }
