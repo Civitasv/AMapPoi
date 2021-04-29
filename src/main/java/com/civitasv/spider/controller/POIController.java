@@ -41,6 +41,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.sql.Time;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
@@ -56,7 +57,6 @@ public class POIController {
     public TextField types;
     public TextField city;
     public TextField rectangle;
-    public TextField grids;
     public TextField threshold;
     public ChoiceBox<String> format;
     public TextField outputDirectory;
@@ -73,6 +73,7 @@ public class POIController {
     public MenuItem joinQQ;
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
+    private ExecutorCompletionService<POI> poiExecutorCompletionService;
     private boolean start = false;
     private int perExecuteTime;
     private static final GeometryFactory geometryFactory = new GeometryFactory();
@@ -94,7 +95,6 @@ public class POIController {
 
     private void init() {
         this.threadNum.setTextFormatter(getFormatter());
-        this.grids.setTextFormatter(getFormatter());
         this.threshold.setTextFormatter(getFormatter());
         this.city.setTextFormatter(getFormatter());
         wechat.setOnAction(event -> {
@@ -148,12 +148,7 @@ public class POIController {
             appendMessage("线程数目读取成功");
 
             appendMessage("读取初始网格数中");
-            Integer grids = ParseUtil.tryParse(this.grids.getText());
-            if (grids == null) {
-                appendMessage("解析初始网格数失败，请检查！");
-                analysis(false);
-                return;
-            }
+            int grids = 1;
             appendMessage("初始网格数读取成功");
 
             appendMessage("读取阈值中");
@@ -223,13 +218,13 @@ public class POIController {
                     appendMessage("获取行政区 " + city.getText() + " 区域边界中");
                     // 获取完整边界和边界名
                     Map<String, Object> boundaryMap = getBoundaryByAdCode(city.getText());
-                    String adname = (String) boundaryMap.get("adname");
-                    Geometry geometry = (Geometry) boundaryMap.get("geometry");
-                    if (geometry == null || adname == null) {
+                    if(boundaryMap == null){
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！"));
                         analysis(false);
                         return;
                     }
+                    String adname = (String) boundaryMap.get("adname");
+                    Geometry geometry = (Geometry) boundaryMap.get("geometry");
                     appendMessage("成功获取行政区 " + city.getText() + " 区域边界");
                     getPoiDataByAdName(geometry, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), city.getText(), adname);
                     break;
@@ -310,7 +305,6 @@ public class POIController {
             keywords.setDisable(isAnalysis);
             types.setDisable(isAnalysis);
             tabs.setDisable(isAnalysis);
-            grids.setDisable(isAnalysis);
             threshold.setDisable(isAnalysis);
             format.setDisable(isAnalysis);
             outputDirectory.setDisable(isAnalysis);
@@ -324,7 +318,6 @@ public class POIController {
         analysis(false);
         messageDetail.clear();
     }
-
 
     public void chooseAdCode() throws URISyntaxException, IOException {
         Desktop.getDesktop().browse(new URI("http://www.mca.gov.cn//article/sj/xzqh/2020/202006/202008310601.shtml"));
@@ -394,6 +387,7 @@ public class POIController {
         // 3. 开始爬取
         appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
         executorService = Executors.newFixedThreadPool(threadNum);
+        poiExecutorCompletionService = new ExecutorCompletionService<>(executorService);
         boolean success = true;
         while (!analysisGrid.isEmpty() && start) {
             appendMessage("正在爬取，任务队列剩余" + analysisGrid.size() + "个");
@@ -408,6 +402,8 @@ public class POIController {
         executorService.shutdown();
 
         res = res.stream().filter(filter).collect(Collectors.toList());
+
+        appendMessage("共获得POI：" + res.size() + "条");
 
         if (!start) return;
         appendMessage(success ? "POI爬取完毕" : "未完全爬取");
@@ -493,27 +489,25 @@ public class POIController {
         }
         res.addAll(Arrays.asList(poi.getPois()));
         int total = poi.getCount();
-        for (int i = 2; i <= total / size + 1; i += threadNum) {
-            List<Callable<POI>> call = new ArrayList<>();
-            for (int j = 0; j < threadNum && (i + j) <= total / size + 1; j++) {
-                int finalPage = i + j;
-                call.add(() -> getPoi(polygon, keywords, types, finalPage, size, keys));
+        int taskNum = total / size + 1;
+        // 添加任务
+        for (int i = 2; i <= taskNum; i++) {
+            int finalPage = i;
+            poiExecutorCompletionService.submit(() -> getPoi(polygon, keywords, types, finalPage, size, keys));
+        }
+        // 阻塞获取
+        try {
+            for (int j = 1; j < taskNum; j++) {
+                POI item = poiExecutorCompletionService.take().get();
+                // 如果第一页获取数据成功，认为后面可能出现null，不一棍子打死
+                if (item != null) {
+                    res.addAll(Arrays.asList(item.getPois()));
+                }else {
+                    return null;
+                };
             }
-            try {
-                long startTime = System.currentTimeMillis();   //获取开始时间
-                List<Future<POI>> futures = executorService.invokeAll(call);
-                long endTime = System.currentTimeMillis(); //获取结束时间
-                if (endTime - startTime < perExecuteTime) { // 严格控制每次执行perExecuteTime
-                    TimeUnit.MILLISECONDS.sleep(perExecuteTime - (endTime - startTime));
-                }
-                for (Future<POI> future : futures) {
-                    POI item = future.get();
-                    // 如果第一页获取数据成功，认为后面可能出现null，不一棍子打死
-                    if (item != null) res.addAll(Arrays.asList(item.getPois()));
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                appendMessage("爬取线程已中断");
-            }
+        } catch (InterruptedException | ExecutionException e) {
+            appendMessage("爬取线程已中断");
         }
         return res;
     }
@@ -688,6 +682,7 @@ public class POIController {
     }
 
     private POI getPoi(String polygon, String keywords, String types, int page, int size, Queue<String> keys) {
+        long startTime = System.currentTimeMillis();   //获取开始时间
         if (!start) return null;
         String key = getKey(keys);
         if (key == null) {
@@ -703,23 +698,23 @@ public class POIController {
                     for (int i = 0; i < 3; i++) {
                         appendMessage("重试第" + (i + 1) + "次...");
                         poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
-                        if (poi != null) {
+                        if (poi != null && "10000".equals(poi.getInfocode())) {
                             appendMessage("数据获取成功，继续爬取...");
-                            break;
+                            return poi;
                         }
                     }
                 }
                 if (poi == null) {
-                    appendMessage("数据获取失败，请检查网络或稍后重试...");
+                    appendMessage("数据获取失败");
                     appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
-                    return null;
-                }
-                if ("10001".equals(poi.getInfocode())) {
-                    appendMessage("key----" + key + "已经过期");
-                } else if ("10003".equals(poi.getInfocode())) {
-                    appendMessage("key----" + key + "已达调用量上限");
-                } else {
-                    appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
+                }else {
+                    if ("10001".equals(poi.getInfocode())) {
+                        appendMessage("key----" + key + "已经过期");
+                    } else if ("10003".equals(poi.getInfocode())) {
+                        appendMessage("key----" + key + "已达调用量上限");
+                    } else {
+                        appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
+                    }
                 }
                 // 去除过期的，使用其它key重新访问
                 keys.poll();
@@ -734,32 +729,45 @@ public class POIController {
                         for (int i = 0; i < 3; i++) {
                             appendMessage("重试第" + (i + 1) + "次...");
                             poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
-                            if (poi != null) {
+                            if (poi != null && "10000".equals(poi.getInfocode())) {
                                 appendMessage("数据获取成功，继续爬取...");
-                                break;
+                                return poi;
                             }
                         }
                     }
+                    keys.poll();
                     if (poi == null) {
-                        appendMessage("数据获取失败，请检查网络或稍后重试...");
+                        appendMessage("数据获取失败");
                         appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
                         continue;
                     }
-                    if ("10000".equals(poi.getInfocode())) {
-                        appendMessage("切换key成功");
-                        break;
-                    } else {
-                        appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
-                        keys.poll();
-                    }
+                    appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
                 }
-                if (keys.isEmpty()) {
-                    appendMessage("key池已耗尽，无法继续获取POI...");
-                    return null;
-                }
+                appendMessage("key池已耗尽，无法继续获取POI...");
+                return null;
+            }
+        }
+        long endTime = System.currentTimeMillis(); //获取结束时间
+        if (endTime - startTime < perExecuteTime) { // 严格控制每次执行perExecuteTime
+            try {
+                TimeUnit.MILLISECONDS.sleep(perExecuteTime - (endTime - startTime));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
         return (poi != null && "10000".equals(poi.getInfocode())) ? poi : null;
+    }
+
+    private Queue<String> parseKeyText(){
+        List<String> keyList = Arrays.asList(this.keys.getText().split(","));
+        String pattern = "^[A-Za-z0-9]+$";
+        for (String key : keyList) {
+            boolean isMatch = Pattern.matches(pattern, key);
+            if (!isMatch) {
+                return null;
+            }
+        }
+        return new ArrayDeque<>(keyList);
     }
 
     private void appendMessage(String text) {
@@ -772,14 +780,14 @@ public class POIController {
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "高德key池不能为空！"));
             return false;
         }
+        Queue<String> keysQueue = parseKeyText();
+        if(keysQueue == null){
+            Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "请检查key的格式！"));
+            return false;
+        }
         if (keywords.getText().isEmpty() && types.getText().isEmpty()) {
             // 关键字和类型均为空
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "参数设置", null, "POI关键字和POI类型两者至少必填其一！"));
-            return false;
-        }
-        if (grids.getText().isEmpty()) {
-            // 初始网格数为空
-            Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "初始网格", null, "初始网格不能为空！"));
             return false;
         }
         if (threshold.getText().isEmpty()) {
