@@ -21,6 +21,8 @@ public class MyProgressBar {
     private final String unFinishChar;
     // 显示区域
     private final TextArea textArea;
+    // 当前
+    private int current;
 
     /**
      * 使用系统标准输出，显示字符进度条及其百分比
@@ -38,11 +40,11 @@ public class MyProgressBar {
         this.textArea.appendText("\r\n");
         this.textArea.appendText("Progress:");
         this.textArea.appendText(String.format("%3d%%", 0));
-        this.textArea.appendText("[");
+        /*this.textArea.appendText("[");
         for (int i = 0; i < total; i++) {
             this.textArea.appendText(unFinishChar);
         }
-        this.textArea.appendText("]");
+        this.textArea.appendText("]");*/
     }
 
     /**
@@ -52,6 +54,7 @@ public class MyProgressBar {
         if (value < 0 || value > maxVal) {
             return;
         }
+        this.current = value;
         // 比例
         float rate = (float) (value * 1.0 / maxVal);
         // 比例*进度条总长度=当前长度
@@ -64,18 +67,24 @@ public class MyProgressBar {
     private void draw(float rate) {
         int finish = (int) (rate * this.total);
         int unFinish = total - finish;
-        for (int i = 0; i < total + 6; i++)
-            this.textArea.deletePreviousChar();
+        this.textArea.appendText("\r\n");
+        /*for (int i = 0; i < total + 6; i++)
+            this.textArea.deletePreviousChar();*/
+        this.textArea.appendText("Progress:");
         this.textArea.appendText(String.format("%3d%%", (int) (rate * 100)));
-        this.textArea.appendText("[");
+        /*this.textArea.appendText("[");
         for (int i = 0; i < finish; i++) {
             this.textArea.appendText(finishChar);
         }
         for (int i = 0; i < unFinish; i++) {
             this.textArea.appendText(unFinishChar);
         }
-        this.textArea.appendText("]");
+        this.textArea.appendText("]");*/
         if ((int) (rate * 100) == 100)
             this.textArea.appendText("\r\n");
+    }
+
+    public int getCurrent() {
+        return current;
     }
 }

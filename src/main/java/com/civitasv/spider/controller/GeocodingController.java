@@ -89,8 +89,8 @@ public class GeocodingController {
             if (!check()) {
                 return;
             }
-            analysis(true);
             start = true;
+            analysis(true);
 
             appendMessage("读取高德key中");
             Queue<String> keys = new ArrayDeque<>(Arrays.asList(this.keys.getText().split(",")));
@@ -135,7 +135,7 @@ public class GeocodingController {
                 analysis(false);
                 return;
             }
-
+            appendMessage("输入文件解析成功");
             // 解析地址
             if (parseRes.size() > 0) {
                 if (!parseRes.get(0).containsKey("address")) {
@@ -480,7 +480,7 @@ public class GeocodingController {
                 if (response == null) {
                     appendMessage("数据获取失败");
                     appendMessage("错误数据---" + address + "--" + city);
-                }else{
+                } else {
                     if ("10001".equals(response.getInfocode())) {
                         appendMessage("key----" + key + "已经过期");
                     } else if ("10003".equals(response.getInfocode())) {
@@ -512,12 +512,12 @@ public class GeocodingController {
                     if (response == null) {
                         appendMessage("数据获取失败");
                         appendMessage("错误数据---" + address + "--" + city);
-                    }else{
+                    } else {
                         if ("10001".equals(response.getInfocode())) {
                             appendMessage("key----" + key + "已经过期");
                         } else if ("10003".equals(response.getInfocode())) {
                             appendMessage("key----" + key + "已达调用量上限");
-                        }else{
+                        } else {
                             appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
                         }
                     }

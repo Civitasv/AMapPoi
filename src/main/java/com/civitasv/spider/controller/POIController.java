@@ -215,8 +215,8 @@ public class POIController {
         worker.execute(() -> {
             messageDetail.clear();
             if (!check()) return;
-            analysis(true);
             start = true;
+            analysis(true);
 
             appendMessage("读取线程数目中");
             Integer threadNum = ParseUtil.tryParse(this.threadNum.getText());
