@@ -71,6 +71,7 @@ public class POIController {
     public ChoiceBox<String> coordinateType2;
     public MenuItem wechat;
     public MenuItem joinQQ;
+    public TreeView<CheckBox> fieldsView;
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
     private ExecutorCompletionService<POI> poiExecutorCompletionService;
@@ -111,6 +112,85 @@ public class POIController {
                 e.printStackTrace();
             }
         });
+        setFields();
+    }
+
+    private void setFields() {
+        TreeItem<CheckBox> item = new CheckBoxTreeItem<>(new CheckBox("poi"));
+        TreeItem<CheckBox> id = new CheckBoxTreeItem<>(new CheckBox("id"));
+        item.getChildren().add(id);
+        TreeItem<CheckBox> parent = new CheckBoxTreeItem<>(new CheckBox("parent"));
+        item.getChildren().add(parent);
+        TreeItem<CheckBox> name = new CheckBoxTreeItem<>(new CheckBox("name"));
+        item.getChildren().add(name);
+        TreeItem<CheckBox> type = new CheckBoxTreeItem<>(new CheckBox("type"));
+        item.getChildren().add(type);
+        TreeItem<CheckBox> typecode = new CheckBoxTreeItem<>(new CheckBox("typecode"));
+        item.getChildren().add(typecode);
+        TreeItem<CheckBox> biz_type = new CheckBoxTreeItem<>(new CheckBox("biz_type"));
+        item.getChildren().add(biz_type);
+        TreeItem<CheckBox> address = new CheckBoxTreeItem<>(new CheckBox("address"));
+        item.getChildren().add(address);
+        TreeItem<CheckBox> location = new CheckBoxTreeItem<>(new CheckBox("location"));
+        item.getChildren().add(location);
+        TreeItem<CheckBox> distance = new CheckBoxTreeItem<>(new CheckBox("distance"));
+        item.getChildren().add(distance);
+        TreeItem<CheckBox> tel = new CheckBoxTreeItem<>(new CheckBox("tel"));
+        item.getChildren().add(tel);
+        TreeItem<CheckBox> postcode = new CheckBoxTreeItem<>(new CheckBox("postcode"));
+        item.getChildren().add(postcode);
+        TreeItem<CheckBox> website = new CheckBoxTreeItem<>(new CheckBox("website"));
+        item.getChildren().add(website);
+        TreeItem<CheckBox> email = new CheckBoxTreeItem<>(new CheckBox("email"));
+        item.getChildren().add(email);
+        TreeItem<CheckBox> pcode = new CheckBoxTreeItem<>(new CheckBox("pcode"));
+        item.getChildren().add(pcode);
+        TreeItem<CheckBox> pname = new CheckBoxTreeItem<>(new CheckBox("pname"));
+        item.getChildren().add(pname);
+        TreeItem<CheckBox> citycode = new CheckBoxTreeItem<>(new CheckBox("citycode"));
+        item.getChildren().add(citycode);
+        TreeItem<CheckBox> cityname = new CheckBoxTreeItem<>(new CheckBox("cityname"));
+        item.getChildren().add(cityname);
+        TreeItem<CheckBox> adcode = new CheckBoxTreeItem<>(new CheckBox("adcode"));
+        item.getChildren().add(adcode);
+        TreeItem<CheckBox> adname = new CheckBoxTreeItem<>(new CheckBox("adname"));
+        item.getChildren().add(adname);
+        TreeItem<CheckBox> entr_location = new CheckBoxTreeItem<>(new CheckBox("entr_location"));
+        item.getChildren().add(entr_location);
+        TreeItem<CheckBox> navi_poiid = new CheckBoxTreeItem<>(new CheckBox("navi_poiid"));
+        item.getChildren().add(navi_poiid);
+        TreeItem<CheckBox> gridcode = new CheckBoxTreeItem<>(new CheckBox("gridcode"));
+        item.getChildren().add(gridcode);
+        TreeItem<CheckBox> alias = new CheckBoxTreeItem<>(new CheckBox("alias"));
+        item.getChildren().add(alias);
+        TreeItem<CheckBox> business_area = new CheckBoxTreeItem<>(new CheckBox("business_area"));
+        item.getChildren().add(business_area);
+        TreeItem<CheckBox> parking_type = new CheckBoxTreeItem<>(new CheckBox("parking_type"));
+        item.getChildren().add(parking_type);
+        TreeItem<CheckBox> tag = new CheckBoxTreeItem<>(new CheckBox("tag"));
+        item.getChildren().add(tag);
+        TreeItem<CheckBox> indoor_map = new CheckBoxTreeItem<>(new CheckBox("indoor_map"));
+        item.getChildren().add(indoor_map);
+        TreeItem<CheckBox> indoor_data = new CheckBoxTreeItem<>(new CheckBox("indoor_data"));
+        item.getChildren().add(indoor_data);
+        TreeItem<CheckBox> cpid = new CheckBoxTreeItem<>(new CheckBox("cpid"));
+        indoor_data.getChildren().add(cpid);
+        TreeItem<CheckBox> floor = new CheckBoxTreeItem<>(new CheckBox("floor"));
+        indoor_data.getChildren().add(floor);
+        TreeItem<CheckBox> truefloor = new CheckBoxTreeItem<>(new CheckBox("truefloor"));
+        indoor_data.getChildren().add(truefloor);
+        TreeItem<CheckBox> groupbuy_num = new CheckBoxTreeItem<>(new CheckBox("groupbuy_num"));
+        TreeItem<CheckBox> biz_ext = new CheckBoxTreeItem<>(new CheckBox("biz_ext"));
+        TreeItem<CheckBox> rating = new CheckBoxTreeItem<>(new CheckBox("rating"));
+        TreeItem<CheckBox> cost = new CheckBoxTreeItem<>(new CheckBox("cost"));
+        TreeItem<CheckBox> meal_ordering = new CheckBoxTreeItem<>(new CheckBox("meal_ordering"));
+        TreeItem<CheckBox> seat_ordering = new CheckBoxTreeItem<>(new CheckBox("seat_ordering"));
+        TreeItem<CheckBox> ticket_ordering = new CheckBoxTreeItem<>(new CheckBox("ticket_ordering"));
+        TreeItem<CheckBox> hotel_ordering = new CheckBoxTreeItem<>(new CheckBox("hotel_ordering"));
+        TreeItem<CheckBox> photos = new CheckBoxTreeItem<>(new CheckBox("photos"));
+        TreeItem<CheckBox> title = new CheckBoxTreeItem<>(new CheckBox("titile"));
+        TreeItem<CheckBox> url = new CheckBoxTreeItem<>(new CheckBox("url"));
+        fieldsView.setRoot(item);
     }
 
     private TextFormatter<Integer> getFormatter() {

@@ -13,79 +13,84 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="main" alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" styleClass="main" xmlns="http://javafx.com/javafx/8.0.271" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.civitasv.spider.controller.POIController">
+<VBox fx:id="main" alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"
+      minWidth="-Infinity" styleClass="main" xmlns="http://javafx.com/javafx/8.0.271"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.civitasv.spider.controller.POIController">
     <MenuBar>
         <Menu mnemonicParsing="false" text="工具">
-            <MenuItem mnemonicParsing="false" onAction="#openGeocoding" text="地理编码" />
-            <MenuItem mnemonicParsing="false" onAction="#openSpatialTransform" text="格式转换" />
-            <MenuItem mnemonicParsing="false" onAction="#openCoordinateTransform" text="坐标转换" />
+            <MenuItem mnemonicParsing="false" onAction="#openGeocoding" text="地理编码"/>
+            <MenuItem mnemonicParsing="false" onAction="#openSpatialTransform" text="格式转换"/>
+            <MenuItem mnemonicParsing="false" onAction="#openCoordinateTransform" text="坐标转换"/>
         </Menu>
         <Menu mnemonicParsing="false" text="关于">
-            <MenuItem fx:id="joinQQ" mnemonicParsing="false" text="加入用户群" />
-            <MenuItem fx:id="wechat" mnemonicParsing="false" text="关注公众号" />
-            <MenuItem mnemonicParsing="false" onAction="#starsMe" text="star支持" />
+            <MenuItem fx:id="joinQQ" mnemonicParsing="false" text="加入用户群"/>
+            <MenuItem fx:id="wechat" mnemonicParsing="false" text="关注公众号"/>
+            <MenuItem mnemonicParsing="false" onAction="#starsMe" text="star支持"/>
         </Menu>
     </MenuBar>
     <VBox>
         <VBox.margin>
-            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
         </VBox.margin>
-        <Label text="高德key（不同key之间以英文逗号分割）：" />
-        <TextArea fx:id="keys" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="500.0" />
+        <Label text="高德key（不同key之间以英文逗号分割）："/>
+        <TextArea fx:id="keys" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="500.0"/>
         <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="345.0">
             <padding>
-                <Insets bottom="10.0" top="10.0" />
+                <Insets bottom="10.0" top="10.0"/>
             </padding>
-            <Label prefHeight="18.0" prefWidth="100.0" text="开发者类型：" />
+            <Label prefHeight="18.0" prefWidth="100.0" text="开发者类型："/>
             <ChoiceBox fx:id="userType" prefWidth="150.0" value="个人开发者">
                 <items>
                     <FXCollections fx:factory="observableArrayList">
-                        <String fx:value="个人开发者" />
-                        <String fx:value="个人认证开发者" />
-                        <String fx:value="企业开发者" />
+                        <String fx:value="个人开发者"/>
+                        <String fx:value="个人认证开发者"/>
+                        <String fx:value="企业开发者"/>
                     </FXCollections>
                 </items>
             </ChoiceBox>
         </HBox>
         <HBox alignment="CENTER_LEFT">
-            <Label minHeight="-Infinity" minWidth="-Infinity" prefWidth="100.0" text="POI关键字：" />
-            <TextField fx:id="keywords" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="400.0" promptText="使用逗号分割不同关键字" HBox.hgrow="ALWAYS" />
+            <Label minHeight="-Infinity" minWidth="-Infinity" prefWidth="100.0" text="POI关键字："/>
+            <TextField fx:id="keywords" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="400.0"
+                       promptText="使用逗号分割不同关键字" HBox.hgrow="ALWAYS"/>
             <VBox.margin>
-                <Insets top="10.0" />
+                <Insets top="10.0"/>
             </VBox.margin>
         </HBox>
         <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="345.0">
             <padding>
-                <Insets bottom="10.0" top="10.0" />
+                <Insets bottom="10.0" top="10.0"/>
             </padding>
-            <Label prefHeight="18.0" prefWidth="100.0" text="POI类型：" />
-            <TextField fx:id="types" prefHeight="30.0" prefWidth="250.0" promptText="使用逗号分割不同类型" HBox.hgrow="ALWAYS" />
+            <Label prefHeight="18.0" prefWidth="100.0" text="POI类型："/>
+            <TextField fx:id="types" prefHeight="30.0" prefWidth="250.0" promptText="使用逗号分割不同类型" HBox.hgrow="ALWAYS"/>
             <Button fx:id="poiType" onMouseClicked="#openPOITypes" prefHeight="30.0" prefWidth="150.0" text="POI分类编码">
                 <HBox.margin>
-                    <Insets left="5.0" />
+                    <Insets left="5.0"/>
                 </HBox.margin>
             </Button>
             <VBox.margin>
-                <Insets bottom="10.0" />
+                <Insets bottom="10.0"/>
             </VBox.margin>
         </HBox>
         <TabPane fx:id="tabs" tabClosingPolicy="UNAVAILABLE">
             <Tab text="行政区">
                 <AnchorPane minHeight="0.0" minWidth="0.0">
                     <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
-                        <Label text="行政区代码：" />
-                        <TextField fx:id="city" prefHeight="30.0" prefWidth="210.0" promptText="行政区六位代码" HBox.hgrow="ALWAYS" />
+                        <Label text="行政区代码："/>
+                        <TextField fx:id="city" prefHeight="30.0" prefWidth="210.0" promptText="行政区六位代码"
+                                   HBox.hgrow="ALWAYS"/>
                         <Button mnemonicParsing="false" onMouseClicked="#chooseAdCode" prefHeight="30.0" text="行政区划代码">
                             <HBox.margin>
-                                <Insets left="5.0" />
+                                <Insets left="5.0"/>
                             </HBox.margin>
                         </Button>
                         <padding>
-                            <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                            <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
                         </padding>
                     </HBox>
                 </AnchorPane>
@@ -93,50 +98,53 @@
             <Tab text="矩形">
                 <AnchorPane minHeight="0.0" minWidth="0.0">
                     <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
-                        <Label layoutX="14.0" layoutY="14.0" text="矩形：" />
-                        <TextField fx:id="rectangle" layoutX="51.0" layoutY="10.0" prefHeight="30.0" prefWidth="300.0" promptText="矩形左上角经纬度#矩形右下角经纬度" HBox.hgrow="ALWAYS" />
+                        <Label layoutX="14.0" layoutY="14.0" text="矩形："/>
+                        <TextField fx:id="rectangle" layoutX="51.0" layoutY="10.0" prefHeight="30.0" prefWidth="300.0"
+                                   promptText="矩形左上角经纬度#矩形右下角经纬度" HBox.hgrow="ALWAYS"/>
                         <ChoiceBox fx:id="coordinateType" prefHeight="30.0" prefWidth="150.0" value="wgs84">
                             <items>
                                 <FXCollections fx:factory="observableArrayList">
-                                    <String fx:value="wgs84" />
-                                    <String fx:value="gcj02" />
-                                    <String fx:value="bd09" />
+                                    <String fx:value="wgs84"/>
+                                    <String fx:value="gcj02"/>
+                                    <String fx:value="bd09"/>
                                 </FXCollections>
                             </items>
                             <HBox.margin>
-                                <Insets left="10.0" />
+                                <Insets left="10.0"/>
                             </HBox.margin>
                         </ChoiceBox>
                     </HBox>
                     <padding>
-                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
                     </padding>
                 </AnchorPane>
             </Tab>
             <Tab text="自定义">
                 <AnchorPane minHeight="0.0" minWidth="0.0">
                     <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
-                        <Label layoutX="14.0" layoutY="14.0" text="文件目录：" />
-                        <TextField fx:id="userFile" layoutX="75.0" layoutY="10.0" prefHeight="30.0" prefWidth="210.0" promptText="GeoJSO格式边界" HBox.hgrow="ALWAYS" />
-                        <Button layoutX="293.0" layoutY="10.0" mnemonicParsing="false" onMouseClicked="#chooseFile" prefHeight="30.0" text="浏览">
+                        <Label layoutX="14.0" layoutY="14.0" text="文件目录："/>
+                        <TextField fx:id="userFile" layoutX="75.0" layoutY="10.0" prefHeight="30.0" prefWidth="210.0"
+                                   promptText="GeoJSO格式边界" HBox.hgrow="ALWAYS"/>
+                        <Button layoutX="293.0" layoutY="10.0" mnemonicParsing="false" onMouseClicked="#chooseFile"
+                                prefHeight="30.0" text="浏览">
                             <HBox.margin>
-                                <Insets left="5.0" />
+                                <Insets left="5.0"/>
                             </HBox.margin>
                         </Button>
                         <ChoiceBox fx:id="coordinateType2" prefHeight="30.0" prefWidth="150.0" value="wgs84">
                             <items>
                                 <FXCollections fx:factory="observableArrayList">
-                                    <String fx:value="wgs84" />
-                                    <String fx:value="gcj02" />
-                                    <String fx:value="bd09" />
+                                    <String fx:value="wgs84"/>
+                                    <String fx:value="gcj02"/>
+                                    <String fx:value="bd09"/>
                                 </FXCollections>
                             </items>
                             <HBox.margin>
-                                <Insets left="10.0" />
+                                <Insets left="10.0"/>
                             </HBox.margin>
                         </ChoiceBox>
                         <padding>
-                            <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                            <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
                         </padding>
                     </HBox>
                 </AnchorPane>
@@ -144,61 +152,67 @@
         </TabPane>
         <HBox alignment="CENTER_LEFT">
             <padding>
-                <Insets bottom="10.0" />
+                <Insets bottom="10.0"/>
             </padding>
-            <Label prefWidth="100.0" text="切分阈值：" />
-            <TextField fx:id="threshold" prefHeight="25.0" prefWidth="150.0" promptText="不超过1000" text="850" />
+            <Label prefWidth="100.0" text="切分阈值："/>
+            <TextField fx:id="threshold" prefHeight="25.0" prefWidth="150.0" promptText="不超过1000" text="850"/>
             <VBox.margin>
-                <Insets top="10.0" />
+                <Insets top="10.0"/>
             </VBox.margin>
         </HBox>
         <HBox alignment="CENTER_LEFT">
             <padding>
-                <Insets bottom="10.0" />
+                <Insets bottom="10.0"/>
             </padding>
-            <Label prefHeight="18.0" prefWidth="100.0" text="线程数目：" />
-            <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" promptText="建议不大于QPS * keys_num" HBox.hgrow="ALWAYS" />
+            <Label prefHeight="18.0" prefWidth="100.0" text="线程数目："/>
+            <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" promptText="建议不大于QPS * keys_num"
+                       HBox.hgrow="ALWAYS"/>
         </HBox>
+        <Label text="输出字段："/>
+        <TreeView prefHeight="200.0" prefWidth="200.0" fx:id="fieldsView"/>
+
         <HBox alignment="CENTER_LEFT">
             <padding>
-                <Insets bottom="10.0" />
+                <Insets bottom="10.0"/>
             </padding>
-            <Label prefHeight="18.0" prefWidth="100.0" text="输出格式：" />
+            <Label prefHeight="18.0" prefWidth="100.0" text="输出格式："/>
             <ChoiceBox fx:id="format" prefWidth="150.0" value="geojson">
                 <items>
                     <FXCollections fx:factory="observableArrayList">
-                        <String fx:value="geojson" />
-                        <String fx:value="shp" />
-                        <String fx:value="csv" />
-                        <String fx:value="txt" />
+                        <String fx:value="geojson"/>
+                        <String fx:value="shp"/>
+                        <String fx:value="csv"/>
+                        <String fx:value="txt"/>
                     </FXCollections>
                 </items>
             </ChoiceBox>
         </HBox>
-
         <HBox alignment="CENTER_LEFT">
             <padding>
-                <Insets bottom="10.0" />
+                <Insets bottom="10.0"/>
             </padding>
-            <Label prefWidth="100.0" text="输出目录：" />
-            <TextField fx:id="outputDirectory" prefHeight="30.0" prefWidth="300.0" HBox.hgrow="ALWAYS" />
-            <Button fx:id="directoryBtn" onMouseClicked="#chooseDirectory" prefHeight="30.0" prefWidth="100.0" text="浏览">
+            <Label prefWidth="100.0" text="输出目录："/>
+            <TextField fx:id="outputDirectory" prefHeight="30.0" prefWidth="300.0" HBox.hgrow="ALWAYS"/>
+            <Button fx:id="directoryBtn" onMouseClicked="#chooseDirectory" prefHeight="30.0" prefWidth="100.0"
+                    text="浏览">
                 <HBox.margin>
-                    <Insets left="5.0" />
+                    <Insets left="5.0"/>
                 </HBox.margin>
             </Button>
         </HBox>
         <HBox>
-            <Button fx:id="execute" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#execute" prefHeight="60.0" prefWidth="400.0" styleClass="execute" text="执行" HBox.hgrow="ALWAYS" />
-            <Button fx:id="cancel" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#cancel" prefHeight="61.0" prefWidth="200.0" styleClass="cancel" text="取消" HBox.hgrow="ALWAYS">
+            <Button fx:id="execute" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#execute"
+                    prefHeight="60.0" prefWidth="400.0" styleClass="execute" text="执行" HBox.hgrow="ALWAYS"/>
+            <Button fx:id="cancel" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#cancel"
+                    prefHeight="61.0" prefWidth="200.0" styleClass="cancel" text="取消" HBox.hgrow="ALWAYS">
                 <HBox.margin>
-                    <Insets left="5.0" />
+                    <Insets left="5.0"/>
                 </HBox.margin>
             </Button>
         </HBox>
         <TextArea fx:id="messageDetail" minWidth="-Infinity" prefWidth="500.0">
             <VBox.margin>
-                <Insets top="10.0" />
+                <Insets top="10.0"/>
             </VBox.margin>
         </TextArea>
     </VBox>
