@@ -509,13 +509,19 @@ public class GeocodingController {
                             }
                         }
                     }
-                    keys.poll();
                     if (response == null) {
                         appendMessage("数据获取失败");
                         appendMessage("错误数据---" + address + "--" + city);
-                        continue;
+                    }else{
+                        if ("10001".equals(response.getInfocode())) {
+                            appendMessage("key----" + key + "已经过期");
+                        } else if ("10003".equals(response.getInfocode())) {
+                            appendMessage("key----" + key + "已达调用量上限");
+                        }else{
+                            appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
+                        }
                     }
-                    appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
+                    keys.poll();
                 }
                 appendMessage("key池已耗尽，无法继续获取POI...");
                 return null;
