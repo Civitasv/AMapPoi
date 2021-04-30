@@ -471,24 +471,23 @@ public class GeocodingController {
                     for (int i = 0; i < 3; i++) {
                         appendMessage("重试第" + (i + 1) + "次...");
                         response = aMapDao.geocoding(key, address, city);
-                        if (response != null) {
+                        if (response != null && "10000".equals(response.getInfocode())) {
                             appendMessage("数据获取成功，继续爬取...");
-                            break;
+                            return response;
                         }
                     }
                 }
                 if (response == null) {
-                    appendMessage("数据获取失败，请检查网络或稍后重试...");
+                    appendMessage("数据获取失败");
                     appendMessage("错误数据---" + address + "--" + city);
-                    return null;
-                }
-
-                if ("10001".equals(response.getInfocode())) {
-                    appendMessage("key----" + key + "已经过期");
-                } else if ("10003".equals(response.getInfocode())) {
-                    appendMessage("key----" + key + "已达调用量上限");
-                } else {
-                    appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
+                }else{
+                    if ("10001".equals(response.getInfocode())) {
+                        appendMessage("key----" + key + "已经过期");
+                    } else if ("10003".equals(response.getInfocode())) {
+                        appendMessage("key----" + key + "已达调用量上限");
+                    } else {
+                        appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
+                    }
                 }
                 // 去除过期的，使用其它key重新访问
                 keys.poll();
@@ -504,30 +503,22 @@ public class GeocodingController {
                         for (int i = 0; i < 3; i++) {
                             appendMessage("重试第" + (i + 1) + "次...");
                             response = aMapDao.geocoding(key, address, city);
-                            if (response != null) {
+                            if (response != null && "10000".equals(response.getInfocode())) {
                                 appendMessage("数据获取成功，继续爬取...");
-                                break;
+                                return response;
                             }
                         }
                     }
+                    keys.poll();
                     if (response == null) {
-                        appendMessage("数据获取失败，请检查网络或稍后重试...");
+                        appendMessage("数据获取失败");
                         appendMessage("错误数据---" + address + "--" + city);
-                        return null;
+                        continue;
                     }
-
-                    if ("10000".equals(response.getInfocode())) {
-                        appendMessage("切换key成功");
-                        break;
-                    } else {
-                        appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
-                        keys.poll();
-                    }
+                    appendMessage("错误代码：" + response.getInfocode() + "详细信息：" + response.getInfo());
                 }
-                if (keys.isEmpty()) {
-                    appendMessage("key池已耗尽，无法继续获取POI...");
-                    return null;
-                }
+                appendMessage("key池已耗尽，无法继续获取POI...");
+                return null;
             }
         }
         return (response != null && "10000".equals(response.getInfocode())) ? response : null;
