@@ -771,32 +771,34 @@ public class POIController {
         POI poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
         if (start && (poi == null || !"10000".equals(poi.getInfocode()))) {
             synchronized (this) {
-                if (poi == null) {
-                    // 如果返回null，重试
-                    appendMessage("数据获取失败，正在重试中...");
-                    for (int i = 0; i < 3; i++) {
-                        appendMessage("重试第" + (i + 1) + "次...");
-                        poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
-                        if (poi != null && "10000".equals(poi.getInfocode())) {
-                            appendMessage("数据获取成功，继续爬取...");
-                            return poi;
+                if (keys.contains(key)) {
+                    if (poi == null) {
+                        // 如果返回null，重试
+                        appendMessage("数据获取失败，正在重试中...");
+                        for (int i = 0; i < 3; i++) {
+                            appendMessage("重试第" + (i + 1) + "次...");
+                            poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
+                            if (poi != null && "10000".equals(poi.getInfocode())) {
+                                appendMessage("数据获取成功，继续爬取...");
+                                return poi;
+                            }
                         }
                     }
-                }
-                if (poi == null) {
-                    appendMessage("数据获取失败");
-                    appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
-                } else {
-                    if ("10001".equals(poi.getInfocode())) {
-                        appendMessage("key----" + key + "已经过期");
-                    } else if ("10003".equals(poi.getInfocode())) {
-                        appendMessage("key----" + key + "已达调用量上限");
+                    if (poi == null) {
+                        appendMessage("数据获取失败");
+                        appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
                     } else {
-                        appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
+                        if ("10001".equals(poi.getInfocode())) {
+                            appendMessage("key----" + key + "已经过期");
+                        } else if ("10003".equals(poi.getInfocode())) {
+                            appendMessage("key----" + key + "已达调用量上限");
+                        } else {
+                            appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
+                        }
                     }
+                    // 去除过期的，使用其它key重新访问
+                    keys.remove(key);
                 }
-                // 去除过期的，使用其它key重新访问
-                keys.poll();
                 while (!keys.isEmpty()) {
                     appendMessage("正在尝试其它key");
                     key = getKey(keys);
@@ -814,7 +816,7 @@ public class POIController {
                             }
                         }
                     }
-                    keys.poll();
+                    keys.remove(key);
                     if (poi == null) {
                         appendMessage("数据获取失败");
                         appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
