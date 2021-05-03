@@ -168,8 +168,8 @@
             <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" promptText="建议不大于QPS * keys_num"
                        HBox.hgrow="ALWAYS"/>
         </HBox>
-        <Label text="输出字段："/>
-        <TreeView prefHeight="200.0" prefWidth="200.0" fx:id="fieldsView"/>
+        <!--<Label text="输出字段："/>
+        <TreeView prefHeight="200.0" prefWidth="200.0" fx:id="fieldsView"/>-->
 
         <HBox alignment="CENTER_LEFT">
             <padding>

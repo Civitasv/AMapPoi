@@ -71,7 +71,7 @@ public class POIController {
     public ChoiceBox<String> coordinateType2;
     public MenuItem wechat;
     public MenuItem joinQQ;
-    public TreeView<CheckBox> fieldsView;
+    // public TreeView<CheckBox> fieldsView;
     private final AMapDao mapDao = new AMapDaoImpl();
     private ExecutorService worker, executorService;
     private ExecutorCompletionService<POI> poiExecutorCompletionService;
@@ -112,10 +112,10 @@ public class POIController {
                 e.printStackTrace();
             }
         });
-        setFields();
+        // setFields();
     }
 
-    private void setFields() {
+    /*private void setFields() {
         TreeItem<CheckBox> item = new CheckBoxTreeItem<>(new CheckBox("poi"));
         TreeItem<CheckBox> id = new CheckBoxTreeItem<>(new CheckBox("id"));
         item.getChildren().add(id);
@@ -191,7 +191,7 @@ public class POIController {
         TreeItem<CheckBox> title = new CheckBoxTreeItem<>(new CheckBox("titile"));
         TreeItem<CheckBox> url = new CheckBoxTreeItem<>(new CheckBox("url"));
         fieldsView.setRoot(item);
-    }
+    }*/
 
     private TextFormatter<Integer> getFormatter() {
         return new TextFormatter<>(
@@ -623,6 +623,7 @@ public class POIController {
             }
             appendMessage("写入成功，结果存储于" + csvFile.getAbsolutePath());
         } catch (IOException e) {
+            e.printStackTrace();
             appendMessage("写入失败");
             appendMessage(e.getMessage());
         }
@@ -652,6 +653,7 @@ public class POIController {
             writer.write(geoJSON.toString());
             appendMessage("写入成功，结果存储于" + jsonFile.getAbsolutePath());
         } catch (IOException e) {
+            e.printStackTrace();
             appendMessage("写入失败");
             appendMessage(e.getMessage());
         }
@@ -711,6 +713,7 @@ public class POIController {
                 appendMessage("写入成功，结果存储于" + shpFile.getAbsolutePath());
             } else appendMessage("写入失败");
         } catch (SchemaException e) {
+            e.printStackTrace();
             appendMessage("写入失败");
         }
     }
