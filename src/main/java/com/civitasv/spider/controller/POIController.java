@@ -595,15 +595,16 @@ public class POIController {
         String filename = outputDirectory.getText();
         switch (tab) {
             case "行政区":
-                filename = filename + "/解析结果_" + city.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + "." + format;
+                filename = filename + "/解析结果_" + city.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
             case "矩形":
-                filename = filename + "/解析结果_" + rectangle.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + "." + format;
+                filename = filename + "/解析结果_" + rectangle.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
             case "自定义":
-                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + "." + format;
+                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
         }
+        filename = filename.length() > 200 ? filename.substring(0, 200) + "等." + format : filename + "." + format;
         File csvFile = FileUtil.getNewFile(filename);
         if (csvFile == null) {
             appendMessage("输出路径有误，请检查后重试！");
@@ -633,15 +634,16 @@ public class POIController {
         String filename = outputDirectory.getText();
         switch (tab) {
             case "行政区":
-                filename = filename + "/解析结果_" + city.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".json";
+                filename = filename + "/解析结果_" + city.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
             case "矩形":
-                filename = filename + "/解析结果_" + rectangle.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".json";
+                filename = filename + "/解析结果_" + rectangle.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
             case "自定义":
-                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".json";
+                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
         }
+        filename = filename.length() > 200 ? filename.substring(0, 200) + "等.json" : filename + ".json";
         GeoJSON geoJSON = parseResult(res);
         File jsonFile = FileUtil.getNewFile(filename);
         if (jsonFile == null) {
@@ -664,15 +666,16 @@ public class POIController {
         String filename = outputDirectory.getText();
         switch (tab) {
             case "行政区":
-                filename = filename + "/解析结果_" + city.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".shp";
+                filename = filename + "/解析结果_" + city.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
             case "矩形":
-                filename = filename + "/解析结果_" + rectangle.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".shp";
+                filename = filename + "/解析结果_" + rectangle.getText() + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
             case "自定义":
-                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "") + ".shp";
+                filename = filename + "/解析结果_" + FileUtil.getFileName(userFile.getText()) + (!types.getText().isEmpty() ? "types_" + types.getText() : "") + (!keywords.getText().isEmpty() ? "keywords_" + keywords.getText() : "");
                 break;
         }
+        filename = filename.length() > 200 ? filename.substring(0, 200) + "等.shp" : filename + ".shp";
         appendMessage("正在写入数据，请等待");
         try {
             final SimpleFeatureType type =
