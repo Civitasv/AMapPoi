@@ -390,6 +390,7 @@ public class GeocodingController {
             format.setDisable(isAnalysis);
             outputDirectory.setDisable(isAnalysis);
             userType.setDisable(isAnalysis);
+            threadNum.setDisable(isAnalysis);
         });
         if (!start) return;
         start = isAnalysis;
