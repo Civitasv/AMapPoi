@@ -25,12 +25,15 @@ public class ParseUtil {
                             @Override
                             public void accept(String line) {
                                 if (index == 0) {
-                                    String[] arr = line.split(",");
+                                    String[] arr = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
                                     keys = new String[arr.length];
                                     for (int i = 0; i < arr.length; i++)
                                         keys[i] = arr[i].trim();
                                 } else {
-                                    String[] values = line.split(",");
+                                    String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+                                    if (values.length != keys.length) {
+                                        return;
+                                    }
                                     Map<String, String> item = new LinkedHashMap<>();
                                     for (int i = 0; i < values.length; i++)
                                         item.put(keys[i], values[i]);
