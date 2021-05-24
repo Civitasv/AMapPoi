@@ -74,8 +74,11 @@ public class FileUtil {
         } else {
             int i = 1;
             while (true) {
-                String[] split = file.getPath().split("\\.");
-                String nameFilePath = split[0] + "(" + i + ")" + "." + split[1];
+                String tempPath = file.getPath();
+                int index = tempPath.lastIndexOf('.');
+                String name = tempPath.substring(0,index);
+                String suffix = tempPath.substring(index + 1);
+                String nameFilePath = name + "(" + i + ")" + "." + suffix;
                 File newFile = new File(nameFilePath);
                 if (!newFile.exists()) {
                     return newFile;
@@ -98,8 +101,10 @@ public class FileUtil {
             if (!file.exists()) {
                 return false;
             }
-            String[] split = file.getPath().split("\\.");
-            String cpgFilePath = split[0] + ".cpg";
+            String tempPath = file.getPath();
+            int index = tempPath.lastIndexOf('.');
+            String name = tempPath.substring(0,index);
+            String cpgFilePath = name + ".cpg";
             File cpgFile = new File(cpgFilePath);
             if (cpgFile.exists()) {
                 return true;
