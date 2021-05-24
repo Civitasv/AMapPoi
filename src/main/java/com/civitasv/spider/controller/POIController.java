@@ -741,12 +741,16 @@ public class POIController {
                 feature.addProperty("typecode", info.typecode);
                 if (info.address != null)
                     feature.addProperty("address", info.address.toString());
+                else feature.addProperty("address", "");
                 if (info.pname != null)
                     feature.addProperty("pname", info.pname.toString());
+                else feature.addProperty("pname", "");
                 if (info.cityname != null)
                     feature.addProperty("cityname", info.cityname.toString());
+                else feature.addProperty("cityname", "");
                 if (info.adname != null)
                     feature.addProperty("adname", info.adname.toString());
+                else feature.addProperty("adname", "");
                 feature.addProperty("gcj02_lon", lonlat[0]);
                 feature.addProperty("gcj02_lat", lonlat[1]);
                 feature.addProperty("wgs84_lon", String.valueOf(wgs84[0]));
