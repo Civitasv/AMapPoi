@@ -289,12 +289,6 @@ public class POIController {
             Geometry boundary;
             switch (tabs.getSelectionModel().getSelectedItem().getText()) {
                 case "行政区":
-                    if (city.getText().isEmpty()) {
-                        // 行政区为空
-                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区代码", null, "请设置行政区代码！"));
-                        analysis(false);
-                        return;
-                    }
                     appendMessage("获取行政区 " + city.getText() + " 区域边界中");
                     // 获取完整边界和边界名
                     Map<String, Object> boundaryMap = getBoundaryByAdCode(city.getText());
@@ -309,34 +303,19 @@ public class POIController {
                     getPoiDataByAdName(geometry, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), city.getText(), adname);
                     break;
                 case "矩形":
-                    if (rectangle.getText().isEmpty()) {
-                        // 行政区为空
-                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "请设置矩形范围！"));
-                        analysis(false);
-                        return;
-                    }
                     // 获取坐标类型
                     String rectangleCoordinateType = coordinateType.getValue();
                     appendMessage("解析矩形区域中");
                     double[] rectangleBoundary = getBoundaryByRectangle(rectangle.getText(), rectangleCoordinateType);
                     if (rectangleBoundary == null) {
-                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式或稍后重试！"));
+                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式！"));
                         analysis(false);
                         return;
                     }
                     appendMessage("解析矩形区域成功");
-
                     getPoiDataByRectangle(rectangleBoundary, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), __ -> true);
-
                     break;
                 case "自定义":
-                    if (userFile.getText().isEmpty()) {
-                        // 行政区为空
-                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "请设置geojson文件路径！"));
-                        analysis(false);
-                        return;
-                    }
-
                     appendMessage("解析用户geojson文件中");
                     String userCoordinateType = coordinateType2.getValue();
                     boundary = getBoundaryByUserFile(userFile.getText(), userCoordinateType);
@@ -419,7 +398,11 @@ public class POIController {
     }
 
     private Geometry getBoundaryByUserFile(String path, String type) {
-        return BoundaryUtil.getBoundaryByGeoJson(FileUtil.readFile(path), type);
+        String filePath = FileUtil.readFile(path);
+        if(filePath == null){
+            return null;
+        }
+        return BoundaryUtil.getBoundaryByGeoJson(filePath, type);
     }
 
     private double[] getBoundaryByRectangle(String text, String type) {
@@ -861,6 +844,11 @@ public class POIController {
         return new ArrayDeque<>(keyList);
     }
 
+    private boolean parseRect(String text){
+        String pattern = "^(\\d+(?:\\.\\d+)?),(\\d+(?:\\.\\d+)?)#(\\d+(?:\\.\\d+)?),(\\d+(?:\\.\\d+)?)$";
+        return Pattern.matches(pattern, rectangle.getText());
+    }
+
     private void appendMessage(String text) {
         Platform.runLater(() -> messageDetail.appendText(text + "\r\n"));
     }
@@ -873,6 +861,7 @@ public class POIController {
         }
         Queue<String> keysQueue = parseKeyText();
         if (keysQueue == null) {
+            // key解析异常
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "请检查key的格式！"));
             return false;
         }
@@ -880,6 +869,38 @@ public class POIController {
             // 关键字和类型均为空
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "参数设置", null, "POI关键字和POI类型两者至少必填其一！"));
             return false;
+        }
+
+        switch (tabs.getSelectionModel().getSelectedItem().getText()) {
+            case "行政区":
+                if (city.getText().isEmpty()) {
+                    // 行政区为空
+                    Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区代码", null, "请设置行政区代码！"));
+                    analysis(false);
+                    return false;
+                }
+                break;
+            case "矩形":
+                if (rectangle.getText().isEmpty()) {
+                    // 行政区为空
+                    Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "请设置矩形范围！"));
+                    analysis(false);
+                    return false;
+                }
+                if(!parseRect(rectangle.getText())){
+                    Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "请检查矩形输入格式！\n 如：114.12,30.53#115.28,29.59"));
+                    analysis(false);
+                    return false;
+                }
+                break;
+            case "自定义":
+                if (userFile.getText().isEmpty()) {
+                    // 行政区为空
+                    Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "请设置geojson文件路径！"));
+                    analysis(false);
+                    return false;
+                }
+                break;
         }
         if (threshold.getText().isEmpty()) {
             // 阈值为空
