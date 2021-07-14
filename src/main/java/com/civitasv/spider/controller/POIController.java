@@ -797,7 +797,10 @@ public class POIController {
                     key = getKey(keys);
                     appendMessage("切换key：" + key);
                     poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
-                    if (poi == null) {
+                    if (poi != null && "10000".equals(poi.getInfocode())){
+                        appendMessage("数据获取成功，继续爬取...");
+                        return poi;
+                    } else {
                         // 如果返回null，重试
                         appendMessage("数据获取失败，正在重试中...");
                         for (int i = 0; i < 3; i++) {
