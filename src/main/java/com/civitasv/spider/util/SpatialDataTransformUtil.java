@@ -35,21 +35,21 @@ import java.util.Map;
 /**
  * 空间数据转换工具类
  * <p>
- * csv shp geojson
+ * csv shp GeoJSON 三种格式相互转换
  */
 public class SpatialDataTransformUtil {
 
     /**
-     * 解析geojson字符串为featureCollection
+     * 解析 GeoJSON 格式字符串为featureCollection
      *
-     * @param geojsonStr geojson字符串
-     * @return 若可以解析，则返回featureCollection，否则返回null
+     * @param geojsonStr GeoJSON 格式字符串
+     * @return 若可以解析，则返回 FeatureCollection，否则返回 null
      */
     public static FeatureCollection<SimpleFeatureType, SimpleFeature> geojsonStr2FeatureCollection(String geojsonStr) {
         try (InputStream in = new ByteArrayInputStream(geojsonStr.getBytes())) {
-            GeometryJSON gjson = new GeometryJSON();
-            FeatureJSON fjson = new FeatureJSON(gjson);
-            return fjson.readFeatureCollection(in);
+            GeometryJSON geometryJSON = new GeometryJSON();
+            FeatureJSON featureJSON = new FeatureJSON(geometryJSON);
+            return featureJSON.readFeatureCollection(in);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -57,23 +57,23 @@ public class SpatialDataTransformUtil {
     }
 
     /**
-     * 解析featureCollection为geojson字符串
+     * 解析 FeatureCollection 为 GeoJSON 字符串
      *
      * @param featureCollection features
-     * @return 若可以解析，则返回geojson字符串，否则返回null
+     * @return 若可以解析，则返回 GeoJSON 字符串，否则返回 null
      */
     public static String featureCollection2GeoJson(FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection) {
-        FeatureJSON fjson = new FeatureJSON();
+        FeatureJSON featureJSON = new FeatureJSON();
         try (FeatureIterator<SimpleFeature> featureIterator = featureCollection.features();
              StringWriter writer = new StringWriter()) {
             writer.write("{\"type\":\"FeatureCollection\",\"crs\":");
-            fjson.writeCRS(featureCollection.getSchema().getCoordinateReferenceSystem(), writer);
+            featureJSON.writeCRS(featureCollection.getSchema().getCoordinateReferenceSystem(), writer);
             writer.write(",");
             writer.write("\"features\":");
             writer.write("[");
             while (featureIterator.hasNext()) {
                 SimpleFeature feature = featureIterator.next();
-                fjson.writeFeature(feature, writer);
+                featureJSON.writeFeature(feature, writer);
                 if (featureIterator.hasNext())
                     writer.write(",");
             }
@@ -118,8 +118,10 @@ public class SpatialDataTransformUtil {
                 featureStore.setTransaction(transaction);
                 try {
                     featureStore.addFeatures(collection);
-                    FileUtil.generateCpgFile(shpFile.toString(), StandardCharsets.UTF_8);
-                    transaction.commit();
+                    boolean success = FileUtil.generateCpgFile(shpFile.toString(), StandardCharsets.UTF_8);
+                    if (success)
+                        transaction.commit();
+                    else transaction.rollback();
                 } catch (Exception problem) {
                     problem.printStackTrace();
                     transaction.rollback();
@@ -137,24 +139,24 @@ public class SpatialDataTransformUtil {
     }
 
     /**
-     * GeoJson字符串-> shpPath
+     * 保存 GeoJSON 格式字符串为 shapefile
      *
-     * @param geojsonStr GeoJson字符串
-     * @param shpPath    shp保存路径
-     * @return 是否保存成功
+     * @param geojsonStr GeoJSON 字符串
+     * @param shpPath    shapefile 保存路径
+     * @return 格式转换是否成功
      */
     public static boolean transformGeoJsonStrToShp(String geojsonStr, String shpPath) {
         try (InputStream in = new ByteArrayInputStream(geojsonStr.getBytes())) {
             // open geojson
-            GeometryJSON gjson = new GeometryJSON();
-            FeatureJSON fjson = new FeatureJSON(gjson);
-            FeatureCollection<SimpleFeatureType, SimpleFeature> features = fjson.readFeatureCollection(in);
+            GeometryJSON geometryJSON = new GeometryJSON();
+            FeatureJSON featureJSON = new FeatureJSON(geometryJSON);
+            FeatureCollection<SimpleFeatureType, SimpleFeature> features = featureJSON.readFeatureCollection(in);
             // convert schema for shapefile
             SimpleFeatureType schema = features.getSchema();
             GeometryDescriptor geom = schema.getGeometryDescriptor();
-            // geojson文件属性
+            // GeoJSON 文件属性
             List<AttributeDescriptor> attributes = schema.getAttributeDescriptors();
-            // geojson文件空间类型（必须在第一个）
+            // GeoJSON 文件空间类型（必须在第一个）
             GeometryType geomType = null;
             List<AttributeDescriptor> attribs = new ArrayList<>();
             for (AttributeDescriptor attrib : attributes) {
@@ -203,13 +205,13 @@ public class SpatialDataTransformUtil {
     }
 
     /**
-     * GeoJson to Shp
+     * GeoJSON to shapefile
      *
-     * @param geojsonPath geojson 文件路径
-     * @param shpPath     shp 文件路径
+     * @param geojsonPath   GeoJSON 文件路径
+     * @param shapefilePath shapefile 文件路径
      * @return 转换是否成功
      */
-    public static boolean transformGeoJsonToShp(String geojsonPath, String shpPath) {
+    public static boolean transformGeoJsonToShp(String geojsonPath, String shapefilePath) {
         try (InputStream in = new FileInputStream(geojsonPath)) {
             // open geojson
             GeometryJSON gjson = new GeometryJSON();
@@ -261,14 +263,21 @@ public class SpatialDataTransformUtil {
                     outFeatures.add(reType);
                 }
             }
-            return saveFeaturesToShp(outFeatures, outSchema, shpPath);
+            return saveFeaturesToShp(outFeatures, outSchema, shapefilePath);
         } catch (IOException e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    public static boolean transformShpToGeoJson(String shpPath, String geojsonPath) {
+    /**
+     * shapefile 转换为 GeoJSON 格式字符串
+     *
+     * @param shpPath     shapefile 文件路径
+     * @param geojsonPath GeoJSON 文件路径
+     * @return 转换是否成功
+     */
+    public static boolean transformShpToGeoJSON(String shpPath, String geojsonPath) {
         try {
             File file = new File(shpPath);
             FileDataStore myData = FileDataStoreFinder.getDataStore(file);
@@ -279,19 +288,19 @@ public class SpatialDataTransformUtil {
             Query query = new Query(schema.getTypeName());
 
             FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures(query);
-            FeatureJSON fjson = new FeatureJSON();
-            File geojson = new File(geojsonPath);
+            FeatureJSON featureJSON = new FeatureJSON();
+            File geojsonFile = new File(geojsonPath);
             try (FeatureIterator<SimpleFeature> featureIterator = collection.features();
                  StringWriter writer = new StringWriter();
-                 BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(geojson.toPath(), StandardCharsets.UTF_8))) {
+                 BufferedWriter buffer = new BufferedWriter(Files.newBufferedWriter(geojsonFile.toPath(), StandardCharsets.UTF_8))) {
                 writer.write("{\"type\":\"FeatureCollection\",\"crs\":");
-                fjson.writeCRS(schema.getCoordinateReferenceSystem(), writer);
+                featureJSON.writeCRS(schema.getCoordinateReferenceSystem(), writer);
                 writer.write(",");
                 writer.write("\"features\":");
                 writer.write("[");
                 while (featureIterator.hasNext()) {
                     SimpleFeature feature = featureIterator.next();
-                    fjson.writeFeature(feature, writer);
+                    featureJSON.writeFeature(feature, writer);
                     if (featureIterator.hasNext())
                         writer.write(",");
                 }
@@ -307,6 +316,12 @@ public class SpatialDataTransformUtil {
         }
     }
 
+    /**
+     * shapefile 转换为 CSV
+     * @param shpPath shapefile 文件路径
+     * @param csvPath CSV 文件路径
+     * @return 转换是否成功
+     */
     public static boolean transformShpToCsv(String shpPath, String csvPath) {
         try {
             File file = new File(shpPath);

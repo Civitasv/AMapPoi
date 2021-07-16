@@ -1,6 +1,5 @@
 package com.civitasv.spider.model;
 
-import java.awt.*;
 import java.util.Arrays;
 
 public class POI {
@@ -11,15 +10,16 @@ public class POI {
     private final Info[] pois;
 
     public static class Info {
-        public String id;
-        public String name;
-        public String type;
-        public String typecode;
-        public Object address;
-        public Object location;
-        public Object pname;
-        public Object cityname;
-        public Object adname;
+        public String id; // 唯一id
+        public String name; // 名称
+        public String type; // 兴趣点类型
+        public String typecode; // 兴趣点类型编码
+        public Object address; // 地址
+        public Object location; // 经纬度
+        private String tel; // 电话
+        public Object pname; //  省份名称
+        public Object cityname; // 城市名称
+        public Object adname; // 区域名称
 
         @Override
         public String toString() {
@@ -28,11 +28,12 @@ public class POI {
                     ", name='" + name + '\'' +
                     ", type='" + type + '\'' +
                     ", typecode='" + typecode + '\'' +
-                    ", address='" + address + '\'' +
-                    ", location='" + location + '\'' +
-                    ", pname='" + pname + '\'' +
-                    ", cityname='" + cityname + '\'' +
-                    ", adname='" + adname + '\'' +
+                    ", address=" + address +
+                    ", location=" + location +
+                    ", tel='" + tel + '\'' +
+                    ", pname=" + pname +
+                    ", cityname=" + cityname +
+                    ", adname=" + adname +
                     '}';
         }
     }

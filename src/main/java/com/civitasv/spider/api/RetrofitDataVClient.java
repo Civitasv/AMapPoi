@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Retrofit datav 基类
+ * Retrofit DataV API 基类
  */
 public class RetrofitDataVClient {
     private static RetrofitDataVClient instance;

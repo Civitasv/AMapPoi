@@ -127,7 +127,7 @@ public class CoordinateTransformController {
             } else if ("shp".equals(inputFormat)) {
                 File temp = new File("mid.json");
                 // 转换为geojson
-                if (!SpatialDataTransformUtil.transformShpToGeoJson(inputFile.getText(), temp.getAbsolutePath())) {
+                if (!SpatialDataTransformUtil.transformShpToGeoJSON(inputFile.getText(), temp.getAbsolutePath())) {
                     appendMessage("shp格式有误，请检查后重试！");
                     analysis(false);
                     return;

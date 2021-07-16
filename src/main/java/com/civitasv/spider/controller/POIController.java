@@ -3,13 +3,17 @@ package com.civitasv.spider.controller;
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.dao.AMapDao;
 import com.civitasv.spider.dao.impl.AMapDaoImpl;
+import com.civitasv.spider.helper.CoordinateType;
 import com.civitasv.spider.model.Feature;
 import com.civitasv.spider.model.GeoJSON;
 import com.civitasv.spider.model.POI;
 import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.sun.javafx.collections.ObservableListWrapper;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
@@ -67,8 +71,8 @@ public class POIController {
     public Button execute;
     public Button poiType;
     public ChoiceBox<String> userType;
-    public ChoiceBox<String> coordinateType;
-    public ChoiceBox<String> coordinateType2;
+    public ChoiceBox<CoordinateType> coordinateType;
+    public ChoiceBox<CoordinateType> coordinateType2;
     public MenuItem wechat;
     public MenuItem joinQQ;
     // public TreeView<CheckBox> fieldsView;
@@ -98,6 +102,11 @@ public class POIController {
         this.threadNum.setTextFormatter(getFormatter());
         this.threshold.setTextFormatter(getFormatter());
         this.city.setTextFormatter(getFormatter());
+        List<CoordinateType> list = Arrays.asList(CoordinateType.WGS84, CoordinateType.BD09, CoordinateType.GCJ02);
+        this.coordinateType.setItems(new ObservableListWrapper<>(list));
+        this.coordinateType.getSelectionModel().selectFirst();
+        this.coordinateType2.setItems(new ObservableListWrapper<>(list));
+        this.coordinateType2.getSelectionModel().selectFirst();
         wechat.setOnAction(event -> {
             try {
                 openAbout(false);
@@ -297,16 +306,15 @@ public class POIController {
                         analysis(false);
                         return;
                     }
-                    String adname = (String) boundaryMap.get("adname");
-                    Geometry geometry = (Geometry) boundaryMap.get("geometry");
+                    String adName = (String) boundaryMap.get("adName");
+                    Geometry geometry = (Geometry) boundaryMap.get("gcj02Boundary");
                     appendMessage("成功获取行政区 " + city.getText() + " 区域边界");
-                    getPoiDataByAdName(geometry, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), city.getText(), adname);
+                    getPoiDataByAdName(geometry, grids, threadNum, threshold, keywords.toString(), types.toString(), keys, tabs.getSelectionModel().getSelectedItem().getText(), city.getText(), adName);
                     break;
                 case "矩形":
                     // 获取坐标类型
-                    String rectangleCoordinateType = coordinateType.getValue();
                     appendMessage("解析矩形区域中");
-                    double[] rectangleBoundary = getBoundaryByRectangle(rectangle.getText(), rectangleCoordinateType);
+                    double[] rectangleBoundary = getBoundaryByRectangle(rectangle.getText(), coordinateType.getValue());
                     if (rectangleBoundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式！"));
                         analysis(false);
@@ -317,8 +325,7 @@ public class POIController {
                     break;
                 case "自定义":
                     appendMessage("解析用户geojson文件中");
-                    String userCoordinateType = coordinateType2.getValue();
-                    boundary = getBoundaryByUserFile(userFile.getText(), userCoordinateType);
+                    boundary = getBoundaryByUserFile(userFile.getText(), coordinateType2.getValue());
                     if (boundary == null) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "geojson文件解析失败"));
                         analysis(false);
@@ -397,25 +404,25 @@ public class POIController {
         return BoundaryUtil.getBoundaryAndAdNameByAdCode(adCode);
     }
 
-    private Geometry getBoundaryByUserFile(String path, String type) {
+    private Geometry getBoundaryByUserFile(String path, CoordinateType type) {
         String filePath = FileUtil.readFile(path);
-        if(filePath == null){
+        if (filePath == null) {
             return null;
         }
-        return BoundaryUtil.getBoundaryByGeoJson(filePath, type);
+        return BoundaryUtil.getBoundaryByDataVGeoJSON(filePath, type);
     }
 
-    private double[] getBoundaryByRectangle(String text, String type) {
+    private double[] getBoundaryByRectangle(String text, CoordinateType type) {
         String[] str = text.split("#");
         if (str.length == 2) {
             String[] leftTop = str[0].split(",");
             String[] rightBottom = str[1].split(",");
             double[] leftTopLonlat = new double[]{Double.parseDouble(leftTop[0]), Double.parseDouble(leftTop[1])};
             double[] rightBottomLonlat = new double[]{Double.parseDouble(rightBottom[0]), Double.parseDouble(rightBottom[1])};
-            if ("wgs84".equals(type)) {
+            if (type == CoordinateType.WGS84) {
                 leftTopLonlat = CoordinateTransformUtil.transformWGS84ToGCJ02(leftTopLonlat[0], leftTopLonlat[1]);
                 rightBottomLonlat = CoordinateTransformUtil.transformWGS84ToGCJ02(rightBottomLonlat[0], rightBottomLonlat[1]);
-            } else if ("bd09".equals(type)) {
+            } else if (type == CoordinateType.BD09) {
                 leftTopLonlat = CoordinateTransformUtil.transformBD09ToGCJ02(leftTopLonlat[0], leftTopLonlat[1]);
                 rightBottomLonlat = CoordinateTransformUtil.transformBD09ToGCJ02(rightBottomLonlat[0], rightBottomLonlat[1]);
             }
@@ -761,7 +768,7 @@ public class POIController {
             appendMessage("key池已耗尽，无法继续获取POI...");
             return null;
         }
-        POI poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
+        POI poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
         if (start && (poi == null || !"10000".equals(poi.getInfocode()))) {
             synchronized (this) {
                 if (keys.contains(key)) {
@@ -770,7 +777,7 @@ public class POIController {
                         appendMessage("数据获取失败，正在重试中...");
                         for (int i = 0; i < 3; i++) {
                             appendMessage("重试第" + (i + 1) + "次...");
-                            poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
+                            poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
                             if (poi != null && "10000".equals(poi.getInfocode())) {
                                 appendMessage("数据获取成功，继续爬取...");
                                 return poi;
@@ -796,8 +803,8 @@ public class POIController {
                     appendMessage("正在尝试其它key");
                     key = getKey(keys);
                     appendMessage("切换key：" + key);
-                    poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
-                    if (poi != null && "10000".equals(poi.getInfocode())){
+                    poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
+                    if (poi != null && "10000".equals(poi.getInfocode())) {
                         appendMessage("数据获取成功，继续爬取...");
                         return poi;
                     } else {
@@ -805,7 +812,7 @@ public class POIController {
                         appendMessage("数据获取失败，正在重试中...");
                         for (int i = 0; i < 3; i++) {
                             appendMessage("重试第" + (i + 1) + "次...");
-                            poi = mapDao.getPoi(key, polygon, keywords, types, page, size);
+                            poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
                             if (poi != null && "10000".equals(poi.getInfocode())) {
                                 appendMessage("数据获取成功，继续爬取...");
                                 return poi;
@@ -847,7 +854,7 @@ public class POIController {
         return new ArrayDeque<>(keyList);
     }
 
-    private boolean parseRect(String text){
+    private boolean parseRect(String text) {
         String pattern = "^(\\d+(?:\\.\\d+)?),(\\d+(?:\\.\\d+)?)#(\\d+(?:\\.\\d+)?),(\\d+(?:\\.\\d+)?)$";
         return Pattern.matches(pattern, rectangle.getText());
     }
@@ -890,7 +897,7 @@ public class POIController {
                     analysis(false);
                     return false;
                 }
-                if(!parseRect(rectangle.getText())){
+                if (!parseRect(rectangle.getText())) {
                     Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "请检查矩形输入格式！\n 如：114.12,30.53#115.28,29.59"));
                     analysis(false);
                     return false;

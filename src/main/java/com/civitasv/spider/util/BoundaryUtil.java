@@ -2,6 +2,7 @@ package com.civitasv.spider.util;
 
 import com.civitasv.spider.dao.DataVDao;
 import com.civitasv.spider.dao.impl.DataVDaoImpl;
+import com.civitasv.spider.helper.CoordinateType;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -22,36 +23,37 @@ import java.util.Map;
 
 public class BoundaryUtil {
     private final static GeometryFactory geometryFactory = new GeometryFactory();
+    private final static DataVDao dataVDao = new DataVDaoImpl();
 
 
     /**
-     * 获取城市外接矩形区域范围和城市adname
+     * 根据行政区代码获取城市外接矩形区域范围和行政区名称
      *
      * @param adCode 行政区代码
-     * @return 城市矩形区域范围和城市adname
+     * @return 城市矩形区域范围和行政区名称
      */
     public static Map<String, Object> getBoundaryAndAdNameByAdCode(String adCode) {
-        DataVDao dao = new DataVDaoImpl();
-        JsonObject boundaryJson = dao.getBoundary(adCode);
-        if (boundaryJson == null)
+        // 访问 DataV 服务获取行政区GeoJSON格式边界数据
+        JsonObject boundaryGeoJson = dataVDao.getBoundary(adCode);
+        if (boundaryGeoJson == null)
             return null;
-        Geometry gcj02 = getBoundaryByGeoJson(boundaryJson.toString(), "gcj02");
-        String adName = getAdNameFromAdGeoJson(boundaryJson.toString());
-        HashMap<String, Object> message = new HashMap<>();
-        message.put("geometry", gcj02);
-        message.put("adname", adName);
-        return message;
+        Geometry gcj02Boundary = getBoundaryByDataVGeoJSON(boundaryGeoJson.toString(), CoordinateType.GCJ02);
+        String adName = getAdNameFromAdGeoJSON(boundaryGeoJson.toString());
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("gcj02Boundary", gcj02Boundary);
+        data.put("adName", adName);
+        return data;
     }
 
     /**
-     * 获取geojson的边界
+     * 获取 DataV 返回的 GeoJSON 格式数据边界
      *
-     * @param geojson geojson字符串
-     * @param type    坐标类型
-     * @return geojson边界
+     * @param geojsonStr GeoJSON 格式字符串
+     * @param type       坐标类型 {@link CoordinateType}
+     * @return 边界数据
      */
-    public static Geometry getBoundaryByGeoJson(String geojson, String type) {
-        FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = SpatialDataTransformUtil.geojsonStr2FeatureCollection(geojson);
+    public static Geometry getBoundaryByDataVGeoJSON(String geojsonStr, CoordinateType type) {
+        FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = SpatialDataTransformUtil.geojsonStr2FeatureCollection(geojsonStr);
         if (featureCollection == null) return null;
 
         try (FeatureIterator<SimpleFeature> featureIterator = featureCollection.features()) {
@@ -61,10 +63,10 @@ public class BoundaryUtil {
                 if (defaultGeometry instanceof Polygon) {
                     Polygon polygon = (Polygon) defaultGeometry;
                     Coordinate[] coordinates = polygon.getCoordinates();
-                    if ("wgs84".equals(type)) {
+                    if (type == CoordinateType.WGS84) {
                         coordinates = Arrays.stream(coordinates)
                                 .map(CoordinateTransformUtil::transformWGS84ToGCJ02).toArray(Coordinate[]::new);
-                    } else if ("bd09".equals(type)) {
+                    } else if (type == CoordinateType.BD09) {
                         coordinates = Arrays.stream(coordinates)
                                 .map(CoordinateTransformUtil::transformBD09ToGCJ02).toArray(Coordinate[]::new);
                     }
@@ -75,10 +77,10 @@ public class BoundaryUtil {
                     for (int i = 0; i < multiPolygon.getNumGeometries(); i++) {
                         Geometry geometryN = multiPolygon.getGeometryN(i);
                         Coordinate[] coordinates = geometryN.getCoordinates();
-                        if ("wgs84".equals(type)) {
+                        if (type == CoordinateType.WGS84) {
                             coordinates = Arrays.stream(coordinates)
                                     .map(CoordinateTransformUtil::transformWGS84ToGCJ02).toArray(Coordinate[]::new);
-                        } else if ("bd09".equals(type)) {
+                        } else if (type == CoordinateType.BD09) {
                             coordinates = Arrays.stream(coordinates)
                                     .map(CoordinateTransformUtil::transformBD09ToGCJ02).toArray(Coordinate[]::new);
                         }
@@ -93,17 +95,17 @@ public class BoundaryUtil {
     }
 
     /**
-     * 根据国家行政区geojson获取名字
+     * 根据国家行政区 DataV GeoJSON 获取名字
      *
-     * @param geojson 国家行政区geojson边界
+     * @param geojsonStr 国家行政区 GeoJSON 格式边界
      * @return 行政区名字
      */
-    public static String getAdNameFromAdGeoJson(String geojson) {
-        FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = SpatialDataTransformUtil.geojsonStr2FeatureCollection(geojson);
+    public static String getAdNameFromAdGeoJSON(String geojsonStr) {
+        FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = SpatialDataTransformUtil.geojsonStr2FeatureCollection(geojsonStr);
         if (featureCollection == null) return null;
 
         try (FeatureIterator<SimpleFeature> featureIterator = featureCollection.features()) {
-            if (featureIterator.hasNext()) {
+            if (featureIterator.hasNext()) { // 只有一个feature
                 SimpleFeature boundary = featureIterator.next();
                 return (String) boundary.getAttribute("name");
             }

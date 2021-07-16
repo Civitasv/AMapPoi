@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Retrofit基类
+ * Retrofit 高德地图API基类
  */
 public class RetrofitAMapClient {
     private static RetrofitAMapClient instance;

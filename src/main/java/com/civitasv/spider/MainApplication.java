@@ -1,18 +1,10 @@
 package com.civitasv.spider;
 
-import com.civitasv.spider.controller.GeocodingController;
-import com.civitasv.spider.controller.LoadingController;
 import com.civitasv.spider.controller.POIController;
-import com.civitasv.spider.util.FXMLUtil;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.util.concurrent.*;
 
 public class MainApplication extends Application {
 
