@@ -65,7 +65,7 @@
                     <AnchorPane minHeight="0.0" minWidth="0.0">
                         <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
                             <Label text="行政区代码：" />
-                            <TextField fx:id="city" prefHeight="30.0" prefWidth="210.0" promptText="行政区六位代码" HBox.hgrow="ALWAYS" />
+                            <TextField fx:id="adCode" prefHeight="30.0" prefWidth="210.0" promptText="行政区六位代码" HBox.hgrow="ALWAYS" />
                             <Button mnemonicParsing="false" onMouseClicked="#chooseAdCode" prefHeight="30.0" text="行政区划代码">
                                 <HBox.margin>
                                     <Insets left="5.0" />
@@ -82,7 +82,7 @@
                         <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
                             <Label layoutX="14.0" layoutY="14.0" text="矩形：" />
                             <TextField fx:id="rectangle" layoutX="51.0" layoutY="10.0" prefHeight="30.0" prefWidth="300.0" promptText="矩形左上角经纬度#矩形右下角经纬度" HBox.hgrow="ALWAYS" />
-                            <ChoiceBox fx:id="coordinateType" prefHeight="30.0" prefWidth="150.0">
+                            <ChoiceBox fx:id="rectangleCoordinateType" prefHeight="30.0" prefWidth="150.0">
                                 <HBox.margin>
                                     <Insets left="10.0" />
                                 </HBox.margin>
@@ -103,7 +103,7 @@
                                     <Insets left="5.0" />
                                 </HBox.margin>
                             </Button>
-                            <ChoiceBox fx:id="coordinateType2" prefHeight="30.0" prefWidth="150.0">
+                            <ChoiceBox fx:id="userFileCoordinateType" prefHeight="30.0" prefWidth="150.0">
                                 <HBox.margin>
                                     <Insets left="10.0" />
                                 </HBox.margin>
@@ -132,8 +132,6 @@
                 <Label prefHeight="18.0" prefWidth="100.0" text="线程数目：" />
                 <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="400.0" promptText="建议不大于QPS * keys_num" HBox.hgrow="ALWAYS" />
             </HBox>
-            <!--<Label text="输出字段："/>
-              <TreeView prefHeight="200.0" prefWidth="200.0" fx:id="fieldsView"/>-->
 
             <HBox alignment="CENTER_LEFT">
                 <padding>

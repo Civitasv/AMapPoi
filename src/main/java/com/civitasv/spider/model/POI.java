@@ -16,7 +16,7 @@ public class POI {
         public String typecode; // 兴趣点类型编码
         public Object address; // 地址
         public Object location; // 经纬度
-        private String tel; // 电话
+        public Object tel; // 电话
         public Object pname; //  省份名称
         public Object cityname; // 城市名称
         public Object adname; // 区域名称
