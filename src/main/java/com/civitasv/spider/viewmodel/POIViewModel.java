@@ -828,7 +828,7 @@ public class POIViewModel {
 
 
     private boolean parseRect(String text) {
-        String pattern = "^(\\d+(?:\\.\\d+)?),(\\d+(?:\\.\\d+)?)#(\\d+(?:\\.\\d+)?),(\\d+(?:\\.\\d+)?)$";
+        String pattern = "^(-?\\d{1,3}(\\.\\d+)?),\\s?(-?\\d{1,3}(\\.\\d+)?)#(-?\\d{1,3}(\\.\\d+)?),\\s?(-?\\d{1,3}(\\.\\d+)?)$";
         return Pattern.matches(pattern, text);
     }
 
