@@ -183,6 +183,11 @@ public class POIController {
         controller.show(isQQ);
     }
 
+    public void openDonate() throws IOException {
+        DonateController controller = new DonateController();
+        controller.show();
+    }
+
     public void starsMe() throws URISyntaxException, IOException {
         Desktop.getDesktop().browse(new URI("https://github.com/Civitasv/AMapPoi"));
     }
