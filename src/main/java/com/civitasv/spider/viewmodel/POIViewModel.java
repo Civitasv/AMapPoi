@@ -24,8 +24,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.sql.Time;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -33,7 +35,6 @@ import java.util.stream.Collectors;
 public class POIViewModel {
     private final AMapDao mapDao;
     private ExecutorService worker, executorService;
-    private ExecutorCompletionService<POI> poiExecutorCompletionService;
     private final GeometryFactory geometryFactory;
     private final ViewHolder viewHolder;
     private final DataHolder dataHolder;
@@ -515,7 +516,6 @@ public class POIViewModel {
         // 3. 开始爬取
         appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
         executorService = Executors.newFixedThreadPool(threadNum);
-        poiExecutorCompletionService = new ExecutorCompletionService<>(executorService);
         boolean success = true;
         while (start && !analysisGrid.isEmpty()) {
             double[] rec = analysisGrid.pop();
@@ -551,6 +551,26 @@ public class POIViewModel {
         }
     }
 
+    private POI retry(Runnable job, int count) {
+        if (count == 0) {
+            appendMessage("重试失败！");
+            return null;
+        }
+        appendMessage("重试中...");
+        Future<POI> future = (Future<POI>) executorService.submit(job);
+        try {
+            POI item = future.get(20, TimeUnit.SECONDS);
+            if (item != null) {
+                return item;
+            } else {
+                return null;
+            }
+        } catch (TimeoutException | InterruptedException | ExecutionException ignore) {
+            appendMessage("TIMEOUT!!!");
+            return retry(job, --count);
+        }
+    }
+
     private List<POI.Info> getPoi(Queue<String> keys, double[] boundary, POI initPoi, String keywords, String types) {
         List<POI.Info> res = new ArrayList<>(Arrays.asList(initPoi.getPois()));
         int total = initPoi.getCount();
@@ -561,14 +581,31 @@ public class POIViewModel {
         int taskNum = total / size + 1;
 
         // 添加任务
+        Map<Future<POI>, Runnable> futureAndJobs = new HashMap<>();
         for (int page = 2; page <= taskNum; page++) {
             int finalPage = page;
-            poiExecutorCompletionService.submit(() -> getPoi(keys, polygon, keywords, types, finalPage, size));
+            Runnable job = () -> getPoi(keys, polygon, keywords, types, finalPage, size);
+            Future<POI> future = executorService.submit(() -> getPoi(keys, polygon, keywords, types, finalPage, size));
+            futureAndJobs.put(future, job);
         }
         // 阻塞获取
         try {
-            for (int j = 1; j < taskNum; j++) {
-                POI item = poiExecutorCompletionService.take().get();
+            List<Runnable> timeoutJobs = new ArrayList<>();
+            for (Map.Entry<Future<POI>, Runnable> mapItem : futureAndJobs.entrySet()) {
+                try {
+                    POI item = mapItem.getKey().get(20, TimeUnit.SECONDS);
+                    if (item != null) {
+                        res.addAll(Arrays.asList(item.getPois()));
+                    } else {
+                        return null;
+                    }
+                } catch (TimeoutException e) {
+                    timeoutJobs.add(mapItem.getValue());
+                }
+            }
+
+            for (Runnable job : timeoutJobs) {
+                POI item = retry(job, 3);
                 if (item != null) {
                     res.addAll(Arrays.asList(item.getPois()));
                 } else {

@@ -7,6 +7,8 @@ import com.civitasv.spider.model.POI;
 import retrofit2.Call;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.TimeoutException;
 
 public class AMapDaoImpl implements AMapDao {
     @Override
