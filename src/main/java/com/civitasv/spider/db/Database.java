@@ -19,11 +19,10 @@ public class Database {
     private static final Logger LOGGER = Logger.getLogger(Database.class.getSimpleName());
 
     // database URL
-    private String url = "jdbc:sqlite:" + "./poi.db";
+    private String url = "jdbc:sqlite:" + "app/db/poi.db";
 
     // Constructor
     public Database() {
-        MessageUtil.alert(Alert.AlertType.INFORMATION,"TEST","",url);
         System.out.println(this.url);
     }
 
