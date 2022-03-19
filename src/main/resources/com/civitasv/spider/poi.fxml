@@ -81,7 +81,7 @@
                     <Insets bottom="10.0" top="5.0"/>
                 </padding>
                 <Label prefHeight="18.0" prefWidth="100.0" text="已选择类型："/>
-                <TextField fx:id="types" editable="false" prefHeight="30.0" prefWidth="400.0" HBox.hgrow="ALWAYS"/>
+                <TextField fx:id="types" prefHeight="30.0" prefWidth="400.0" HBox.hgrow="ALWAYS"/>
                 <Button fx:id="poiType" onMouseClicked="#openPOITypes" prefHeight="30.0" prefWidth="100.0" text="清除">
                     <HBox.margin>
                         <Insets left="5.0"/>
@@ -102,7 +102,7 @@
                     <AnchorPane minHeight="0.0" minWidth="0.0">
                         <HBox alignment="CENTER" layoutX="18.0" layoutY="8.0">
                             <Label text="行政区代码："/>
-                            <TextField fx:id="adCode" editable="false" prefHeight="30.0" prefWidth="210.0"
+                            <TextField fx:id="adCode" prefHeight="30.0" prefWidth="210.0"
                                        HBox.hgrow="ALWAYS"/>
                             <Button mnemonicParsing="false" onMouseClicked="#chooseAdCode" prefHeight="30.0"
                                     text="选择行政区划">

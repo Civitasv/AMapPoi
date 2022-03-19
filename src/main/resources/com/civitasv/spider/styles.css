@@ -141,6 +141,16 @@
     -fx-opacity: 0;
 }
 
+.tree-view .scroll-bar:vertical {
+    -fx-pref-width: 1;
+    -fx-opacity: 0;
+}
+
+.tree-view .scroll-bar:horizontal {
+    -fx-pref-height: 1;
+    -fx-opacity: 0;
+}
+
 .tree-view, .tree-cell {
     -fx-background-color: #232c38;
     -fx-text-fill: white;
