@@ -1,22 +1,12 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.dao.AMapDao;
-import com.civitasv.spider.dao.impl.AMapDaoImpl;
+import com.civitasv.spider.db.Database;
 import com.civitasv.spider.helper.CoordinateType;
-import com.civitasv.spider.model.Feature;
-import com.civitasv.spider.model.GeoJSON;
-import com.civitasv.spider.model.POI;
-import com.civitasv.spider.util.*;
+import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.sun.javafx.collections.ObservableListWrapper;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -28,31 +18,17 @@ import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.geotools.data.DataUtilities;
-import org.geotools.feature.SchemaException;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.*;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
+import org.apache.commons.lang3.StringUtils;
 
 import java.awt.*;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.sql.Time;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class POIController {
     private static Scene scene;
@@ -78,6 +54,30 @@ public class POIController {
     public MenuItem wechat; // 微信
     public MenuItem joinQQ; // QQ群
 
+    // added by leon
+    public ChoiceBox<String> poiCate1; // POI大类
+    public ChoiceBox<String> poiCate2; // POI中类
+    public ChoiceBox<String> poiCate3; // POI小类
+
+    // 数据库操作对象
+    private Database database;
+
+    public Database getDatabase() {
+        return database;
+    }
+
+    // 大中小类
+    private String cate1, cate2, cate3;
+    private String curCategoryId;
+    Set<String> choosedPoiCategory;
+
+    // 主界面
+    private Stage mainStage;
+
+    public Stage getMainStage() {
+        return mainStage;
+    }
+
     private POIViewModel poiViewModel;
 
     public void show() throws IOException {
@@ -92,6 +92,7 @@ public class POIController {
         scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
         stage.setScene(scene);
         stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
+        this.mainStage = stage;
         stage.show();
     }
 
@@ -121,6 +122,79 @@ public class POIController {
                 e.printStackTrace();
             }
         });
+
+        /*
+         * 改为从数据库选择POI类型
+         * added by leon
+         */
+        this.database = new Database();
+        this.choosedPoiCategory = new HashSet<>();
+
+        // 设置key
+        this.keys.setText("");
+
+        // 设置cate1下拉
+        refreshChoiceBoxCate1();
+
+        this.poiCate1.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCate2(newValue));
+
+        this.poiCate2.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCate3(newValue));
+
+        this.poiCate3.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> getPoiCategory(newValue));
+    }
+
+    private void refreshChoiceBoxCate1() {
+        List<String> arrCate1;
+        try {
+            // 获取POI大类
+            arrCate1 = database.getPoiCategory1();
+            this.poiCate1.setItems(new ObservableListWrapper<>(arrCate1));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void refreshChoiceBoxCate2(String cate1) {
+        this.cate1 = cate1;
+        List<String> arrCate2;
+        try {
+            arrCate2 = database.getPoiCategory2(this.cate1);
+            this.poiCate2.setItems(new ObservableListWrapper<>(arrCate2));
+            this.poiCate2.setValue("");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void refreshChoiceBoxCate3(String cate2) {
+        this.cate2 = cate2;
+        List<String> arrCate3;
+        try {
+            arrCate3 = database.getPoiCategory3(this.cate1, this.cate2);
+            this.poiCate3.setItems(new ObservableListWrapper<>(arrCate3));
+            this.poiCate3.setValue("");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getPoiCategory(String cate3) {
+        this.cate3 = cate3;
+        try {
+            this.curCategoryId = database.getPoiCategoryId(this.cate1, this.cate2, this.cate3);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void addPoiCategory() {
+        if ((this.poiCate1.getValue().equals("")) || (this.poiCate2.getValue().equals("")) || (this.poiCate3.getValue().equals(""))) {
+            MessageUtil.alert(Alert.AlertType.ERROR, "类型错误", null, "请完整选择POI类型！");
+            return;
+        }
+        this.choosedPoiCategory.add(this.curCategoryId);
+        String splitSetWithComma = StringUtils.join(choosedPoiCategory.toArray(), ",");
+        this.types.setText(splitSetWithComma);
     }
 
     private TextFormatter<Integer> getFormatter() {
@@ -136,8 +210,13 @@ public class POIController {
         poiViewModel.cancel();
     }
 
-    public void chooseAdCode() throws URISyntaxException, IOException {
-        Desktop.getDesktop().browse(new URI("http://www.mca.gov.cn//article/sj/xzqh/2020/202006/202008310601.shtml"));
+    public void openCityChoose() throws IOException {
+        CityChooseController controller = new CityChooseController();
+        controller.show(this);
+    }
+
+    public void chooseAdCode() throws IOException {
+        openCityChoose();
     }
 
     public void chooseFile() {
@@ -159,8 +238,9 @@ public class POIController {
             outputDirectory.setText(file.getAbsolutePath());
     }
 
-    public void openPOITypes() throws URISyntaxException, IOException {
-        Desktop.getDesktop().browse(new URI("https://lbs.amap.com/api/webservice/download"));
+    public void openPOITypes() {
+        choosedPoiCategory.clear();
+        this.types.setText("");
     }
 
     public void openGeocoding() throws IOException {

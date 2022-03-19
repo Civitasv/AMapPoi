@@ -4,10 +4,10 @@ import java.util.Arrays;
 
 public class POI {
     private final Integer status;
-    private final String info;
-    private final String infocode;
-    private final Integer count;
-    private final Info[] pois;
+    private String info;
+    private String infocode;
+    private Integer count;
+    private Info[] pois;
 
     public static class Info {
         public String id; // 唯一id
@@ -56,6 +56,10 @@ public class POI {
 
     public Info[] getPois() {
         return pois;
+    }
+
+    public POI(Integer status) {
+        this.status = status;
     }
 
     public POI(Integer status, String info, String infocode, Integer count, Info[] pois) {

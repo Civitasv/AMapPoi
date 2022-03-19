@@ -3,6 +3,7 @@ package com.civitasv.spider.viewmodel;
 import com.civitasv.spider.dao.AMapDao;
 import com.civitasv.spider.dao.impl.AMapDaoImpl;
 import com.civitasv.spider.helper.CoordinateType;
+import com.civitasv.spider.model.POIJob;
 import com.civitasv.spider.model.Feature;
 import com.civitasv.spider.model.GeoJSON;
 import com.civitasv.spider.model.POI;
@@ -24,10 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.sql.Time;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -38,7 +37,8 @@ public class POIViewModel {
     private final GeometryFactory geometryFactory;
     private final ViewHolder viewHolder;
     private final DataHolder dataHolder;
-    private boolean start;
+
+    private boolean hasStart;
 
     public POIViewModel(TextField threadNum, TextField keywords, TextArea keys, TextField types,
                         TextField adCode, TextField rectangle, TextField threshold, ChoiceBox<String> format,
@@ -52,7 +52,7 @@ public class POIViewModel {
         this.dataHolder = new DataHolder();
         this.geometryFactory = new GeometryFactory();
         this.mapDao = new AMapDaoImpl();
-        this.start = false;
+        this.hasStart = false;
     }
 
     public static class ViewHolder {
@@ -117,7 +117,6 @@ public class POIViewModel {
         public String types;
         public String tab;
         public double[] boundary;
-
     }
 
     private boolean check() {
@@ -316,12 +315,13 @@ public class POIViewModel {
 
             switch (dataHolder.tab) {
                 case "行政区":
+                    if (!hasStart) return;
                     String adCode = viewHolder.adCode.getText();
                     appendMessage("获取行政区 " + adCode + " 区域边界中");
                     // 获取完整边界和边界名
                     Map<String, Object> data = BoundaryUtil.getBoundaryAndAdNameByAdCode(adCode);
                     if (data == null) {
-                        if (!start) return;
+                        if (!hasStart) return;
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！"));
                         analysis(false);
                         return;
@@ -329,7 +329,7 @@ public class POIViewModel {
                     String adName = (String) data.get("adName");
                     Geometry geometry = (Geometry) data.get("gcj02Boundary");
                     dataHolder.boundary = getBoundaryFromGeometry(geometry);
-
+                    if (!hasStart) return;
                     appendMessage("成功获取行政区 " + adCode + ":" + adName + " 区域边界");
                     getPoiData(dataHolder.boundary, dataHolder.threadNum,
                             dataHolder.threshold, dataHolder.keywords, dataHolder.types,
@@ -346,32 +346,36 @@ public class POIViewModel {
                     break;
                 case "矩形":
                     // 获取坐标类型
+                    if (!hasStart) return;
                     String rectangle = viewHolder.rectangle.getText();
                     CoordinateType type = viewHolder.rectangleCoordinateType.getValue();
                     appendMessage("解析矩形区域中");
                     double[] rectangleBoundary = getBoundaryByRectangle(rectangle, type);
                     if (rectangleBoundary == null) {
-                        if (!start) return;
+                        if (!hasStart) return;
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式！"));
                         analysis(false);
                         return;
                     }
                     dataHolder.boundary = rectangleBoundary;
+                    if (!hasStart) return;
                     appendMessage("解析矩形区域成功");
                     getPoiData(dataHolder.boundary, dataHolder.threadNum,
                             dataHolder.threshold, dataHolder.keywords, dataHolder.types,
                             dataHolder.aMapKeys, info -> true);
                     break;
                 case "自定义":
+                    if (!hasStart) return;
                     appendMessage("解析用户geojson文件中");
                     Geometry boundary = getBoundaryByUserFile(viewHolder.userFile.getText(), viewHolder.userFileCoordinateType.getValue());
                     if (boundary == null) {
-                        if (!start) return;
+                        if (!hasStart) return;
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "geojson文件解析失败"));
                         analysis(false);
                         return;
                     }
                     dataHolder.boundary = getBoundaryFromGeometry(boundary);
+                    if (!hasStart) return;
                     appendMessage("成功解析用户文件");
 
                     getPoiData(dataHolder.boundary, dataHolder.threadNum,
@@ -394,19 +398,21 @@ public class POIViewModel {
 
     public void cancel() {
         analysis(false);
-        clearMessage();
     }
 
-    private void analysis(boolean isAnalysis) {
-        if (!start && !isAnalysis) {
+    private void analysis(boolean start) {
+        if (!hasStart && !start) {
             return;
         }
-        start = isAnalysis;
-        setDisable(isAnalysis);
-        appendMessage(isAnalysis ? "开始POI爬取，请勿操作" : "停止POI爬取");
-        if (!isAnalysis && executorService != null)
+        if (hasStart && start) {
+            return;
+        }
+        hasStart = start;
+        setDisable(start);
+        appendMessage(start ? "开始POI爬取，请勿操作" : "停止POI爬取");
+        if (!start && executorService != null)
             executorService.shutdownNow();
-        if (!isAnalysis && worker != null)
+        if (!start && worker != null)
             worker.shutdownNow();
     }
 
@@ -473,31 +479,36 @@ public class POIViewModel {
         return null;
     }
 
-    private void getAnalysisGrids(Deque<double[]> analysisGrid, Deque<POI> analysisPoi, double[] rect, int threshold,
-                                  Queue<String> keys, String keywords, String types) {
+    private boolean getAnalysisGrids(Deque<double[]> analysisGrid, Deque<POI> analysisPoi, double[] rect, int threshold,
+                                     Queue<String> keys, String keywords, String types) {
+        if (!hasStart) return false;
+        boolean result = true;
         int page = 1, size = 20; // 页码、每页个数
         double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
         String polygon = left + "," + top + "|" + right + "," + bottom;
 
         POI poi = getPoi(keys, polygon, keywords, types, page, size); // 访问第一页
-        if (poi == null || poi.getCount() == 0) return;
+        if (poi == null || poi.getStatus() == -1) {
+            appendMessage("四分失败，请重试!");
+            return false;
+        }
 
-        if (start && poi.getCount() > threshold) {
+        if (poi.getCount() > threshold) {
             appendMessage("超出阈值，继续四分");
             // 继续四分
             double itemWidth = (right - left) / 2;
             double itemHeight = (top - bottom) / 2;
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
-                    getAnalysisGrids(analysisGrid, analysisPoi, new double[]{left + i * itemWidth, bottom + j * itemHeight,
+                    result = result && getAnalysisGrids(analysisGrid, analysisPoi, new double[]{left + i * itemWidth, bottom + j * itemHeight,
                             left + (i + 1) * itemWidth, bottom + (j + 1) * itemHeight}, threshold, keys, keywords, types);
                 }
             }
-            appendMessage("四分完成");
         } else {
             analysisGrid.add(new double[]{left, bottom, right, top});
             analysisPoi.add(poi);
         }
+        return result;
     }
 
     private void getPoiData(double[] boundary, int threadNum, int threshold, String keywords,
@@ -510,24 +521,30 @@ public class POIViewModel {
         Deque<POI> analysisPoi = new ArrayDeque<>(); // 网格剖分
 
         appendMessage("划分所有任务网格中");
-        getAnalysisGrids(analysisGrid, analysisPoi, new double[]{left, bottom, right, top}, threshold, keys, keywords, types);
-        appendMessage("任务网格切分成功，共有" + analysisGrid.size() + "个任务网格");
+        if (getAnalysisGrids(analysisGrid, analysisPoi, new double[]{left, bottom, right, top}, threshold, keys, keywords, types)) {
+            appendMessage("任务网格切分成功，共有" + analysisGrid.size() + "个任务网格");
+        } else {
+            return;
+        }
 
         // 3. 开始爬取
+        if (!hasStart) return;
         appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
+
+        // 失败的任务
+        List<POIJob> allFailJobs = new ArrayList<>();
+
         executorService = Executors.newFixedThreadPool(threadNum);
-        boolean success = true;
-        while (start && !analysisGrid.isEmpty()) {
+        while (hasStart && !analysisGrid.isEmpty()) {
             double[] rec = analysisGrid.pop();
             POI initPoi = analysisPoi.pop();
             appendMessage("正在爬取网格" + Arrays.toString(rec) + "，任务队列剩余" + analysisGrid.size() + "个");
-            List<POI.Info> item = getPoi(keys, rec, initPoi, keywords, types);
-            if (item == null) {
-                success = false;
-                break;
-            }
-            appendMessage("该网格含POI：" + item.size() + "条");
-            res.addAll(item);
+            Map<String, Object> item = getPoi(keys, rec, initPoi, keywords, types);
+            List<POI.Info> data = (List<POI.Info>) item.get("data");
+            List<POIJob> failJobs = (List<POIJob>) item.get("failJobs");
+            appendMessage("该网格含POI：" + data.size() + "条");
+            res.addAll(data);
+            allFailJobs.addAll(failJobs);
         }
         executorService.shutdown();
         appendMessage("该区域边界共含POI：" + res.size() + "条");
@@ -535,8 +552,7 @@ public class POIViewModel {
         res = res.stream().filter(filter).collect(Collectors.toList());
         appendMessage("过滤成功，共获得POI：" + res.size() + "条");
 
-        if (!start) return;
-        appendMessage(success ? "POI爬取完毕" : "未完全爬取");
+        appendMessage(allFailJobs.size() == 0 ? "POI爬取完毕" : "未完全爬取");
         // 导出res
         switch (viewHolder.format.getValue()) {
             case "csv":
@@ -549,6 +565,9 @@ public class POIViewModel {
             case "shp":
                 writeToShp(res);
         }
+        // 导出失败任务
+        if (allFailJobs.size() > 0)
+            writeToFailJobsTxt(allFailJobs);
     }
 
     private POI retry(Runnable job, int count) {
@@ -560,18 +579,14 @@ public class POIViewModel {
         Future<POI> future = (Future<POI>) executorService.submit(job);
         try {
             POI item = future.get(20, TimeUnit.SECONDS);
-            if (item != null) {
-                return item;
-            } else {
-                return null;
-            }
+            return item;
         } catch (TimeoutException | InterruptedException | ExecutionException ignore) {
             appendMessage("TIMEOUT!!!");
             return retry(job, --count);
         }
     }
 
-    private List<POI.Info> getPoi(Queue<String> keys, double[] boundary, POI initPoi, String keywords, String types) {
+    private Map<String, Object> getPoi(Queue<String> keys, double[] boundary, POI initPoi, String keywords, String types) {
         List<POI.Info> res = new ArrayList<>(Arrays.asList(initPoi.getPois()));
         int total = initPoi.getCount();
 
@@ -581,41 +596,44 @@ public class POIViewModel {
         int taskNum = total / size + 1;
 
         // 添加任务
-        Map<Future<POI>, Runnable> futureAndJobs = new HashMap<>();
+        List<Future<POI>> futures = new ArrayList<>();
+        List<POIJob> jobs = new ArrayList<>();
         for (int page = 2; page <= taskNum; page++) {
             int finalPage = page;
-            Runnable job = () -> getPoi(keys, polygon, keywords, types, finalPage, size);
-            Future<POI> future = executorService.submit(() -> getPoi(keys, polygon, keywords, types, finalPage, size));
-            futureAndJobs.put(future, job);
+            POIJob job = new POIJob(polygon, keywords, types, finalPage, size);
+            Future<POI> future = executorService.submit(() ->
+                    getPoi(keys, polygon, keywords, types, finalPage, size));
+            futures.add(future);
+            jobs.add(job);
         }
-        // 阻塞获取
-        try {
-            List<Runnable> timeoutJobs = new ArrayList<>();
-            for (Map.Entry<Future<POI>, Runnable> mapItem : futureAndJobs.entrySet()) {
-                try {
-                    POI item = mapItem.getKey().get(20, TimeUnit.SECONDS);
-                    if (item != null) {
-                        res.addAll(Arrays.asList(item.getPois()));
-                    } else {
-                        return null;
-                    }
-                } catch (TimeoutException e) {
-                    timeoutJobs.add(mapItem.getValue());
-                }
-            }
 
-            for (Runnable job : timeoutJobs) {
-                POI item = retry(job, 3);
+        // 阻塞获取
+        List<POIJob> failJobs = new ArrayList<>();
+        for (int i = 0; i < futures.size(); i++) {
+            try {
+                POI item = futures.get(i).get(20, TimeUnit.SECONDS);
                 if (item != null) {
-                    res.addAll(Arrays.asList(item.getPois()));
+                    if (item.getStatus() == -1) {
+                        // 说明剩余的任务都将失败
+                        for (int j = i; j < jobs.size(); j++) {
+                            failJobs.add(jobs.get(j));
+                        }
+                        break;
+                    } else {
+                        res.addAll(Arrays.asList(item.getPois()));
+                    }
                 } else {
-                    return null;
+                    failJobs.add(jobs.get(i));
                 }
+            } catch (TimeoutException | InterruptedException | ExecutionException e) {
+                failJobs.add(jobs.get(i));
             }
-        } catch (InterruptedException | ExecutionException e) {
-            appendMessage("爬取线程已中断");
         }
-        return res;
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", res);
+        result.put("failJobs", failJobs);
+        return result;
     }
 
     private synchronized String getAMapKey(Queue<String> keys) {
@@ -628,29 +646,17 @@ public class POIViewModel {
     }
 
     private POI getPoi(Queue<String> keys, String polygon, String keywords, String types, int page, int size) {
+        if (!hasStart) return new POI(-1);
         long startTime = System.currentTimeMillis();   //获取开始时间
-        if (!start) return null;
         String key = getAMapKey(keys);
         if (key == null) {
             appendMessage("key池已耗尽，无法继续获取POI...");
-            return null;
+            return new POI(-1); // -1 表示由于 key 池耗尽，无法继续获取POI
         }
         POI poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
-        if (start && (poi == null || !"10000".equals(poi.getInfocode()))) {
+        if (poi == null || !"10000".equals(poi.getInfocode())) {
             synchronized (this) {
                 if (keys.contains(key)) {
-                    if (poi == null) {
-                        // 如果返回null，重试
-                        appendMessage("数据获取失败，正在重试中...");
-                        for (int i = 0; i < 3; i++) {
-                            appendMessage("重试第" + (i + 1) + "次...");
-                            poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
-                            if (poi != null && "10000".equals(poi.getInfocode())) {
-                                appendMessage("数据获取成功，继续爬取...");
-                                return poi;
-                            }
-                        }
-                    }
                     if (poi == null) {
                         appendMessage("数据获取失败");
                         appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
@@ -662,40 +668,10 @@ public class POIViewModel {
                         } else {
                             appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
                         }
+                        // 去除无效的，使用其它key重新访问
+                        keys.remove(key);
                     }
-                    // 去除过期的，使用其它key重新访问
-                    keys.remove(key);
                 }
-                while (!keys.isEmpty()) {
-                    appendMessage("正在尝试其它key");
-                    key = getAMapKey(keys);
-                    appendMessage("切换key：" + key);
-                    poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
-                    if (poi != null && "10000".equals(poi.getInfocode())) {
-                        appendMessage("数据获取成功，继续爬取...");
-                        return poi;
-                    } else {
-                        // 如果返回null，重试
-                        appendMessage("数据获取失败，正在重试中...");
-                        for (int i = 0; i < 3; i++) {
-                            appendMessage("重试第" + (i + 1) + "次...");
-                            poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
-                            if (poi != null && "10000".equals(poi.getInfocode())) {
-                                appendMessage("数据获取成功，继续爬取...");
-                                return poi;
-                            }
-                        }
-                    }
-                    keys.remove(key);
-                    if (poi == null) {
-                        appendMessage("数据获取失败");
-                        appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
-                        continue;
-                    }
-                    appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
-                }
-                appendMessage("key池已耗尽，无法继续获取POI...");
-                return null;
             }
         }
         long endTime = System.currentTimeMillis(); //获取结束时间
@@ -725,7 +701,31 @@ public class POIViewModel {
         return filename.length() > 200 ? filename.substring(0, 200) + "等." + format : filename + "." + format;
     }
 
+    private void writeToFailJobsTxt(List<POIJob> allFailJobs) {
+        if (!hasStart) return;
+        // 准备失败网格文件
+        String filename = viewHolder.outputDirectory.getText();
+        File failJobsFile = FileUtil.getNewFile(filename + "fail_jobs.txt");
+        if (failJobsFile == null) {
+            appendMessage("输出路径有误，请检查后重试！");
+            return;
+        }
+        try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(failJobsFile.toPath(), StandardCharsets.UTF_8))) {
+            appendMessage("写入失败任务数据...");
+            writer.write('\ufeff');
+            writer.write("polygon,keywords,types,page,size\r\n");
+            for (POIJob job : allFailJobs) {
+                writer.write("\"" + job.polygon + "\"," + "\"" + job.keywords + "\"," + "\"" + job.types + "\"," + "\"" + job.page + "\"," + "\"" + job.size + "\"" + "\r\n");
+            }
+            appendMessage("失败任务写入成功，结果存储于" + failJobsFile.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            appendMessage("写入失败");
+        }
+    }
+
     private void writeToCsvOrTxt(List<POI.Info> res, String format) {
+        if (!hasStart) return;
         String filename = filename(format);
         File csvFile = FileUtil.getNewFile(filename);
         if (csvFile == null) {
@@ -753,6 +753,7 @@ public class POIViewModel {
     }
 
     private void writeToGeoJson(List<POI.Info> res) {
+        if (!hasStart) return;
         String filename = filename(".json");
         GeoJSON geoJSON = parseResult(res);
         File jsonFile = FileUtil.getNewFile(filename);
@@ -773,6 +774,7 @@ public class POIViewModel {
 
 
     private void writeToShp(List<POI.Info> res) {
+        if (!hasStart) return;
         String filename = filename(".shp");
         appendMessage("正在写入数据，请等待");
         try {
