@@ -1,6 +1,9 @@
 package com.civitasv.spider.db;
 
+import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.model.City;
+import com.civitasv.spider.util.MessageUtil;
+import javafx.scene.control.Alert;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -15,26 +18,17 @@ public class Database {
 
     private static final Logger LOGGER = Logger.getLogger(Database.class.getSimpleName());
 
-    // absolute path of the project
-    private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
-
-    // Sqlite db files path (this should be appened to the DEFAULT_DIRECTORY)
-    private static final String DEFAULT_JDBC_URL = "/poi.db";
-
     // database URL
-    private String url = "jdbc:sqlite:" + DEFAULT_DIRECTORY;
+    private String url = "jdbc:sqlite:" + "./poi.db";
 
     // Constructor
-    public Database(String url) {
-        this.url = this.url + url;
-    }
     public Database() {
-        this(DEFAULT_JDBC_URL);
+        MessageUtil.alert(Alert.AlertType.INFORMATION,"TEST","",url);
+        System.out.println(this.url);
     }
 
     // 获取大类
     public List<String> getPoiCategory1() throws SQLException {
-
         List<String> arrCate1 = new ArrayList<>();
 
         Connection connection = DriverManager.getConnection(this.url);
