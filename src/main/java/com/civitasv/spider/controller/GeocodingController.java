@@ -237,7 +237,7 @@ public class GeocodingController {
                         item.put("formatted_address_" + k, info.formattedAddress);
                         item.put("country_" + k, info.country);
                         item.put("province_" + k, info.province);
-                        item.put("city_" + k, info.city);
+                        item.put("city_" + k, info.city != null ? info.city.toString() : "");
                         item.put("citycode_" + k, info.cityCode);
                         item.put("district_" + k, info.district != null ? info.district.toString() : "");
                         item.put("adcode_" + k, info.adCode != null ? info.adCode : "");
@@ -255,6 +255,7 @@ public class GeocodingController {
                     }
                 }
             } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
                 appendMessage("爬取线程已中断");
             }
         }
@@ -321,6 +322,7 @@ public class GeocodingController {
                 }
                 for (int j = 0; j < futures.size(); j++) {
                     Future<Geocodes.Response> future = futures.get(j);
+                    System.out.println(future.get());
                     Geocodes.Response response = future.get();
                     if (response == null) {
                         break job;
@@ -341,7 +343,7 @@ public class GeocodingController {
                         jsonItem.addProperty("formatted_address", info.formattedAddress);
                         jsonItem.addProperty("country", info.country);
                         jsonItem.addProperty("province", info.province);
-                        jsonItem.addProperty("city", info.city);
+                        jsonItem.addProperty("city", info.city != null ? info.city.toString() : "");
                         jsonItem.addProperty("citycode", info.cityCode);
                         jsonItem.addProperty("district", info.district != null ? info.district.toString() : "");
                         jsonItem.addProperty("adcode", info.adCode);
@@ -362,6 +364,7 @@ public class GeocodingController {
                     jsonArray.add(jsonObject);
                 }
             } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
                 appendMessage("爬取线程已中断");
             }
         }

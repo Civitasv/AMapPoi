@@ -44,6 +44,7 @@ public class POIController {
     public TextField outputDirectory; // 输出文件夹
     public TextArea messageDetail; // 输出信息
     public TextField userFile; // 用户自定义文件
+    public TextField failJobsFile; // 失败任务文件
     public TabPane tabs; // tab 栏
     public Button directoryBtn; // 点击选择文件夹
     public Button execute; // 执行
@@ -98,7 +99,7 @@ public class POIController {
 
     private void init() {
         this.poiViewModel = new POIViewModel(threadNum, keywords, keys, types, adCode,
-                rectangle, threshold, format, outputDirectory, messageDetail, userFile, tabs, directoryBtn,
+                rectangle, threshold, format, outputDirectory, messageDetail, userFile,failJobsFile, tabs, directoryBtn,
                 execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ);
         this.threadNum.setTextFormatter(getFormatter());
         this.threshold.setTextFormatter(getFormatter());
@@ -228,6 +229,17 @@ public class POIController {
         File file = fileChooser.showOpenDialog(scene.getWindow());
         if (file != null)
             userFile.setText(file.getAbsolutePath());
+    }
+
+    public void chooseFailJobsFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("选择输入文件");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("csv", "*.csv")
+        );
+        File file = fileChooser.showOpenDialog(scene.getWindow());
+        if (file != null)
+            failJobsFile.setText(file.getAbsolutePath());
     }
 
     public void chooseDirectory() {

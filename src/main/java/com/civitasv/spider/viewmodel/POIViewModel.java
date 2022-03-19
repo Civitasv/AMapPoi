@@ -10,6 +10,7 @@ import com.civitasv.spider.model.POI;
 import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.opencsv.CSVWriter;
 import javafx.application.Platform;
 import javafx.scene.control.*;
 import org.geotools.data.DataUtilities;
@@ -22,6 +23,7 @@ import org.opengis.feature.simple.SimpleFeatureType;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -42,12 +44,12 @@ public class POIViewModel {
 
     public POIViewModel(TextField threadNum, TextField keywords, TextArea keys, TextField types,
                         TextField adCode, TextField rectangle, TextField threshold, ChoiceBox<String> format,
-                        TextField outputDirectory, TextArea messageDetail, TextField userFile, TabPane tabs,
+                        TextField outputDirectory, TextArea messageDetail, TextField userFile, TextField failJobsFile, TabPane tabs,
                         Button directoryBtn, Button execute, Button poiType, ChoiceBox<String> userType,
                         ChoiceBox<CoordinateType> rectangleCoordinateType, ChoiceBox<CoordinateType> userFileCoordinateType,
                         MenuItem wechat, MenuItem joinQQ) {
         this.viewHolder = new ViewHolder(threadNum, keywords, keys, types, adCode,
-                rectangle, threshold, format, outputDirectory, messageDetail, userFile, tabs, directoryBtn,
+                rectangle, threshold, format, outputDirectory, messageDetail, userFile, failJobsFile, tabs, directoryBtn,
                 execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ);
         this.dataHolder = new DataHolder();
         this.geometryFactory = new GeometryFactory();
@@ -67,6 +69,7 @@ public class POIViewModel {
         public TextField outputDirectory; // 输出文件夹
         public TextArea messageDetail; // 输出信息
         public TextField userFile; // 用户自定义文件
+        public TextField failJobsFile; // 任务失败文件
         public TabPane tabs; // tab 栏
         public Button directoryBtn; // 点击选择文件夹
         public Button execute; // 执行
@@ -79,7 +82,7 @@ public class POIViewModel {
 
         public ViewHolder(TextField threadNum, TextField keywords, TextArea keys, TextField types,
                           TextField adCode, TextField rectangle, TextField threshold, ChoiceBox<String> format,
-                          TextField outputDirectory, TextArea messageDetail, TextField userFile, TabPane tabs,
+                          TextField outputDirectory, TextArea messageDetail, TextField userFile, TextField failJobsFile, TabPane tabs,
                           Button directoryBtn, Button execute, Button poiType, ChoiceBox<String> userType,
                           ChoiceBox<CoordinateType> rectangleCoordinateType, ChoiceBox<CoordinateType> userFileCoordinateType,
                           MenuItem wechat, MenuItem joinQQ) {
@@ -94,6 +97,7 @@ public class POIViewModel {
             this.outputDirectory = outputDirectory;
             this.messageDetail = messageDetail;
             this.userFile = userFile;
+            this.failJobsFile = failJobsFile;
             this.tabs = tabs;
             this.directoryBtn = directoryBtn;
             this.execute = execute;
@@ -126,9 +130,11 @@ public class POIViewModel {
             return false;
         }
         if (viewHolder.keywords.getText().isEmpty() && viewHolder.types.getText().isEmpty()) {
-            // 关键字和类型均为空
-            Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "参数设置", null, "POI关键字和POI类型两者至少必填其一！"));
-            return false;
+            if (!"失败文件".equals(viewHolder.tabs.getSelectionModel().getSelectedItem().getText())) {
+                // 关键字和类型均为空
+                Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "参数设置", null, "POI关键字和POI类型两者至少必填其一！"));
+                return false;
+            }
         }
         if (viewHolder.threshold.getText().isEmpty()) {
             // 阈值为空
@@ -262,6 +268,13 @@ public class POIViewModel {
                     return false;
                 }
                 break;
+            case "失败文件":
+                if (viewHolder.failJobsFile.getText().isEmpty()) {
+                    // 行政区为空
+                    Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "失败文件", null, "请设置失败任务文件路径！"));
+                    return false;
+                }
+                break;
         }
         dataHolder.tab = tab;
         return true;
@@ -390,11 +403,79 @@ public class POIViewModel {
                                 return boundary.intersects(geometryFactory.createPoint(coordinate));
                             });
                     break;
+                case "失败文件":
+                    if (!hasStart) return;
+                    appendMessage("解析失败任务文件中");
+                    List<POIJob> poiJobs = parseFailJobsFile(viewHolder.failJobsFile.getText());
+                    getPOIDataFromFailJobs(dataHolder.aMapKeys, dataHolder.threadNum, poiJobs);
+                    break;
             }
             analysis(false);
         });
     }
 
+    private void getPOIDataFromFailJobs(Queue<String> keys, int threadNum, List<POIJob> poiJobs) {
+        List<POI.Info> res = new ArrayList<>();
+        executorService = Executors.newFixedThreadPool(threadNum);
+        // 添加任务
+        List<Future<POI>> futures = new ArrayList<>();
+        for (POIJob job : poiJobs) {
+            Future<POI> future = executorService.submit(() ->
+                    getPoi(keys, job.polygon, job.keywords, job.types, job.page, job.size));
+            futures.add(future);
+        }
+
+        // 阻塞获取
+        List<POIJob> failJobs = new ArrayList<>();
+        for (int i = 0; i < futures.size(); i++) {
+            try {
+                POI item = futures.get(i).get(20, TimeUnit.SECONDS);
+                if (item != null) {
+                    if (item.getStatus() == -1) {
+                        // 说明剩余的任务都将失败
+                        for (int j = i; j < poiJobs.size(); j++) {
+                            failJobs.add(poiJobs.get(j));
+                        }
+                        break;
+                    } else {
+                        res.addAll(Arrays.asList(item.getPois()));
+                    }
+                } else {
+                    failJobs.add(poiJobs.get(i));
+                }
+            } catch (TimeoutException | InterruptedException | ExecutionException e) {
+                failJobs.add(poiJobs.get(i));
+            }
+        }
+        executorService.shutdown();
+        appendMessage("共获得POI：" + res.size() + "条");
+
+        appendMessage(failJobs.size() == 0 ? "POI爬取完毕" : "未完全爬取");
+        // 导出res
+        switch (viewHolder.format.getValue()) {
+            case "csv":
+            case "txt":
+                writeToCsvOrTxt(res, viewHolder.format.getValue());
+                break;
+            case "geojson":
+                writeToGeoJson(res);
+                break;
+            case "shp":
+                writeToShp(res);
+        }
+        // 导出失败任务
+        if (failJobs.size() > 0)
+            writeToFailJobsTxt(failJobs);
+    }
+
+    private List<POIJob> parseFailJobsFile(String failJobsFilePath) {
+        List<POIJob> jobs = new ArrayList<>();
+        List<Map<String, String>> parseRes = ParseUtil.parseTxtOrCsv(failJobsFilePath);
+        for (Map<String, String> item : parseRes) {
+            jobs.add(new POIJob(item.get("polygon"), item.get("keywords"), item.get("types"), Integer.parseInt(item.get("page")), Integer.parseInt(item.get("size"))));
+        }
+        return jobs;
+    }
 
     public void cancel() {
         analysis(false);
@@ -705,18 +786,19 @@ public class POIViewModel {
         if (!hasStart) return;
         // 准备失败网格文件
         String filename = viewHolder.outputDirectory.getText();
-        File failJobsFile = FileUtil.getNewFile(filename + "fail_jobs.txt");
+        File failJobsFile = FileUtil.getNewFile(filename + "/fail_jobs.csv");
         if (failJobsFile == null) {
             appendMessage("输出路径有误，请检查后重试！");
             return;
         }
-        try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(failJobsFile.toPath(), StandardCharsets.UTF_8))) {
-            appendMessage("写入失败任务数据...");
-            writer.write('\ufeff');
-            writer.write("polygon,keywords,types,page,size\r\n");
-            for (POIJob job : allFailJobs) {
-                writer.write("\"" + job.polygon + "\"," + "\"" + job.keywords + "\"," + "\"" + job.types + "\"," + "\"" + job.page + "\"," + "\"" + job.size + "\"" + "\r\n");
+        try {
+            CSVWriter writer = new CSVWriter(new FileWriter(failJobsFile));
+            writer.writeNext(new String[]{"polygon", "types", "keywords", "page", "size"});
+            for (POIJob item : allFailJobs) {
+                String[] entries = {item.polygon, item.types, item.keywords, String.valueOf(item.page), String.valueOf(item.size)};
+                writer.writeNext(entries);
             }
+            writer.close();
             appendMessage("失败任务写入成功，结果存储于" + failJobsFile.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();

@@ -93,7 +93,7 @@ public class Geocodes {
         public String province;
         @SerializedName("citycode")
         public String cityCode;
-        public String city;
+        public Object city;
         public Object district;
         public Object township;
         public Neighborhood neighborhood;

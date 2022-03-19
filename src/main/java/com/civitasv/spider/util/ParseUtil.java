@@ -1,5 +1,8 @@
 package com.civitasv.spider.util;
 
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
@@ -13,39 +16,20 @@ public class ParseUtil {
      * @return 解析结果
      */
     public static List<Map<String, String>> parseTxtOrCsv(String path) {
-        File file = new File(path);
         List<Map<String, String>> res = new ArrayList<>();
-        if (file.exists()) {
-            try {
-                Files.lines(file.toPath())
-                        .forEach(new Consumer<String>() {
-                            private int index = 0;
-                            private String[] keys;
-
-                            @Override
-                            public void accept(String line) {
-                                if (index == 0) {
-                                    String[] arr = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-                                    keys = new String[arr.length];
-                                    for (int i = 0; i < arr.length; i++)
-                                        keys[i] = arr[i].trim();
-                                } else {
-                                    String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-                                    if (values.length != keys.length) {
-                                        return;
-                                    }
-                                    Map<String, String> item = new LinkedHashMap<>();
-                                    for (int i = 0; i < values.length; i++)
-                                        item.put(keys[i], values[i]);
-                                    res.add(item);
-                                }
-                                index++;
-                            }
-                        });
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
+        try {
+            CSVReader reader = new CSVReader(new FileReader(path));
+            List<String[]> data = reader.readAll();
+            // header
+            String[] header = data.get(0);
+            for (int i = 1; i < data.size(); i++) {
+                Map<String, String> map = new HashMap<>();
+                for (int j = 0; j < header.length; j++)
+                    map.put(header[j], data.get(i)[j]);
+                res.add(map);
             }
+        } catch (IOException | CsvException e) {
+            e.printStackTrace();
         }
         return res;
     }
