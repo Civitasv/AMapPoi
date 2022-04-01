@@ -108,7 +108,6 @@ public class POIViewModel {
             this.wechat = wechat;
             this.joinQQ = joinQQ;
         }
-
     }
 
     private static class DataHolder {
