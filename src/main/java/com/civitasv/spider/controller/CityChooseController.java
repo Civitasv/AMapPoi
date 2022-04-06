@@ -3,8 +3,6 @@ package com.civitasv.spider.controller;
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.model.City;
 import com.civitasv.spider.util.MessageUtil;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;

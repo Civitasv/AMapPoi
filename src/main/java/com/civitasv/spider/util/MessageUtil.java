@@ -1,14 +1,10 @@
 package com.civitasv.spider.util;
 
 import com.civitasv.spider.MainApplication;
-import javafx.application.Platform;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-
-import java.awt.*;
 
 /**
  * 消息提示

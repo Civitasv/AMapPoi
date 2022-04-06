@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.civitasv.spider.mapper.TaskMapper">
+  <resultMap id="BaseResultMap" type="com.civitasv.spider.model.po.TaskPo">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="keys" jdbcType="VARCHAR" property="keys" />
+    <result column="types" jdbcType="VARCHAR" property="types" />
+    <result column="keywords" jdbcType="VARCHAR" property="keywords" />
+    <result column="threadnum" jdbcType="INTEGER" property="threadnum" />
+    <result column="threshold" jdbcType="INTEGER" property="threshold" />
+    <result column="user_type" jdbcType="INTEGER" property="userType" />
+    <result column="output_directory" jdbcType="VARCHAR" property="outputDirectory" />
+    <result column="output_type" jdbcType="INTEGER" property="outputType" />
+    <result column="request_actual_times" jdbcType="INTEGER" property="requestActualTimes" />
+    <result column="request_excepted_times" jdbcType="INTEGER" property="requestExceptedTimes" />
+    <result column="poi_actial_sum" jdbcType="INTEGER" property="poiActialSum" />
+    <result column="poi_excetued_sum" jdbcType="INTEGER" property="poiExcetuedSum" />
+    <result column="total_executed_time" jdbcType="INTEGER" property="totalExecutedTime" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from task
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.civitasv.spider.model.po.TaskPo">
+    <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+      Sqlite
+    </selectKey>
+    insert into task (`keys`, types, keywords, 
+      threadnum, threshold, user_type, 
+      output_directory, output_type, request_actual_times, 
+      request_excepted_times, poi_actial_sum, poi_excetued_sum, 
+      total_executed_time, `status`)
+    values (#{keys,jdbcType=VARCHAR}, #{types,jdbcType=VARCHAR}, #{keywords,jdbcType=VARCHAR}, 
+      #{threadnum,jdbcType=INTEGER}, #{threshold,jdbcType=INTEGER}, #{userType,jdbcType=INTEGER}, 
+      #{outputDirectory,jdbcType=VARCHAR}, #{outputType,jdbcType=INTEGER}, #{requestActualTimes,jdbcType=INTEGER}, 
+      #{requestExceptedTimes,jdbcType=INTEGER}, #{poiActialSum,jdbcType=INTEGER}, #{poiExcetuedSum,jdbcType=INTEGER}, 
+      #{totalExecutedTime,jdbcType=INTEGER}, #{status,jdbcType=INTEGER})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.civitasv.spider.model.po.TaskPo">
+    update task
+    set `keys` = #{keys,jdbcType=VARCHAR},
+      types = #{types,jdbcType=VARCHAR},
+      keywords = #{keywords,jdbcType=VARCHAR},
+      threadnum = #{threadnum,jdbcType=INTEGER},
+      threshold = #{threshold,jdbcType=INTEGER},
+      user_type = #{userType,jdbcType=INTEGER},
+      output_directory = #{outputDirectory,jdbcType=VARCHAR},
+      output_type = #{outputType,jdbcType=INTEGER},
+      request_actual_times = #{requestActualTimes,jdbcType=INTEGER},
+      request_excepted_times = #{requestExceptedTimes,jdbcType=INTEGER},
+      poi_actial_sum = #{poiActialSum,jdbcType=INTEGER},
+      poi_excetued_sum = #{poiExcetuedSum,jdbcType=INTEGER},
+      total_executed_time = #{totalExecutedTime,jdbcType=INTEGER},
+      `status` = #{status,jdbcType=INTEGER}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select id, `keys`, types, keywords, threadnum, threshold, user_type, output_directory, 
+    output_type, request_actual_times, request_excepted_times, poi_actial_sum, poi_excetued_sum, 
+    total_executed_time, `status`
+    from task
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <select id="selectByStatus" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select id, `keys`, types, keywords, threadnum, threshold, user_type, output_directory,
+           output_type, request_actual_times, request_excepted_times, poi_actial_sum, poi_excetued_sum,
+           total_executed_time, `status`
+    from task
+    where `status` = #{id,jdbcType=INTEGER}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select id, `keys`, types, keywords, threadnum, threshold, user_type, output_directory, 
+    output_type, request_actual_times, request_excepted_times, poi_actial_sum, poi_excetued_sum, 
+    total_executed_time, `status`
+    from task
+  </select>
+</mapper>

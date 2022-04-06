@@ -14,12 +14,12 @@ public class POI {
         public String name; // 名称
         public String type; // 兴趣点类型
         public String typecode; // 兴趣点类型编码
-        public Object address; // 地址
-        public Object location; // 经纬度
-        public Object tel; // 电话
-        public Object pname; //  省份名称
-        public Object cityname; // 城市名称
-        public Object adname; // 区域名称
+        public String address; // 地址
+        public String location; // 经纬度
+        public String tel; // 电话
+        public String pname; //  省份名称
+        public String cityname; // 城市名称
+        public String adname; // 区域名称
 
         @Override
         public String toString() {

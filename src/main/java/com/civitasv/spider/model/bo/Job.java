@@ -1,4 +1,4 @@
-package com.civitasv.spider.model;
+package com.civitasv.spider.model.bo;
 
 import com.civitasv.spider.helper.JobStatus;
 

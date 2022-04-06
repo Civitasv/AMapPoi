@@ -1,9 +1,6 @@
 package com.civitasv.spider.db;
 
-import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.model.City;
-import com.civitasv.spider.util.MessageUtil;
-import javafx.scene.control.Alert;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -19,7 +16,7 @@ public class Database {
     private static final Logger LOGGER = Logger.getLogger(Database.class.getSimpleName());
 
     // database URL
-    private String url = "jdbc:sqlite:" + "app/db/poi.db";
+    private String url = "jdbc:sqlite:" + "src\\main\\resources\\com\\civitasv\\spider\\db\\poi.db";
 
     // Constructor
     public Database() {
@@ -155,3 +152,5 @@ public class Database {
             con.close();
     }
 }
+
+

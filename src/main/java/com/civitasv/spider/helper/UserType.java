@@ -1,19 +1,18 @@
 package com.civitasv.spider.helper;
 
-public enum OutputType {
-    CSV("csv"),
-    SHAPEFILE("shapefile"),
-    GEOJSON("geojson"),
-    TXT("txt");
+public enum UserType {
+    IndividualDevelopers("个人开发者"),
+    IndividualCertifiedDeveloper("个人认证开发者"),
+    EnterpriseDeveloper("企业开发者");
 
     private final String description;
 
-    OutputType(String description) {
+    UserType(String description) {
         this.description = description;
     }
 
-    public static OutputType getOutputType(String description){
-        for (OutputType value : OutputType.values()) {
+    public static UserType getUserType(String description){
+        for (UserType value : UserType.values()) {
             if(value.description.equals(description)){
                 return value;
             }

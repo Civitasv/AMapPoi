@@ -3,10 +3,13 @@ package com.civitasv.spider.viewmodel;
 import com.civitasv.spider.dao.AMapDao;
 import com.civitasv.spider.dao.impl.AMapDaoImpl;
 import com.civitasv.spider.helper.CoordinateType;
-import com.civitasv.spider.model.POIJob;
+import com.civitasv.spider.helper.OutputType;
+import com.civitasv.spider.helper.UserType;
 import com.civitasv.spider.model.Feature;
 import com.civitasv.spider.model.GeoJSON;
 import com.civitasv.spider.model.POI;
+import com.civitasv.spider.model.POIJob;
+import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -119,7 +122,7 @@ public class POIViewModel {
         public String keywords;
         public String types;
         public String tab;
-        public double[] boundary;
+        public Double[] boundary;
     }
 
     private boolean check() {
@@ -301,16 +304,20 @@ public class POIViewModel {
         dataHolder.perExecuteTime = (int) (1000 * (threadNum * 1.0 / (qps * keysNum)));
     }
 
-    private double[] getBoundaryFromGeometry(Geometry geometry) {
+    private Double[] getBoundaryFromGeometry(Geometry geometry) {
         Envelope envelopeInternal = geometry.getEnvelopeInternal();
 
         double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
                 right = envelopeInternal.getMaxX(), top = envelopeInternal.getMaxY();
-        return new double[]{left, bottom, right, top};
+        return new Double[]{left, bottom, right, top};
     }
 
     public void execute() {
         worker = Executors.newSingleThreadExecutor();
+        // 判断是否有未完成的task
+
+
+
         worker.execute(() -> {
             clearMessage();
             if (!check()) return;
@@ -324,6 +331,7 @@ public class POIViewModel {
             alterThreadNum();
             perExecuteTime();
             analysis(true);
+            Predicate<? super POI.Info> filter = null;
 
             switch (dataHolder.tab) {
                 case "行政区":
@@ -343,18 +351,17 @@ public class POIViewModel {
                     dataHolder.boundary = getBoundaryFromGeometry(geometry);
                     if (!hasStart) return;
                     appendMessage("成功获取行政区 " + adCode + ":" + adName + " 区域边界");
-                    getPoiData(dataHolder.boundary, dataHolder.threadNum,
-                            dataHolder.threshold, dataHolder.keywords, dataHolder.types,
-                            dataHolder.aMapKeys, info -> {
-                                int level = getLevel(adCode);
-                                if (level == 0)
-                                    return "中华人民共和国".equals(adName);
-                                else if (level == 1)
-                                    return info.pname.equals(adName);
-                                else if (level == 2)
-                                    return info.cityname.equals(adName);
-                                else return info.adname.equals(adName);
-                            });
+
+                    filter = info -> {
+                        int level = getLevel(adCode);
+                        if (level == 0)
+                            return "中华人民共和国".equals(adName);
+                        else if (level == 1)
+                            return info.pname.equals(adName);
+                        else if (level == 2)
+                            return info.cityname.equals(adName);
+                        else return info.adname.equals(adName);
+                    };
                     break;
                 case "矩形":
                     // 获取坐标类型
@@ -362,7 +369,7 @@ public class POIViewModel {
                     String rectangle = viewHolder.rectangle.getText();
                     CoordinateType type = viewHolder.rectangleCoordinateType.getValue();
                     appendMessage("解析矩形区域中");
-                    double[] rectangleBoundary = getBoundaryByRectangle(rectangle, type);
+                    Double[] rectangleBoundary = getBoundaryByRectangle(rectangle, type);
                     if (rectangleBoundary == null) {
                         if (!hasStart) return;
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式！"));
@@ -372,9 +379,7 @@ public class POIViewModel {
                     dataHolder.boundary = rectangleBoundary;
                     if (!hasStart) return;
                     appendMessage("解析矩形区域成功");
-                    getPoiData(dataHolder.boundary, dataHolder.threadNum,
-                            dataHolder.threshold, dataHolder.keywords, dataHolder.types,
-                            dataHolder.aMapKeys, info -> true);
+                    filter = info -> true;
                     break;
                 case "自定义":
                     if (!hasStart) return;
@@ -390,17 +395,15 @@ public class POIViewModel {
                     if (!hasStart) return;
                     appendMessage("成功解析用户文件");
 
-                    getPoiData(dataHolder.boundary, dataHolder.threadNum,
-                            dataHolder.threshold, dataHolder.keywords, dataHolder.types,
-                            dataHolder.aMapKeys, info -> {
-                                if (info.location == null) return false;
-                                String[] lonlat = info.location.toString().split(",");
-                                if (lonlat.length != 2) {
-                                    return false;
-                                }
-                                Coordinate coordinate = new Coordinate(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
-                                return boundary.intersects(geometryFactory.createPoint(coordinate));
-                            });
+                    filter = info -> {
+                        if (info.location == null) return false;
+                        String[] lonlat = info.location.toString().split(",");
+                        if (lonlat.length != 2) {
+                            return false;
+                        }
+                        Coordinate coordinate = new Coordinate(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                        return boundary.intersects(geometryFactory.createPoint(coordinate));
+                    };
                     break;
                 case "失败文件":
                     if (!hasStart) return;
@@ -409,6 +412,14 @@ public class POIViewModel {
                     getPOIDataFromFailJobs(dataHolder.aMapKeys, dataHolder.threadNum, poiJobs);
                     break;
             }
+
+            Task task = new Task(null, dataHolder.aMapKeys, dataHolder.types, dataHolder.keywords, dataHolder.threadNum,
+                    dataHolder.threshold, viewHolder.outputDirectory.getText(),OutputType.getOutputType(viewHolder.format.getValue()),
+                    UserType.getUserType(viewHolder.userType.getValue()),dataHolder.boundary,
+                    0, 0,0,0,
+                    0);
+
+            getPoiData(task, filter);
             analysis(false);
         });
     }
@@ -533,7 +544,7 @@ public class POIViewModel {
         return BoundaryUtil.getBoundaryByDataVGeoJSON(filePath, type);
     }
 
-    private double[] getBoundaryByRectangle(String text, CoordinateType type) {
+    private Double[] getBoundaryByRectangle(String text, CoordinateType type) {
         String[] str = text.split("#");
         if (str.length == 2) {
             String[] leftTop = str[0].split(",");
@@ -549,7 +560,7 @@ public class POIViewModel {
                     rightBottomLonlat = CoordinateTransformUtil.transformBD09ToGCJ02(rightBottomLonlat[0], rightBottomLonlat[1]);
                 }
                 if (leftTop.length == 2 && rightBottom.length == 2) {
-                    return new double[]{leftTopLonlat[0], rightBottomLonlat[1], rightBottomLonlat[0], leftTopLonlat[1]};
+                    return new Double[]{leftTopLonlat[0], rightBottomLonlat[1], rightBottomLonlat[0], leftTopLonlat[1]};
 
                 }
             } catch (NumberFormatException e) {
@@ -591,8 +602,15 @@ public class POIViewModel {
         return result;
     }
 
-    private void getPoiData(double[] boundary, int threadNum, int threshold, String keywords,
-                            String types, Queue<String> keys, Predicate<? super POI.Info> filter) {
+    private void getPoiData(Task task, Predicate<? super POI.Info> filter) {
+
+        Double[] boundary = task.boundary;
+        int threadNum = task.threadNum;
+        int threshold = task.threshold;
+        String keywords = task.keywords;
+        String types = task.types;
+        Queue<String> keys = task.aMapKeys;
+
         List<POI.Info> res = new ArrayList<>();
         // 1. 获取边界
         double left = boundary[0], bottom = boundary[1], right = boundary[2], top = boundary[3];

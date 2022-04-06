@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.civitasv.spider.mapper.JobMapper">
+  <resultMap id="BaseResultMap" type="com.civitasv.spider.model.po.JobPo">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="taskid" jdbcType="INTEGER" property="taskid" />
+    <result column="keys" jdbcType="VARCHAR" property="keys" />
+    <result column="types" jdbcType="VARCHAR" property="types" />
+    <result column="keywords" jdbcType="VARCHAR" property="keywords" />
+    <result column="page" jdbcType="INTEGER" property="page" />
+    <result column="size" jdbcType="INTEGER" property="size" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="request_excepted_times" jdbcType="INTEGER" property="requestExceptedTimes" />
+    <result column="poi_actial_sum" jdbcType="INTEGER" property="poiActialSum" />
+    <result column="poi_excetued_sum" jdbcType="INTEGER" property="poiExcetuedSum" />
+    <result column="total_executed_time" jdbcType="INTEGER" property="totalExecutedTime" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from job
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.civitasv.spider.model.po.JobPo">
+    <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+      Sqlite
+    </selectKey>
+    insert into job (taskid, `keys`, types, 
+      keywords, page, `size`, 
+      `status`, request_excepted_times, poi_actial_sum, 
+      poi_excetued_sum, total_executed_time)
+    values (#{taskid,jdbcType=INTEGER}, #{keys,jdbcType=VARCHAR}, #{types,jdbcType=VARCHAR}, 
+      #{keywords,jdbcType=VARCHAR}, #{page,jdbcType=INTEGER}, #{size,jdbcType=INTEGER}, 
+      #{status,jdbcType=INTEGER}, #{requestExceptedTimes,jdbcType=INTEGER}, #{poiActialSum,jdbcType=INTEGER}, 
+      #{poiExcetuedSum,jdbcType=INTEGER}, #{totalExecutedTime,jdbcType=INTEGER})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.civitasv.spider.model.po.JobPo">
+    update job
+    set taskid = #{taskid,jdbcType=INTEGER},
+      `keys` = #{keys,jdbcType=VARCHAR},
+      types = #{types,jdbcType=VARCHAR},
+      keywords = #{keywords,jdbcType=VARCHAR},
+      page = #{page,jdbcType=INTEGER},
+      `size` = #{size,jdbcType=INTEGER},
+      `status` = #{status,jdbcType=INTEGER},
+      request_excepted_times = #{requestExceptedTimes,jdbcType=INTEGER},
+      poi_actial_sum = #{poiActialSum,jdbcType=INTEGER},
+      poi_excetued_sum = #{poiExcetuedSum,jdbcType=INTEGER},
+      total_executed_time = #{totalExecutedTime,jdbcType=INTEGER}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select id, taskid, `keys`, types, keywords, page, `size`, `status`, request_excepted_times, 
+    poi_actial_sum, poi_excetued_sum, total_executed_time
+    from job
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select id, taskid, `keys`, types, keywords, page, `size`, `status`, request_excepted_times, 
+    poi_actial_sum, poi_excetued_sum, total_executed_time
+    from job
+  </select>
+</mapper>
