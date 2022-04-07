@@ -1,4 +1,4 @@
-package com.civitasv.spider.model;
+package com.civitasv.spider.model.bo;
 
 import java.util.Arrays;
 
@@ -16,7 +16,7 @@ public class POI {
         public String typecode; // 兴趣点类型编码
         public String address; // 地址
         public String location; // 经纬度
-        public String tel; // 电话
+        public Object tel; // 电话
         public String pname; //  省份名称
         public String cityname; // 城市名称
         public String adname; // 区域名称

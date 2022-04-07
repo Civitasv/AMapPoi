@@ -2,7 +2,7 @@ import com.civitasv.spider.api.AMapKeys;
 import com.civitasv.spider.dao.AMapDao;
 import com.civitasv.spider.dao.impl.AMapDaoImpl;
 import com.civitasv.spider.mapper.TaskMapper;
-import com.civitasv.spider.model.POI;
+import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.service.serviceImpl.JobServiceImpl;
 import com.civitasv.spider.util.MyBatisUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -20,12 +20,12 @@ public class RetrofitTest {
 
     @Test
     public void testMybatis(){
-        MyBatisUtils.getDefaultMyBatis();
+        MyBatisUtils.getDefaultMybatisPlus();
     }
 
     @Test
     public void testService(){
-        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMyBatis();
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             TaskMapper taskMapper = session.getMapper(TaskMapper.class);
         }

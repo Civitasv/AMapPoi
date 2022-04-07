@@ -1,6 +1,6 @@
 package com.civitasv.spider.mapper;
 
-import com.civitasv.spider.model.entity.TaskPo;
+import com.civitasv.spider.model.po.TaskPo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

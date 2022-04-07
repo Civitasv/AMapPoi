@@ -1,14 +1,10 @@
 package com.civitasv.spider.api.service;
 
 import com.civitasv.spider.model.Geocodes;
-import com.civitasv.spider.model.POI;
-import com.google.gson.JsonObject;
+import com.civitasv.spider.model.bo.POI;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
-import retrofit2.http.QueryMap;
-
-import java.util.Map;
 
 /**
  * 高德service

@@ -1,4 +1,4 @@
-package com.civitasv.spider.model.entity;
+package com.civitasv.spider.model.po;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;

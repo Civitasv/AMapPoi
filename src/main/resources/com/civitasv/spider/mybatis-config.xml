@@ -15,8 +15,8 @@
         </environment>
     </environments>
     <mappers>
-        <mapper resource="com/civitasv/spider/mapper/POIMapper.xml"/>
-        <mapper resource="com/civitasv/spider/mapper/TaskMapper.xml"/>
         <mapper resource="com/civitasv/spider/mapper/JobMapper.xml"/>
+        <mapper resource="com/civitasv/spider/mapper/PoiMapper.xml"/>
+        <mapper resource="com/civitasv/spider/mapper/TaskMapper.xml"/>
     </mappers>
 </configuration>

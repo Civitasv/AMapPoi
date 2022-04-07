@@ -1,9 +1,18 @@
-package com.civitasv.spider.model.entity;
+package com.civitasv.spider.model.po;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.civitasv.spider.helper.OutputType;
+import com.civitasv.spider.helper.TaskStatus;
+import com.civitasv.spider.helper.UserType;
+import com.civitasv.spider.model.bo.Task;
+
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -63,6 +72,11 @@ public class TaskPo implements Serializable {
     @TableField("status")
     private Integer status;
 
+    @TableField("bound_config")
+    private String boundConfig;
+
+    @TableField("bounds")
+    private String bounds;
 
     public Integer getId() {
         return id;
@@ -184,24 +198,55 @@ public class TaskPo implements Serializable {
         this.status = status;
     }
 
+    public String getBoundConfig() {
+        return boundConfig;
+    }
+
+    public void setBoundConfig(String boundConfig) {
+        this.boundConfig = boundConfig;
+    }
+
+    public String getBounds() {
+        return bounds;
+    }
+
+    public void setBounds(String bounds) {
+        this.bounds = bounds;
+    }
+
     @Override
     public String toString() {
         return "Task{" +
-        "id=" + id +
-        ", keys=" + keys +
-        ", types=" + types +
-        ", keywords=" + keywords +
-        ", threadnum=" + threadnum +
-        ", threshold=" + threshold +
-        ", userType=" + userType +
-        ", outputDirectory=" + outputDirectory +
-        ", outputType=" + outputType +
-        ", requestActualTimes=" + requestActualTimes +
-        ", requestExceptedTimes=" + requestExceptedTimes +
-        ", poiActialSum=" + poiActialSum +
-        ", poiExcetuedSum=" + poiExcetuedSum +
-        ", totalExecutedTime=" + totalExecutedTime +
-        ", status=" + status +
-        "}";
+                "id=" + id +
+                ", keys=" + keys +
+                ", types=" + types +
+                ", keywords=" + keywords +
+                ", threadnum=" + threadnum +
+                ", threshold=" + threshold +
+                ", userType=" + userType +
+                ", outputDirectory=" + outputDirectory +
+                ", outputType=" + outputType +
+                ", requestActualTimes=" + requestActualTimes +
+                ", requestExceptedTimes=" + requestExceptedTimes +
+                ", poiActialSum=" + poiActialSum +
+                ", poiExcetuedSum=" + poiExcetuedSum +
+                ", totalExecutedTime=" + totalExecutedTime +
+                ", status=" + status +
+                ", boundConfig=" + boundConfig +
+                "}";
+    }
+
+    public Task toTask(){
+        Queue<String> queue = Arrays.stream(keys.split(",")).collect(Collectors.toCollection(LinkedList::new));
+        try {
+           return new Task(id, queue, types, keywords, threadnum, threshold,outputDirectory,
+                   OutputType.getOutputType(outputType), UserType.getUserType(userType), requestActualTimes,
+                    requestExceptedTimes, poiActialSum, poiExcetuedSum, totalExecutedTime, boundConfig,
+                   TaskStatus.getBoundryType(status),
+                   Arrays.stream(bounds.split("\\|")).map(Double::valueOf).toArray(Double[]::new));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

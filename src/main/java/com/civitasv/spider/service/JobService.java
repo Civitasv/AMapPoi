@@ -1,8 +1,7 @@
 package com.civitasv.spider.service;
 
-import com.civitasv.spider.model.entity.JobPo;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.civitasv.spider.model.entity.TaskPo;
+import com.civitasv.spider.model.po.JobPo;
 
 /**
  * <p>
@@ -13,7 +12,5 @@ import com.civitasv.spider.model.entity.TaskPo;
  * @since 2022-04-06 09:08:52
  */
 public interface JobService extends IService<JobPo> {
-    TaskPo getLatestTask();
-
-
+    void clearTable();
 }

@@ -1,9 +1,12 @@
-package com.civitasv.spider.model.entity;
+package com.civitasv.spider.model.po;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.civitasv.spider.model.bo.Job;
+
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * <p>
@@ -54,6 +57,8 @@ public class JobPo implements Serializable {
     @TableField("total_executed_time")
     private Integer totalExecutedTime;
 
+    @TableField("bounds")
+    private String bounds;
 
     public Integer getId() {
         return id;
@@ -151,6 +156,14 @@ public class JobPo implements Serializable {
         this.totalExecutedTime = totalExecutedTime;
     }
 
+    public String getBounds() {
+        return bounds;
+    }
+
+    public void setBounds(String bounds) {
+        this.bounds = bounds;
+    }
+
     @Override
     public String toString() {
         return "Job{" +
@@ -167,5 +180,11 @@ public class JobPo implements Serializable {
         ", poiExcetuedSum=" + poiExcetuedSum +
         ", totalExecutedTime=" + totalExecutedTime +
         "}";
+    }
+
+    public Job toJob(){
+        return new Job(id, null,
+                Arrays.stream(bounds.split("\\|")).map(Double::valueOf).toArray(Double[]::new),
+                types, keywords, page, size);
     }
 }

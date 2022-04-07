@@ -2,14 +2,19 @@ package com.civitasv.spider.viewmodel;
 
 import com.civitasv.spider.dao.AMapDao;
 import com.civitasv.spider.dao.impl.AMapDaoImpl;
-import com.civitasv.spider.helper.CoordinateType;
-import com.civitasv.spider.helper.OutputType;
-import com.civitasv.spider.helper.UserType;
+import com.civitasv.spider.helper.*;
 import com.civitasv.spider.model.Feature;
 import com.civitasv.spider.model.GeoJSON;
-import com.civitasv.spider.model.POI;
+import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.POIJob;
+import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.Task;
+import com.civitasv.spider.service.JobService;
+import com.civitasv.spider.service.PoiService;
+import com.civitasv.spider.service.TaskService;
+import com.civitasv.spider.service.serviceImpl.JobServiceImpl;
+import com.civitasv.spider.service.serviceImpl.PoiServiceImpl;
+import com.civitasv.spider.service.serviceImpl.TaskServiceImpl;
 import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -42,6 +47,10 @@ public class POIViewModel {
     private final GeometryFactory geometryFactory;
     private final ViewHolder viewHolder;
     private final DataHolder dataHolder;
+
+    private final TaskService taskService = new TaskServiceImpl();
+    private final JobService jobService = new JobServiceImpl();
+    private final PoiService poiService = new PoiServiceImpl();
 
     private boolean hasStart;
 
@@ -304,7 +313,7 @@ public class POIViewModel {
         dataHolder.perExecuteTime = (int) (1000 * (threadNum * 1.0 / (qps * keysNum)));
     }
 
-    private Double[] getBoundaryFromGeometry(Geometry geometry) {
+    public static Double[] getBoundaryFromGeometry(Geometry geometry) {
         Envelope envelopeInternal = geometry.getEnvelopeInternal();
 
         double left = envelopeInternal.getMinX(), bottom = envelopeInternal.getMinY(),
@@ -315,10 +324,39 @@ public class POIViewModel {
     public void execute() {
         worker = Executors.newSingleThreadExecutor();
         // 判断是否有未完成的task
+        Task task  = taskService.getUnFinishedTask();
 
-
-
-        worker.execute(() -> {
+        // 如果继续之前的任务
+        if(task != null){
+            // 初始化界面
+            viewHolder.keywords.setText(task.keywords);
+            viewHolder.types.setText(task.types);
+            viewHolder.keys.setText(String.join(",",task.aMapKeys));
+            viewHolder.outputDirectory.setText(task.outputDirectory);
+            viewHolder.threshold.setText(task.threshold.toString());
+            viewHolder.threadNum.setText(task.threadNum.toString());
+            viewHolder.tabs.getSelectionModel().select(task.boundryType.getCode());
+            viewHolder.userType.getSelectionModel().select(task.userType.getCode());
+            viewHolder.format.getSelectionModel().select(task.outputType.getCode());
+            String configContent = task.boundryConfig.split(":")[1];
+            switch (task.boundryType){
+                case ADCODE:
+                    viewHolder.adCode.setText(configContent);
+                    break;
+                case RECTANGLE:
+                    viewHolder.rectangle.setText(configContent.split(",")[0]);
+                    viewHolder.rectangleCoordinateType.getSelectionModel()
+                            .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
+                    break;
+                case CUSTOM:
+                    viewHolder.userFile.setText(configContent.split(",")[0]);
+                    viewHolder.userFileCoordinateType.getSelectionModel()
+                            .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
+                    break;
+            }
+        }
+        // 开始新的任务
+        else{
             clearMessage();
             if (!check()) return;
             if (!aMapKeys()) return;
@@ -332,6 +370,7 @@ public class POIViewModel {
             perExecuteTime();
             analysis(true);
             Predicate<? super POI.Info> filter = null;
+            String boundryConfig = "";
 
             switch (dataHolder.tab) {
                 case "行政区":
@@ -351,23 +390,14 @@ public class POIViewModel {
                     dataHolder.boundary = getBoundaryFromGeometry(geometry);
                     if (!hasStart) return;
                     appendMessage("成功获取行政区 " + adCode + ":" + adName + " 区域边界");
-
-                    filter = info -> {
-                        int level = getLevel(adCode);
-                        if (level == 0)
-                            return "中华人民共和国".equals(adName);
-                        else if (level == 1)
-                            return info.pname.equals(adName);
-                        else if (level == 2)
-                            return info.cityname.equals(adName);
-                        else return info.adname.equals(adName);
-                    };
+                    boundryConfig = dataHolder.tab + ":" + adCode + "," + adName;
                     break;
                 case "矩形":
                     // 获取坐标类型
                     if (!hasStart) return;
                     String rectangle = viewHolder.rectangle.getText();
                     CoordinateType type = viewHolder.rectangleCoordinateType.getValue();
+                    boundryConfig = dataHolder.tab + ":" + rectangle + "," + type;
                     appendMessage("解析矩形区域中");
                     Double[] rectangleBoundary = getBoundaryByRectangle(rectangle, type);
                     if (rectangleBoundary == null) {
@@ -379,7 +409,6 @@ public class POIViewModel {
                     dataHolder.boundary = rectangleBoundary;
                     if (!hasStart) return;
                     appendMessage("解析矩形区域成功");
-                    filter = info -> true;
                     break;
                 case "自定义":
                     if (!hasStart) return;
@@ -392,36 +421,38 @@ public class POIViewModel {
                         return;
                     }
                     dataHolder.boundary = getBoundaryFromGeometry(boundary);
+
+                    boundryConfig = dataHolder.tab + ":" + viewHolder.userFile.getText() + ","
+                            + viewHolder.userFileCoordinateType.getValue().getDescription();
                     if (!hasStart) return;
                     appendMessage("成功解析用户文件");
-
-                    filter = info -> {
-                        if (info.location == null) return false;
-                        String[] lonlat = info.location.toString().split(",");
-                        if (lonlat.length != 2) {
-                            return false;
-                        }
-                        Coordinate coordinate = new Coordinate(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
-                        return boundary.intersects(geometryFactory.createPoint(coordinate));
-                    };
                     break;
                 case "失败文件":
                     if (!hasStart) return;
                     appendMessage("解析失败任务文件中");
                     List<POIJob> poiJobs = parseFailJobsFile(viewHolder.failJobsFile.getText());
                     getPOIDataFromFailJobs(dataHolder.aMapKeys, dataHolder.threadNum, poiJobs);
+                    boundryConfig = dataHolder.tab + ":" + viewHolder.failJobsFile.getText();
                     break;
             }
 
-            Task task = new Task(null, dataHolder.aMapKeys, dataHolder.types, dataHolder.keywords, dataHolder.threadNum,
+            task = new Task(null, dataHolder.aMapKeys, dataHolder.types, dataHolder.keywords, dataHolder.threadNum,
                     dataHolder.threshold, viewHolder.outputDirectory.getText(),OutputType.getOutputType(viewHolder.format.getValue()),
-                    UserType.getUserType(viewHolder.userType.getValue()),dataHolder.boundary,
+                    UserType.getUserType(viewHolder.userType.getValue()),
                     0, 0,0,0,
-                    0);
+                    0, boundryConfig, TaskStatus.UnStarted, dataHolder.boundary);
+        }
 
-            getPoiData(task, filter);
+        Task finalTask = task;
+        worker.execute(() -> {
+            getPoiData(finalTask);
             analysis(false);
         });
+    }
+
+    public static BoundaryType parseBoundaryType(String config){
+        String[] typePlusConfig = config.split(":");
+        return BoundaryType.getBoundryType(typePlusConfig[0]);
     }
 
     private void getPOIDataFromFailJobs(Queue<String> keys, int threadNum, List<POIJob> poiJobs) {
@@ -536,7 +567,7 @@ public class POIViewModel {
         return new ArrayDeque<>(keyList);
     }
 
-    private Geometry getBoundaryByUserFile(String path, CoordinateType type) {
+    public static Geometry getBoundaryByUserFile(String path, CoordinateType type) {
         String filePath = FileUtil.readFile(path);
         if (filePath == null) {
             return null;
@@ -544,7 +575,7 @@ public class POIViewModel {
         return BoundaryUtil.getBoundaryByDataVGeoJSON(filePath, type);
     }
 
-    private Double[] getBoundaryByRectangle(String text, CoordinateType type) {
+    public static Double[] getBoundaryByRectangle(String text, CoordinateType type) {
         String[] str = text.split("#");
         if (str.length == 2) {
             String[] leftTop = str[0].split(",");
@@ -570,12 +601,16 @@ public class POIViewModel {
         return null;
     }
 
-    private boolean getAnalysisGrids(Deque<double[]> analysisGrid, Deque<POI> analysisPoi, double[] rect, int threshold,
-                                     Queue<String> keys, String keywords, String types) {
+    private boolean getAnalysisGrids(Deque<Job> analysisGrid, Double[] rect, Task task) {
+        int threshold = task.threshold;
+        Queue<String> keys = task.aMapKeys;
+        String keywords = task.keywords;
+        String types = task.types;
+
         if (!hasStart) return false;
         boolean result = true;
         int page = 1, size = 20; // 页码、每页个数
-        double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
+        Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
         String polygon = left + "," + top + "|" + right + "," + bottom;
 
         POI poi = getPoi(keys, polygon, keywords, types, page, size); // 访问第一页
@@ -591,35 +626,31 @@ public class POIViewModel {
             double itemHeight = (top - bottom) / 2;
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
-                    result = result && getAnalysisGrids(analysisGrid, analysisPoi, new double[]{left + i * itemWidth, bottom + j * itemHeight,
-                            left + (i + 1) * itemWidth, bottom + (j + 1) * itemHeight}, threshold, keys, keywords, types);
+                    result = result && getAnalysisGrids(analysisGrid, new Double[]{left + i * itemWidth, bottom + j * itemHeight,
+                            left + (i + 1) * itemWidth, bottom + (j + 1) * itemHeight}, task);
                 }
             }
         } else {
-            analysisGrid.add(new double[]{left, bottom, right, top});
-            analysisPoi.add(poi);
+            Job job = new Job(null, task, rect, task.types, task.keywords, 1, 20);
+            job.poiResponse = poi;
+            analysisGrid.add(job);  // new double[]{left, bottom, right, top});
         }
         return result;
     }
 
-    private void getPoiData(Task task, Predicate<? super POI.Info> filter) {
-
-        Double[] boundary = task.boundary;
+    private void getPoiData(Task task) {
         int threadNum = task.threadNum;
-        int threshold = task.threshold;
         String keywords = task.keywords;
         String types = task.types;
         Queue<String> keys = task.aMapKeys;
 
         List<POI.Info> res = new ArrayList<>();
-        // 1. 获取边界
-        double left = boundary[0], bottom = boundary[1], right = boundary[2], top = boundary[3];
-        // 2. 获取所有任务网格
-        Deque<double[]> analysisGrid = new ArrayDeque<>(); // 网格剖分
-        Deque<POI> analysisPoi = new ArrayDeque<>(); // 网格剖分
+
+        // 1. 获取所有任务网格
+        Deque<Job> analysisGrid = new ArrayDeque<>(); // 网格剖分
 
         appendMessage("划分所有任务网格中");
-        if (getAnalysisGrids(analysisGrid, analysisPoi, new double[]{left, bottom, right, top}, threshold, keys, keywords, types)) {
+        if (getAnalysisGrids(analysisGrid, task.boundary, task)) {
             appendMessage("任务网格切分成功，共有" + analysisGrid.size() + "个任务网格");
         } else {
             return;
@@ -634,10 +665,10 @@ public class POIViewModel {
 
         executorService = Executors.newFixedThreadPool(threadNum);
         while (hasStart && !analysisGrid.isEmpty()) {
-            double[] rec = analysisGrid.pop();
-            POI initPoi = analysisPoi.pop();
-            appendMessage("正在爬取网格" + Arrays.toString(rec) + "，任务队列剩余" + analysisGrid.size() + "个");
-            Map<String, Object> item = getPoi(keys, rec, initPoi, keywords, types);
+            Job job = analysisGrid.pop();
+            POI initPoi = job.poiResponse;
+            appendMessage("正在爬取网格" + Arrays.toString(job.bounds) + "，任务队列剩余" + analysisGrid.size() + "个");
+            Map<String, Object> item = getPoi(keys, job.bounds, initPoi, keywords, types);
             List<POI.Info> data = (List<POI.Info>) item.get("data");
             List<POIJob> failJobs = (List<POIJob>) item.get("failJobs");
             appendMessage("该网格含POI：" + data.size() + "条");
@@ -647,7 +678,7 @@ public class POIViewModel {
         executorService.shutdown();
         appendMessage("该区域边界共含POI：" + res.size() + "条");
         appendMessage("执行过滤算法中");
-        res = res.stream().filter(filter).collect(Collectors.toList());
+        res = res.stream().filter(task.filter).collect(Collectors.toList());
         appendMessage("过滤成功，共获得POI：" + res.size() + "条");
 
         appendMessage(allFailJobs.size() == 0 ? "POI爬取完毕" : "未完全爬取");
@@ -684,7 +715,7 @@ public class POIViewModel {
         }
     }
 
-    private Map<String, Object> getPoi(Queue<String> keys, double[] boundary, POI initPoi, String keywords, String types) {
+    private Map<String, Object> getPoi(Queue<String> keys, Double[] boundary, POI initPoi, String keywords, String types) {
         List<POI.Info> res = new ArrayList<>(Arrays.asList(initPoi.getPois()));
         int total = initPoi.getCount();
 
@@ -976,15 +1007,5 @@ public class POIViewModel {
 
     private void appendMessage(String text) {
         Platform.runLater(() -> viewHolder.messageDetail.appendText(text + "\r\n"));
-    }
-
-    private int getLevel(String adCode) {
-        if ("100000".equals(adCode)) {
-            return 0; // country
-        } else if ("0000".equals(adCode.substring(2))) {
-            return 1; // 省份
-        } else if ("00".equals(adCode.substring(4))) {
-            return 2; // 城市
-        } else return 3; // 县/区
     }
 }
