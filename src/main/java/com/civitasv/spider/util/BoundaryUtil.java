@@ -2,20 +2,14 @@ package com.civitasv.spider.util;
 
 import com.civitasv.spider.dao.DataVDao;
 import com.civitasv.spider.dao.impl.DataVDaoImpl;
-import com.civitasv.spider.helper.CoordinateType;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
+import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.locationtech.jts.geom.*;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;

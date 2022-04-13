@@ -3,9 +3,9 @@ package com.civitasv.spider.model.po;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.civitasv.spider.helper.OutputType;
-import com.civitasv.spider.helper.TaskStatus;
-import com.civitasv.spider.helper.UserType;
+import com.civitasv.spider.helper.Enum.OutputType;
+import com.civitasv.spider.helper.Enum.TaskStatus;
+import com.civitasv.spider.helper.Enum.UserType;
 import com.civitasv.spider.model.bo.Task;
 
 import java.io.Serializable;
@@ -77,6 +77,26 @@ public class TaskPo implements Serializable {
 
     @TableField("bounds")
     private String bounds;
+
+    public TaskPo(Integer id, String keys, String types, String keywords, Integer threadnum, Integer threshold, Integer userType, String outputDirectory, Integer outputType, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExcetuedSum, Integer totalExecutedTime, Integer status, String boundConfig, String bounds) {
+        this.id = id;
+        this.keys = keys;
+        this.types = types;
+        this.keywords = keywords;
+        this.threadnum = threadnum;
+        this.threshold = threshold;
+        this.userType = userType;
+        this.outputDirectory = outputDirectory;
+        this.outputType = outputType;
+        this.requestActualTimes = requestActualTimes;
+        this.requestExceptedTimes = requestExceptedTimes;
+        this.poiActialSum = poiActialSum;
+        this.poiExcetuedSum = poiExcetuedSum;
+        this.totalExecutedTime = totalExecutedTime;
+        this.status = status;
+        this.boundConfig = boundConfig;
+        this.bounds = bounds;
+    }
 
     public Integer getId() {
         return id;

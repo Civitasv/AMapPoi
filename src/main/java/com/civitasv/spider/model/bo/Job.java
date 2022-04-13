@@ -1,8 +1,10 @@
 package com.civitasv.spider.model.bo;
 
-import com.civitasv.spider.helper.JobStatus;
+import com.civitasv.spider.helper.Enum.JobStatus;
+import com.civitasv.spider.model.po.JobPo;
 
-import java.time.Duration;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class Job {
     public Integer id;
@@ -17,8 +19,8 @@ public class Job {
     public Integer requestExceptedTimes;
     public Integer poiActualSSum;
     public Integer poiExceptedSum;
-    public Duration totalExecutedTime;
-    public POI poiResponse;
+    public Integer totalExecutedTime;
+    public POI poi;
 
     public Job(Integer id, Task task, Double[] bounds, String types, String keywords, Integer page, Integer size) {
         this.id = id;
@@ -28,5 +30,11 @@ public class Job {
         this.keywords = keywords;
         this.page = page;
         this.size = size;
+    }
+
+    public JobPo toJobPo(){
+        return new JobPo(id, task.id, String.join(",", task.aMapKeys), types,
+                keywords,page, size, jobStatus.getCode(), requestExceptedTimes, requestActualTimes,poiExceptedSum,
+                poiActualSSum, totalExecutedTime, Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
     }
 }

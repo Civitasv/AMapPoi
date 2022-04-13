@@ -1,17 +1,16 @@
 package com.civitasv.spider.model.bo;
 
-import com.civitasv.spider.helper.*;
+import com.civitasv.spider.helper.Enum.*;
+import com.civitasv.spider.model.po.TaskPo;
 import com.civitasv.spider.util.BoundaryUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class Task {
     public Integer id;
@@ -32,7 +31,7 @@ public class Task {
     public BoundaryType boundryType;
     public String boundryConfig;
     public Predicate<? super POI.Info> filter;
-    public List<Job> Jobs;
+    public List<Job> jobs;
     public TaskStatus taskStatus = TaskStatus.UnStarted;
 
     public Task(Integer id, Queue<String> aMapKeys, String types, String keywords, Integer threadNum, Integer threshold,
@@ -55,7 +54,7 @@ public class Task {
         this.totalExecutedTime = totalExecutedTime;
         this.boundryConfig = boundryConfig;
         this.boundryType = BoundaryType.getBoundryType(boundryConfig.split(":")[0]);
-        this.Jobs = new ArrayList<>();
+        this.jobs = new ArrayList<>();
         this.taskStatus = taskStatus;
         this.boundary = bounds;
 
@@ -142,10 +141,13 @@ public class Task {
                 }
                 return rectangleBoundary;
         }
-
-
-
-
         throw new RuntimeException("代码不应到达此处");
+    }
+
+    public TaskPo toTaskPo(){
+        return new TaskPo(id, String.join(",", aMapKeys), types, keywords, threadNum, threshold, userType.getCode(),
+                outputDirectory,outputType.getCode(), requestActualTimes,requestExceptedTimes, poiActualSum, poiExecutedSum,
+                totalExecutedTime, taskStatus.getCode(), boundryConfig,
+                Arrays.stream(boundary).map(Object::toString).collect(Collectors.joining(",")));
     }
 }

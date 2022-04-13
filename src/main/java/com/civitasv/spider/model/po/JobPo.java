@@ -45,6 +45,9 @@ public class JobPo implements Serializable {
     @TableField("status")
     private Integer status;
 
+    @TableField("request_actual_times")
+    private Integer requestActualTimes;
+
     @TableField("request_excepted_times")
     private Integer requestExceptedTimes;
 
@@ -59,6 +62,23 @@ public class JobPo implements Serializable {
 
     @TableField("bounds")
     private String bounds;
+
+    public JobPo(Integer id, Integer taskid, String keys, String types, String keywords, Integer page, Integer size, Integer status, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExcetuedSum, Integer totalExecutedTime, String bounds) {
+        this.id = id;
+        this.taskid = taskid;
+        this.keys = keys;
+        this.types = types;
+        this.keywords = keywords;
+        this.page = page;
+        this.size = size;
+        this.status = status;
+        this.requestActualTimes = requestActualTimes;
+        this.requestExceptedTimes = requestExceptedTimes;
+        this.poiActialSum = poiActialSum;
+        this.poiExcetuedSum = poiExcetuedSum;
+        this.totalExecutedTime = totalExecutedTime;
+        this.bounds = bounds;
+    }
 
     public Integer getId() {
         return id;

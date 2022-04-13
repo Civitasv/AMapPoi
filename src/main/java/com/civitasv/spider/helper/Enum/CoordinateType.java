@@ -1,4 +1,4 @@
-package com.civitasv.spider.helper;
+package com.civitasv.spider.helper.Enum;
 
 public enum CoordinateType {
     BD09(0,"bd09"),

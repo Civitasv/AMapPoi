@@ -1,15 +1,18 @@
 package com.civitasv.spider.model.bo;
 
-import java.util.Arrays;
+import com.civitasv.spider.model.po.PoiPo;
+
+import java.util.List;
 
 public class POI {
     private final Integer status;
     private String info;
     private String infocode;
     private Integer count;
-    private Info[] pois;
+    private List<Info> pois;
 
     public static class Info {
+        public Integer oid;
         public String id; // 唯一id
         public String name; // 名称
         public String type; // 兴趣点类型
@@ -36,6 +39,10 @@ public class POI {
                     ", adname=" + adname +
                     '}';
         }
+
+        public PoiPo toPoiPo(Integer jobid){
+            return new PoiPo(oid, id, jobid, name, type, typecode, address, location, tel.toString(), pname, cityname, adname);
+        }
     }
 
     public int getStatus() {
@@ -54,7 +61,7 @@ public class POI {
         return count;
     }
 
-    public Info[] getPois() {
+    public List<Info> getPois() {
         return pois;
     }
 
@@ -62,7 +69,7 @@ public class POI {
         this.status = status;
     }
 
-    public POI(Integer status, String info, String infocode, Integer count, Info[] pois) {
+    public POI(Integer status, String info, String infocode, Integer count, List<Info> pois) {
         this.status = status;
         this.info = info;
         this.infocode = infocode;
@@ -77,7 +84,7 @@ public class POI {
                 ", info='" + info + '\'' +
                 ", infocode='" + infocode + '\'' +
                 ", count=" + count +
-                ", pois=" + Arrays.toString(pois) +
+                ", pois=" + pois +
                 '}';
     }
 }

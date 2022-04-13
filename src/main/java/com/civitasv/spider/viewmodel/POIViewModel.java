@@ -2,12 +2,12 @@ package com.civitasv.spider.viewmodel;
 
 import com.civitasv.spider.dao.AMapDao;
 import com.civitasv.spider.dao.impl.AMapDaoImpl;
-import com.civitasv.spider.helper.*;
+import com.civitasv.spider.helper.Enum.*;
 import com.civitasv.spider.model.Feature;
 import com.civitasv.spider.model.GeoJSON;
-import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.POIJob;
 import com.civitasv.spider.model.bo.Job;
+import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiService;
@@ -427,17 +427,10 @@ public class POIViewModel {
                     if (!hasStart) return;
                     appendMessage("成功解析用户文件");
                     break;
-                case "失败文件":
-                    if (!hasStart) return;
-                    appendMessage("解析失败任务文件中");
-                    List<POIJob> poiJobs = parseFailJobsFile(viewHolder.failJobsFile.getText());
-                    getPOIDataFromFailJobs(dataHolder.aMapKeys, dataHolder.threadNum, poiJobs);
-                    boundryConfig = dataHolder.tab + ":" + viewHolder.failJobsFile.getText();
-                    break;
             }
 
             task = new Task(null, dataHolder.aMapKeys, dataHolder.types, dataHolder.keywords, dataHolder.threadNum,
-                    dataHolder.threshold, viewHolder.outputDirectory.getText(),OutputType.getOutputType(viewHolder.format.getValue()),
+                    dataHolder.threshold, viewHolder.outputDirectory.getText(), OutputType.getOutputType(viewHolder.format.getValue()),
                     UserType.getUserType(viewHolder.userType.getValue()),
                     0, 0,0,0,
                     0, boundryConfig, TaskStatus.UnStarted, dataHolder.boundary);
@@ -453,60 +446,6 @@ public class POIViewModel {
     public static BoundaryType parseBoundaryType(String config){
         String[] typePlusConfig = config.split(":");
         return BoundaryType.getBoundryType(typePlusConfig[0]);
-    }
-
-    private void getPOIDataFromFailJobs(Queue<String> keys, int threadNum, List<POIJob> poiJobs) {
-        List<POI.Info> res = new ArrayList<>();
-        executorService = Executors.newFixedThreadPool(threadNum);
-        // 添加任务
-        List<Future<POI>> futures = new ArrayList<>();
-        for (POIJob job : poiJobs) {
-            Future<POI> future = executorService.submit(() ->
-                    getPoi(keys, job.polygon, job.keywords, job.types, job.page, job.size));
-            futures.add(future);
-        }
-
-        // 阻塞获取
-        List<POIJob> failJobs = new ArrayList<>();
-        for (int i = 0; i < futures.size(); i++) {
-            try {
-                POI item = futures.get(i).get(20, TimeUnit.SECONDS);
-                if (item != null) {
-                    if (item.getStatus() == -1) {
-                        // 说明剩余的任务都将失败
-                        for (int j = i; j < poiJobs.size(); j++) {
-                            failJobs.add(poiJobs.get(j));
-                        }
-                        break;
-                    } else {
-                        res.addAll(Arrays.asList(item.getPois()));
-                    }
-                } else {
-                    failJobs.add(poiJobs.get(i));
-                }
-            } catch (TimeoutException | InterruptedException | ExecutionException e) {
-                failJobs.add(poiJobs.get(i));
-            }
-        }
-        executorService.shutdown();
-        appendMessage("共获得POI：" + res.size() + "条");
-
-        appendMessage(failJobs.size() == 0 ? "POI爬取完毕" : "未完全爬取");
-        // 导出res
-        switch (viewHolder.format.getValue()) {
-            case "csv":
-            case "txt":
-                writeToCsvOrTxt(res, viewHolder.format.getValue());
-                break;
-            case "geojson":
-                writeToGeoJson(res);
-                break;
-            case "shp":
-                writeToShp(res);
-        }
-        // 导出失败任务
-        if (failJobs.size() > 0)
-            writeToFailJobsTxt(failJobs);
     }
 
     private List<POIJob> parseFailJobsFile(String failJobsFilePath) {
@@ -601,7 +540,66 @@ public class POIViewModel {
         return null;
     }
 
-    private boolean getAnalysisGrids(Deque<Job> analysisGrid, Double[] rect, Task task) {
+    private void getPoiData(Task task) {
+        int threadNum = task.threadNum;
+        String keywords = task.keywords;
+        String types = task.types;
+        Queue<String> keys = task.aMapKeys;
+
+        // 1. 获取所有任务网格的第一页
+        List<Job> firstPageJobs = new ArrayList<>(); // 网格剖分
+
+        appendMessage("划分所有任务网格中");
+        if (getAnalysisGrids(firstPageJobs, task.boundary, task)) {
+            appendMessage("任务网格切分成功，共有" + firstPageJobs.size() + "个任务网格");
+        } else {
+            return;
+        }
+
+        // 2. 生成第二页之后的的Job
+        List<Job> jobsAfterSecondPage = generateJobsAfterSecondPage(firstPageJobs);
+
+        task.jobs.addAll(firstPageJobs);
+        task.jobs.addAll(jobsAfterSecondPage);
+
+        // 转换为不可变对象
+        task.jobs = Collections.unmodifiableList(task.jobs);
+
+        // 3. 开始爬取
+        if (!hasStart) return;
+        appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
+
+        executorService = Executors.newFixedThreadPool(threadNum);
+
+        List<Job> res = getPoiOfJobs(task.jobs);
+
+        executorService.shutdown();
+        appendMessage("该区域边界共含POI：" + res.size() + "条");
+        appendMessage("执行过滤算法中");
+        List<POI.Info> pois = res
+                .stream()
+                .flatMap(job->{
+            List<POI.Info> pois1 = job.poi.getPois();
+            pois1.stream().filter(task.filter);
+            return pois1.stream();
+        }).collect(Collectors.toList());
+        appendMessage("过滤成功，共获得POI：" + res.size() + "条");
+
+        // 导出res
+        switch (viewHolder.format.getValue()) {
+            case "csv":
+            case "txt":
+                writeToCsvOrTxt(pois, viewHolder.format.getValue());
+                break;
+            case "geojson":
+                writeToGeoJson(pois);
+                break;
+            case "shp":
+                writeToShp(pois);
+        }
+    }
+
+    private boolean getAnalysisGrids(List<Job> analysisGrid, Double[] rect, Task task) {
         int threshold = task.threshold;
         Queue<String> keys = task.aMapKeys;
         String keywords = task.keywords;
@@ -632,71 +630,68 @@ public class POIViewModel {
             }
         } else {
             Job job = new Job(null, task, rect, task.types, task.keywords, 1, 20);
-            job.poiResponse = poi;
+            job.poi = poi;
             analysisGrid.add(job);  // new double[]{left, bottom, right, top});
         }
         return result;
     }
 
-    private void getPoiData(Task task) {
-        int threadNum = task.threadNum;
-        String keywords = task.keywords;
-        String types = task.types;
-        Queue<String> keys = task.aMapKeys;
+    private List<Job> generateJobsAfterSecondPage(List<Job> analysisGrid){
+        int size = 20; // 每页个数
+        List<Job> jobs = new ArrayList<>();
+        for (Job firstPageJob : analysisGrid) {
+            int total = firstPageJob.poi.getCount();
+            int taskNum = total / size + 1;
+            for (int page = 2; page <= taskNum; page++) {
+                jobs.add(new Job(null, firstPageJob.task, firstPageJob.bounds, firstPageJob.types, firstPageJob.keywords, page, firstPageJob.size));
+            }
+        }
+        return jobs;
+    }
 
-        List<POI.Info> res = new ArrayList<>();
+    private List<Job> getPoiOfJobs(List<Job> jobs) {
+        List<Job> res = new ArrayList<>();
 
-        // 1. 获取所有任务网格
-        Deque<Job> analysisGrid = new ArrayDeque<>(); // 网格剖分
-
-        appendMessage("划分所有任务网格中");
-        if (getAnalysisGrids(analysisGrid, task.boundary, task)) {
-            appendMessage("任务网格切分成功，共有" + analysisGrid.size() + "个任务网格");
-        } else {
-            return;
+        List<Future<Job>> futures = new ArrayList<>();
+        for (Job job : jobs) {
+            double left = job.bounds[0], bottom = job.bounds[1], right = job.bounds[2], top = job.bounds[3];
+            String polygon = left + "," + top + "|" + right + "," + bottom;
+            Future<Job> future = executorService.submit(() -> {
+                job.poi = getPoi(job.task.aMapKeys, polygon, job.keywords, job.types, job.page, job.size);
+                job.jobStatus = JobStatus.Success;
+                return job;
+            });
+            futures.add(future);
         }
 
-        // 3. 开始爬取
-        if (!hasStart) return;
-        appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
-
-        // 失败的任务
-        List<POIJob> allFailJobs = new ArrayList<>();
-
-        executorService = Executors.newFixedThreadPool(threadNum);
-        while (hasStart && !analysisGrid.isEmpty()) {
-            Job job = analysisGrid.pop();
-            POI initPoi = job.poiResponse;
-            appendMessage("正在爬取网格" + Arrays.toString(job.bounds) + "，任务队列剩余" + analysisGrid.size() + "个");
-            Map<String, Object> item = getPoi(keys, job.bounds, initPoi, keywords, types);
-            List<POI.Info> data = (List<POI.Info>) item.get("data");
-            List<POIJob> failJobs = (List<POIJob>) item.get("failJobs");
-            appendMessage("该网格含POI：" + data.size() + "条");
-            res.addAll(data);
-            allFailJobs.addAll(failJobs);
+        int count = 0;
+        // 阻塞获取
+        for (int i = 0; i < futures.size(); i++) {
+            try {
+                Job job = futures.get(i).get(20, TimeUnit.SECONDS);
+                if (job.poi != null) {
+                    if (job.poi.getStatus() == -1) {
+                        // 说明剩余的任务都将失败
+                        for (int j = i; j < jobs.size(); j++) {
+                            jobs.get(j).jobStatus = JobStatus.Failed;
+                        }
+                        break;
+                    } else {
+                        job.jobStatus = JobStatus.Failed;
+                        res.add(job);
+                        if(++count == 50){
+//                            poiService.saveBatch(BeanUtils.jobs2Poipos(res));
+                            count = 0;
+                        }
+                    }
+                } else {
+                    job.jobStatus = JobStatus.Failed;
+                }
+            } catch (TimeoutException | InterruptedException | ExecutionException e) {
+                jobs.get(i).jobStatus = JobStatus.Failed;
+            }
         }
-        executorService.shutdown();
-        appendMessage("该区域边界共含POI：" + res.size() + "条");
-        appendMessage("执行过滤算法中");
-        res = res.stream().filter(task.filter).collect(Collectors.toList());
-        appendMessage("过滤成功，共获得POI：" + res.size() + "条");
-
-        appendMessage(allFailJobs.size() == 0 ? "POI爬取完毕" : "未完全爬取");
-        // 导出res
-        switch (viewHolder.format.getValue()) {
-            case "csv":
-            case "txt":
-                writeToCsvOrTxt(res, viewHolder.format.getValue());
-                break;
-            case "geojson":
-                writeToGeoJson(res);
-                break;
-            case "shp":
-                writeToShp(res);
-        }
-        // 导出失败任务
-        if (allFailJobs.size() > 0)
-            writeToFailJobsTxt(allFailJobs);
+        return res;
     }
 
     private POI retry(Runnable job, int count) {
@@ -713,56 +708,6 @@ public class POIViewModel {
             appendMessage("TIMEOUT!!!");
             return retry(job, --count);
         }
-    }
-
-    private Map<String, Object> getPoi(Queue<String> keys, Double[] boundary, POI initPoi, String keywords, String types) {
-        List<POI.Info> res = new ArrayList<>(Arrays.asList(initPoi.getPois()));
-        int total = initPoi.getCount();
-
-        int size = 20; // 每页个数
-        double left = boundary[0], bottom = boundary[1], right = boundary[2], top = boundary[3];
-        String polygon = left + "," + top + "|" + right + "," + bottom;
-        int taskNum = total / size + 1;
-
-        // 添加任务
-        List<Future<POI>> futures = new ArrayList<>();
-        List<POIJob> jobs = new ArrayList<>();
-        for (int page = 2; page <= taskNum; page++) {
-            int finalPage = page;
-            POIJob job = new POIJob(polygon, keywords, types, finalPage, size);
-            Future<POI> future = executorService.submit(() ->
-                    getPoi(keys, polygon, keywords, types, finalPage, size));
-            futures.add(future);
-            jobs.add(job);
-        }
-
-        // 阻塞获取
-        List<POIJob> failJobs = new ArrayList<>();
-        for (int i = 0; i < futures.size(); i++) {
-            try {
-                POI item = futures.get(i).get(20, TimeUnit.SECONDS);
-                if (item != null) {
-                    if (item.getStatus() == -1) {
-                        // 说明剩余的任务都将失败
-                        for (int j = i; j < jobs.size(); j++) {
-                            failJobs.add(jobs.get(j));
-                        }
-                        break;
-                    } else {
-                        res.addAll(Arrays.asList(item.getPois()));
-                    }
-                } else {
-                    failJobs.add(jobs.get(i));
-                }
-            } catch (TimeoutException | InterruptedException | ExecutionException e) {
-                failJobs.add(jobs.get(i));
-            }
-        }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", res);
-        result.put("failJobs", failJobs);
-        return result;
     }
 
     private synchronized String getAMapKey(Queue<String> keys) {
@@ -783,19 +728,21 @@ public class POIViewModel {
             return new POI(-1); // -1 表示由于 key 池耗尽，无法继续获取POI
         }
         POI poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
-        if (poi == null || !"10000".equals(poi.getInfocode())) {
+        if (poi == null || !CustomErrorCodeEnum.OK.equals(CustomErrorCodeEnum.getBoundryType(10000))) {
             synchronized (this) {
                 if (keys.contains(key)) {
                     if (poi == null) {
                         appendMessage("数据获取失败");
                         appendMessage("错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
                     } else {
-                        if ("10001".equals(poi.getInfocode())) {
-                            appendMessage("key----" + key + "已经过期");
-                        } else if ("10003".equals(poi.getInfocode())) {
-                            appendMessage("key----" + key + "已达调用量上限");
+                        CustomErrorCodeEnum gaodePoiErrorEnum = CustomErrorCodeEnum.getBoundryType(Integer.parseInt(poi.getInfocode()));
+                        if (CustomErrorCodeEnum.INVALID_USER_KEY.equals(gaodePoiErrorEnum)) {
+                            appendMessage("key----" + CustomErrorCodeEnum.INVALID_USER_KEY.getCode() + "已经过期");
+                        } else if (CustomErrorCodeEnum.DAILY_QUERY_OVER_LIMIT.equals(gaodePoiErrorEnum)) {
+                            appendMessage("key----" + key + "已达每日调用量上限，请更换其他key");
                         } else {
-                            appendMessage("错误代码：" + poi.getInfocode() + "详细信息：" + poi.getInfo());
+                            appendMessage("错误代码：" + gaodePoiErrorEnum.getCode() + "详细信息：" + gaodePoiErrorEnum.getDescription() +
+                                    "\n提示：" + gaodePoiErrorEnum.getHelpinfo());
                         }
                         // 去除无效的，使用其它key重新访问
                         keys.remove(key);
@@ -811,7 +758,7 @@ public class POIViewModel {
                 e.printStackTrace();
             }
         }
-        return (poi != null && "10000".equals(poi.getInfocode())) ? poi : null;
+        return (poi != null && CustomErrorCodeEnum.OK.equals(CustomErrorCodeEnum.getBoundryType(10000))) ? poi : null;
     }
 
     private String filename(String format) {

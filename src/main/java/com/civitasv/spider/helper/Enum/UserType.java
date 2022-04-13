@@ -1,17 +1,14 @@
-package com.civitasv.spider.helper;
+package com.civitasv.spider.helper.Enum;
 
-public enum TaskStatus {
-    UnStarted(0, "未开始"),
-    Preprocessing(1, "预处理"),
-    Processing(2, "处理中"),
-    Pause(3, "暂停"),
-    Success(4, "成功"),
-    Failed(5, "失败");
+public enum UserType {
+    IndividualDevelopers(0,"个人开发者"),
+    IndividualCertifiedDeveloper(1,"个人认证开发者"),
+    EnterpriseDeveloper(2,"企业开发者");
 
     private final String description;
     private final Integer code;
 
-    TaskStatus(Integer code, String description) {
+    UserType(Integer code, String description) {
         this.description = description;
         this.code = code;
     }
@@ -24,8 +21,8 @@ public enum TaskStatus {
         return code;
     }
 
-    public static TaskStatus getBoundryType(String description){
-        for (TaskStatus value : TaskStatus.values()) {
+    public static UserType getUserType(String description){
+        for (UserType value : UserType.values()) {
             if(value.description.equals(description)){
                 return value;
             }
@@ -33,8 +30,8 @@ public enum TaskStatus {
         throw new IllegalArgumentException("没有符合该描述的枚举值");
     }
 
-    public static TaskStatus getBoundryType(Integer code){
-        for (TaskStatus value : TaskStatus.values()) {
+    public static UserType getUserType(Integer code){
+        for (UserType value : UserType.values()) {
             if(value.code.equals(code)){
                 return value;
             }

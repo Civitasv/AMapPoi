@@ -1,10 +1,9 @@
-package com.civitasv.spider.helper;
+package com.civitasv.spider.helper.Enum;
 
 public enum JobStatus {
     UnStarted(0, "未开始"),
-    Processing(2, "处理中"),
-    Success(4, "成功"),
-    Failed(5, "失败");
+    Success(1, "成功"),
+    Failed(2, "失败");
 
     private final String description;
     private final Integer code;

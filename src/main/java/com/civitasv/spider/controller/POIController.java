@@ -2,7 +2,7 @@ package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.db.Database;
-import com.civitasv.spider.helper.CoordinateType;
+import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import com.sun.javafx.collections.ObservableListWrapper;

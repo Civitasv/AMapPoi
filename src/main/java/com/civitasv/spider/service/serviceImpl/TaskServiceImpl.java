@@ -2,7 +2,7 @@ package com.civitasv.spider.service.serviceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.civitasv.spider.helper.TaskStatus;
+import com.civitasv.spider.helper.Enum.TaskStatus;
 import com.civitasv.spider.mapper.TaskMapper;
 import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.Task;
@@ -45,7 +45,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, TaskPo> implements 
             }
             Task task = taskPo.toTask();
 
-            task.Jobs = jobService.list().stream().map(jobPo -> {
+            task.jobs = jobService.list().stream().map(jobPo -> {
                 Job job = jobPo.toJob();
                 job.task = task;
                 return job;

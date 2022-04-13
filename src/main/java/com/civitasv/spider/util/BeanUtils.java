@@ -1,13 +1,15 @@
 package com.civitasv.spider.util;
 
+import com.civitasv.spider.model.bo.Job;
+import com.civitasv.spider.model.po.PoiPo;
 import net.sf.cglib.beans.BeanMap;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class Bean2Map {
+public class BeanUtils {
     /**
      * 将对象装换为map
      *
@@ -37,5 +39,13 @@ public class Bean2Map {
         BeanMap beanMap = BeanMap.create(bean);
         beanMap.putAll(map);
         return bean;
+    }
+
+    public static List<PoiPo> jobs2Poipos(List<Job> jobs) {
+        return jobs.stream()
+                .flatMap(job -> job.poi.getPois()
+                        .stream()
+                        .map(poi -> poi.toPoiPo(job.id)))
+                .collect(Collectors.toList());
     }
 }

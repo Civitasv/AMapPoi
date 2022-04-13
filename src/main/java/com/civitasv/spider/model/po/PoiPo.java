@@ -17,11 +17,14 @@ public class PoiPo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableField("id")
+    @TableField("oid")
     private Integer id;
 
+    @TableField("id")
+    private String pid;
+
     @TableField("jobid")
-    private String jobid;
+    private Integer jobid;
 
     @TableField("name")
     private String name;
@@ -50,6 +53,20 @@ public class PoiPo implements Serializable {
     @TableField("adname")
     private String adname;
 
+    public PoiPo(Integer id, String pid, Integer jobid, String name, String type, String typecode, String address, String location, String tel, String pname, String cityname, String adname) {
+        this.id = id;
+        this.pid = pid;
+        this.jobid = jobid;
+        this.name = name;
+        this.type = type;
+        this.typecode = typecode;
+        this.address = address;
+        this.location = location;
+        this.tel = tel;
+        this.pname = pname;
+        this.cityname = cityname;
+        this.adname = adname;
+    }
 
     public Integer getId() {
         return id;
@@ -59,11 +76,11 @@ public class PoiPo implements Serializable {
         this.id = id;
     }
 
-    public String getJobid() {
+    public Integer getJobid() {
         return jobid;
     }
 
-    public void setJobid(String jobid) {
+    public void setJobid(Integer jobid) {
         this.jobid = jobid;
     }
 
