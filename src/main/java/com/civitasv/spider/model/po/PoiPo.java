@@ -176,6 +176,11 @@ public class PoiPo implements Serializable {
     }
 
     public POI.Info toPoi(){
-        return new POI.Info(id, pid, name, type, typecode, address, location, tel, pname, cityname, adname);
+        try{
+            return new POI.Info(id, pid, name, type, typecode, address, location, tel, pname, cityname, adname);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 }

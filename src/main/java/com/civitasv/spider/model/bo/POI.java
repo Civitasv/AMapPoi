@@ -55,7 +55,12 @@ public class POI {
         }
 
         public PoiPo toPoiPo(Long jobid){
-            return new PoiPo(oid, id, jobid, name, type, typecode, address.toString(), location.toString(), tel.toString(), pname.toString(), cityname.toString(), adname.toString());
+            try{
+                return new PoiPo(oid, id, jobid, name, type, typecode, address.toString(), location.toString(), tel.toString(), pname.toString(), cityname.toString(), adname.toString());
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            return null;
         }
     }
 

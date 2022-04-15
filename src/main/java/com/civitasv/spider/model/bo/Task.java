@@ -141,9 +141,14 @@ public class Task {
     }
 
     public TaskPo toTaskPo(){
-        return new TaskPo(id, String.join(",", aMapKeys), types, keywords, threadNum, threshold, userType.getCode(),
-                outputDirectory,outputType.getCode(), requestActualTimes,requestExceptedTimes, poiActualSum, poiExecutedSum,
-                totalExecutedTime, taskStatus.getCode(), boundryConfig,
-                Arrays.stream(boundary).map(Object::toString).collect(Collectors.joining(",")));
+        try{
+            return new TaskPo(id, String.join(",", aMapKeys), types, keywords, threadNum, threshold, userType.getCode(),
+                    outputDirectory,outputType.getCode(), requestActualTimes,requestExceptedTimes, poiActualSum, poiExecutedSum,
+                    totalExecutedTime, taskStatus.getCode(), boundryConfig,
+                    Arrays.stream(boundary).map(Object::toString).collect(Collectors.joining(",")));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 }

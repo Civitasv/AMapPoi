@@ -189,8 +189,13 @@ public class JobPo implements Serializable {
     }
 
     public Job toJob(){
-        return new Job(id, null,
-                Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new),
-                types, keywords, page, size);
+        try{
+            return new Job(id, null,
+                    Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new),
+                    types, keywords, page, size);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 }

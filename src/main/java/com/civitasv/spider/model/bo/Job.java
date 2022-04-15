@@ -33,8 +33,13 @@ public class Job {
     }
 
     public JobPo toJobPo(){
-        return new JobPo(id, taskid, types,
-                keywords,page, size, jobStatus.getCode(), requestExceptedTimes, requestActualTimes,poiExceptedSum,
-                poiActualSSum, totalExecutedTime, Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
+        try{
+            return new JobPo(id, taskid, types,
+                    keywords,page, size, jobStatus.getCode(), requestExceptedTimes, requestActualTimes,poiExceptedSum,
+                    poiActualSSum, totalExecutedTime, Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 }
