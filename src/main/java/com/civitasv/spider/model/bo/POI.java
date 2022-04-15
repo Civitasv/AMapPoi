@@ -2,7 +2,9 @@ package com.civitasv.spider.model.bo;
 
 import com.civitasv.spider.model.po.PoiPo;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class POI {
     private final Integer status;
@@ -81,7 +83,7 @@ public class POI {
     }
 
     public List<Info> getPois() {
-        return pois;
+        return Objects.nonNull(pois) ? pois : Collections.emptyList();
     }
 
     public POI(Integer status) {
