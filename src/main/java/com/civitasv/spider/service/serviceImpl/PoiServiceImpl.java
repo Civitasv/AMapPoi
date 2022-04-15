@@ -41,7 +41,7 @@ public class PoiServiceImpl implements PoiService {
     @Override
     public boolean saveBatch(List<PoiPo> poiPos) {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
-        try (SqlSession session = defaultMyBatis.openSession(ExecutorType.BATCH,true)) {
+        try (SqlSession session = defaultMyBatis.openSession(ExecutorType.BATCH,false)) {
             PoiMapper poiMapper = session.getMapper(PoiMapper.class);
             for (int i = 0; i < poiPos.size(); i++) {
                 PoiPo poiPo = poiPos.get(i);
@@ -50,6 +50,7 @@ public class PoiServiceImpl implements PoiService {
                     session.flushStatements();
                 }
             }
+            session.commit();
             return true;
         }
     }

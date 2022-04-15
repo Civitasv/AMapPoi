@@ -416,6 +416,8 @@ public class POIViewModel {
         taskService.save(taskPo);
         Task finalTask = taskPo.toTask();
         worker.execute(() -> {
+            executorService = Executors.newFixedThreadPool(finalTask.threadNum);
+            completionService = new ExecutorCompletionService<>(executorService);
             getPoiData(finalTask);
             analysis(false);
         });
@@ -533,14 +535,8 @@ public class POIViewModel {
         if (!hasStart) return;
         appendMessage("开始POI爬取，" + (!task.keywords.isEmpty() ? "POI关键字：" + task.keywords : "") + (!task.types.isEmpty() ? (" POI类型：" + task.types) : ""));
 
-        executorService = Executors.newFixedThreadPool(task.threadNum);
+        getPoiOfJobs(task.jobs, task);
 
-        try {
-            getPoiOfJobs(task.jobs, task);
-        } catch (CustomException e) {
-            task.taskStatus = TaskStatus.Pause;
-            taskService.save(task.toTaskPo());
-        }
         List<PoiPo> poiPoList = poiService.list();
         appendMessage("该区域边界共含POI：" + poiPoList.size() + "条");
         appendMessage("执行过滤算法中");
@@ -619,13 +615,17 @@ public class POIViewModel {
         return jobs;
     }
 
-    private List<Job> getPoiOfJobs(List<Job> jobs, Task task) throws CustomException {
+    private List<Job> getPoiOfJobs(List<Job> jobs, Task task){
+        // 缓存机制
+        int saveThreshold = 50;
+        List<Job> cached = new ArrayList<>();
+        ArrayList<Job> unFinishedJob = new ArrayList<>(jobs);
+
         // 构造异步job
-        List<Future<Job>> futures = new ArrayList<>();
         for (Job job : jobs) {
             double left = job.bounds[0], bottom = job.bounds[1], right = job.bounds[2], top = job.bounds[3];
             String polygon = left + "," + top + "|" + right + "," + bottom;
-            Future<Job> future = executorService.submit(() -> {
+            completionService.submit(() -> {
                 try {
                     String key = getAMapKey(task.aMapKeys);
                     job.poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
@@ -640,59 +640,58 @@ public class POIViewModel {
                             return job;
                         case KEY_POOL_RUN_OUT_OF:
                         case STOP_TASK:
-                            throw new CustomException(e.getCostomErrorCodeEnum(), e);
+                            saveUnFinishedJob(task,cached,unFinishedJob,e.getMessage());
                         default:
                             job.jobStatus = JobStatus.Failed;
                             return job;
                     }
                 }
             });
-            futures.add(future);
         }
 
-        // 缓存机制
-        int saveThreshold = 50;
-        List<Job> cached = new ArrayList<>();
         // 阻塞获取
-        for (int i = 0; i < futures.size(); i++) {
-            cached.add(jobs.get(i));
-            try {
+        try {
+            int tryTimes = (int)(20 / 0.5);
+            for (int i = 0; i < jobs.size(); i++) {
                 // 执行一个爬取job
-                futures.get(i).get(20, TimeUnit.SECONDS);
-            } catch (TimeoutException | InterruptedException | ExecutionException e) {
-                // 超时处理
-                jobs.get(i).jobStatus = JobStatus.Failed;
-            } catch (Exception e){
-                if(e instanceof CustomException){
-                    CustomException customException = (CustomException)e;
-                /*  在此处捕获到异常，两种可能：
-                    1. key池被清空
-                    2. 主动停止爬取任务。
-                    剩余的任务都将失败，但后续可以继续爬取
-                */
-                    appendMessage(customException.getMessage());
-                    appendMessage("任务即将停止，正在保存任务状态...请不要关闭软件");
-                    for (int j = i; j < jobs.size(); j++) {
-                        Job job = jobs.get(j);
-                        job.jobStatus = JobStatus.Failed;
+                for (int j = 0; j < tryTimes; j++) {
+                    Future<Job> future = completionService.poll(500, TimeUnit.MILLISECONDS);
+                    if(future != null){
+                        Job job = future.get();
                         cached.add(job);
+                        unFinishedJob.remove(job);
+                        break;
                     }
+                    if((j + 1) == tryTimes){
+                        throw new TimeoutException();
+                    }
+                }
+                appendMessage("已完成任务：" + (i + 1) + "/" + jobs.size());
+                if((i + 1) % saveThreshold == 0 || (i + 1) == jobs.size()) {
+                    appendMessage("正在写入数据，请稍等...");
                     jobService.saveBatch(BeanUtils.jobs2JobPos(cached));
                     poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
-                    throw new CustomException(customException.getCostomErrorCodeEnum(), customException);
-                }else{
-                    throw e;
+                    cached.clear();
                 }
             }
-
-            if((i + 1) % saveThreshold == 0 || (i + 1) == futures.size()) {
-                jobService.saveBatch(BeanUtils.jobs2JobPos(cached));
-                poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
-                cached.clear();
-            }
-            appendMessage("已完成任务：" + (i + 1) + "/" + jobs.size() + "——— 已爬取");
+        } catch (TimeoutException | InterruptedException | ExecutionException e) {
+            saveUnFinishedJob(task, cached, unFinishedJob, e.getMessage());
         }
         return BeanUtils.jobpos2Jobs(jobService.list());
+    }
+
+    private void saveUnFinishedJob(Task task, List<Job> cached, ArrayList<Job> unFinishedJob, String message) {
+        appendMessage(message);
+        appendMessage("任务即将停止，正在保存任务状态...请不要关闭软件");
+        for (Job unJob : unFinishedJob) {
+            unJob.jobStatus = JobStatus.Failed;
+            cached.add(unJob);
+        }
+        jobService.saveBatch(BeanUtils.jobs2JobPos(cached));
+        poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
+
+        task.taskStatus = TaskStatus.Pause;
+        taskService.save(task.toTaskPo());
     }
 
     private synchronized String getAMapKey(Queue<String> keys) throws CustomException {

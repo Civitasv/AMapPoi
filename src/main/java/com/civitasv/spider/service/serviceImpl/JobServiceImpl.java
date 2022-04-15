@@ -41,7 +41,7 @@ public class JobServiceImpl implements JobService {
     @Override
     public boolean saveBatch(List<JobPo> jobPos) {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
-        try (SqlSession session = defaultMyBatis.openSession(ExecutorType.BATCH, true)) {
+        try (SqlSession session = defaultMyBatis.openSession(ExecutorType.BATCH, false)) {
             JobMapper jobMapper = session.getMapper(JobMapper.class);
             for (int i = 0; i < jobPos.size(); i++) {
                 JobPo jobPo = jobPos.get(i);
@@ -50,6 +50,7 @@ public class JobServiceImpl implements JobService {
                     session.flushStatements();
                 }
             }
+            session.commit();
             return true;
         }
     }
