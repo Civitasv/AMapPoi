@@ -165,7 +165,7 @@ public class POIController {
         alert.setContentText("您有未完成的任务，请确认是否继续爬取，点击是则继续爬取上一个任务，否则放弃任务");
 
         Optional<ButtonType> result = alert.showAndWait();
-        return result.get() == ButtonType.OK;
+        return ButtonType.OK == result.get();
     }
 
     public Task handleLastTask(){

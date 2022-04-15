@@ -3,7 +3,6 @@ package com.civitasv.spider.util;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.civitasv.spider.mapper.JobMapper;
 import com.civitasv.spider.mapper.PoiMapper;
 import com.civitasv.spider.mapper.TaskMapper;
@@ -30,9 +29,7 @@ public class MyBatisUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        MybatisSqlSessionFactoryBean mybatisPlus = new MybatisSqlSessionFactoryBean();
-        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-        return sqlSessionFactory;
+        return new SqlSessionFactoryBuilder().build(inputStream);
     }
 
     public static SqlSessionFactory getDefaultMybatisPlus() {

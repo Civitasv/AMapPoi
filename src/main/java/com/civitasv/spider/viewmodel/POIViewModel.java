@@ -382,7 +382,7 @@ public class POIViewModel {
                 case "自定义":
                     if (!hasStart) return;
                     appendMessage("解析用户geojson文件中");
-                    Geometry boundary = null;
+                    Geometry boundary;
                     try {
                         boundary = getBoundaryByUserFile(viewHolder.userFile.getText(), viewHolder.userFileCoordinateType.getValue());
                     } catch (IOException e) {
@@ -409,6 +409,7 @@ public class POIViewModel {
             } catch (IOException e) {
                 e.printStackTrace();
                 Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "task构建失败：" + e.getMessage()));
+                return;
             }
         }
         TaskPo taskPo = task.toTaskPo();
@@ -534,9 +535,8 @@ public class POIViewModel {
 
         executorService = Executors.newFixedThreadPool(task.threadNum);
 
-        List<Job> res = Collections.emptyList();
         try {
-            res = getPoiOfJobs(task.jobs, task);
+            getPoiOfJobs(task.jobs, task);
         } catch (CustomException e) {
             task.taskStatus = TaskStatus.Pause;
             taskService.save(task.toTaskPo());
@@ -710,7 +710,7 @@ public class POIViewModel {
     private POI getPoi(String key, String polygon, String keywords, String types, int page, int size) throws CustomException {
         if (!hasStart) {
             throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
-        };
+        }
         long startTime = System.currentTimeMillis();   //获取开始时间
         POI poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
         if (poi == null || !CustomErrorCodeEnum.OK.equals(CustomErrorCodeEnum.getBoundryType(10000))) {

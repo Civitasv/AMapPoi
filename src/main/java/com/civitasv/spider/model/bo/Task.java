@@ -120,8 +120,6 @@ public class Task {
                 }
                 Geometry geometry = (Geometry) data.get("gcj02Boundary");
                 return POIViewModel.getBoundaryFromGeometry(geometry);
-
-
             case "矩形":
                 // 获取坐标类型
                 String[] rectanglePlusType = typePlusConfig[1].split(",");
@@ -137,9 +135,6 @@ public class Task {
                 Geometry boundary = POIViewModel.getBoundaryByUserFile(filepathPlusType[0],
                         CoordinateType.getBoundryType(filepathPlusType[1]));
                 rectangleBoundary = POIViewModel.getBoundaryFromGeometry(boundary);
-                if (rectangleBoundary == null) {
-                    throw new Exception("geojson文件解析失败");
-                }
                 return rectangleBoundary;
         }
         throw new RuntimeException("代码不应到达此处");

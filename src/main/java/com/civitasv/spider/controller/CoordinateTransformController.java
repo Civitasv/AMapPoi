@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -48,9 +49,9 @@ public class CoordinateTransformController {
         stage.setResizable(false);
         stage.setTitle("坐标转换");
         scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
         stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 
@@ -94,7 +95,7 @@ public class CoordinateTransformController {
             }
             // 根据输入文件格式转换
             if ("geojson".equals(inputFormat) || "json".equals(inputFormat)) { // 如果是geojson
-                String geojson = null;
+                String geojson;
                 try {
                     geojson = FileUtil.readFile(inputFile.getText());
                 } catch (IOException e) {
@@ -138,7 +139,7 @@ public class CoordinateTransformController {
                     analysis(false);
                     return;
                 }
-                String geojson = null;
+                String geojson;
                 try {
                     geojson = FileUtil.readFile(temp.getAbsolutePath());
                 } catch (IOException e) {
