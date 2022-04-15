@@ -13,6 +13,6 @@ import org.apache.ibatis.annotations.Update;
  * @since 2022-04-06 09:08:52
  */
 public interface JobMapper extends BaseMapper<JobPo> {
-    @Update("TRUNCATE TABLE tmp_truncate_table")
+    @Update("delete from job; update sqlite_sequence set seq = 0 where name = 'job';")
     void truncate();
 }

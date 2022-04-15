@@ -1,7 +1,10 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.util.*;
+import com.civitasv.spider.util.CoordinateTransformUtil;
+import com.civitasv.spider.util.FileUtil;
+import com.civitasv.spider.util.MessageUtil;
+import com.civitasv.spider.util.SpatialDataTransformUtil;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -91,8 +94,11 @@ public class CoordinateTransformController {
             }
             // 根据输入文件格式转换
             if ("geojson".equals(inputFormat) || "json".equals(inputFormat)) { // 如果是geojson
-                String geojson = FileUtil.readFile(inputFile.getText());
-                if (geojson == null) {
+                String geojson = null;
+                try {
+                    geojson = FileUtil.readFile(inputFile.getText());
+                } catch (IOException e) {
+                    e.printStackTrace();
                     appendMessage("无法读取geojson文件，请检查后重试！");
                     analysis(false);
                     return;
@@ -132,9 +138,12 @@ public class CoordinateTransformController {
                     analysis(false);
                     return;
                 }
-                String geojson = FileUtil.readFile(temp.getAbsolutePath());
-                if (geojson == null) {
-                    appendMessage("shp格式有误，请检查后重试！");
+                String geojson = null;
+                try {
+                    geojson = FileUtil.readFile(temp.getAbsolutePath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    appendMessage("shp格式有误，请检查后重试！" + e.getMessage());
                     analysis(false);
                     return;
                 }

@@ -7,8 +7,8 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class Job {
-    public Integer id;
-    public Task task;
+    public Long id;
+    public Long taskid;
     public Double[] bounds;
     public String types;
     public String keywords;
@@ -22,9 +22,9 @@ public class Job {
     public Integer totalExecutedTime;
     public POI poi;
 
-    public Job(Integer id, Task task, Double[] bounds, String types, String keywords, Integer page, Integer size) {
+    public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size) {
         this.id = id;
-        this.task = task;
+        this.taskid = taskid;
         this.bounds = bounds;
         this.types = types;
         this.keywords = keywords;
@@ -33,7 +33,7 @@ public class Job {
     }
 
     public JobPo toJobPo(){
-        return new JobPo(id, task.id, String.join(",", task.aMapKeys), types,
+        return new JobPo(id, taskid, types,
                 keywords,page, size, jobStatus.getCode(), requestExceptedTimes, requestActualTimes,poiExceptedSum,
                 poiActualSSum, totalExecutedTime, Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
     }

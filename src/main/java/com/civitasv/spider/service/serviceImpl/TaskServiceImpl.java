@@ -1,7 +1,6 @@
 package com.civitasv.spider.service.serviceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.civitasv.spider.helper.Enum.TaskStatus;
 import com.civitasv.spider.mapper.TaskMapper;
 import com.civitasv.spider.model.bo.Job;
@@ -14,6 +13,7 @@ import com.civitasv.spider.util.MyBatisUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * @author zhanghang
  * @since 2022-04-06 09:08:52
  */
-public class TaskServiceImpl extends ServiceImpl<TaskMapper, TaskPo> implements TaskService {
+public class TaskServiceImpl implements TaskService {
 
     private final JobService jobService = new JobServiceImpl();
     private final PoiService poiService = new PoiServiceImpl();
@@ -47,10 +47,37 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, TaskPo> implements 
 
             task.jobs = jobService.list().stream().map(jobPo -> {
                 Job job = jobPo.toJob();
-                job.task = task;
+                job.taskid = task.id;
                 return job;
             }).collect(Collectors.toList());
             return task;
+        }
+    }
+
+    @Override
+    public List<TaskPo> list() {
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
+        try (SqlSession session = defaultMyBatis.openSession(true)) {
+            TaskMapper taskMapper = session.getMapper(TaskMapper.class);
+            return taskMapper.selectList(new QueryWrapper<>());
+        }
+    }
+
+    @Override
+    public int save(TaskPo taskPo) {
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
+        try (SqlSession session = defaultMyBatis.openSession(true)) {
+            TaskMapper taskMapper = session.getMapper(TaskMapper.class);
+            return taskMapper.insert(taskPo);
+        }
+    }
+
+    @Override
+    public int updateById(TaskPo taskPo) {
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
+        try (SqlSession session = defaultMyBatis.openSession(true)) {
+            TaskMapper taskMapper = session.getMapper(TaskMapper.class);
+            return taskMapper.updateById(taskPo);
         }
     }
 }

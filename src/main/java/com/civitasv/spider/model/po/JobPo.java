@@ -1,8 +1,6 @@
 package com.civitasv.spider.model.po;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.civitasv.spider.model.bo.Job;
 
 import java.io.Serializable;
@@ -21,14 +19,12 @@ public class JobPo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId("id")
-    private Integer id;
+    @TableId(value="id",type= IdType.AUTO)
+    @TableField(value = "id" ,fill = FieldFill.INSERT)
+    private Long id;
 
     @TableField("taskid")
-    private Integer taskid;
-
-    @TableField("keys")
-    private String keys;
+    private Long taskid;
 
     @TableField("types")
     private String types;
@@ -63,10 +59,9 @@ public class JobPo implements Serializable {
     @TableField("bounds")
     private String bounds;
 
-    public JobPo(Integer id, Integer taskid, String keys, String types, String keywords, Integer page, Integer size, Integer status, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExcetuedSum, Integer totalExecutedTime, String bounds) {
+    public JobPo(Long id, Long taskid, String types, String keywords, Integer page, Integer size, Integer status, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExcetuedSum, Integer totalExecutedTime, String bounds) {
         this.id = id;
         this.taskid = taskid;
-        this.keys = keys;
         this.types = types;
         this.keywords = keywords;
         this.page = page;
@@ -80,28 +75,20 @@ public class JobPo implements Serializable {
         this.bounds = bounds;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public Integer getTaskid() {
+    public Long getTaskid() {
         return taskid;
     }
 
-    public void setTaskid(Integer taskid) {
+    public void setTaskid(Long taskid) {
         this.taskid = taskid;
-    }
-
-    public String getKeys() {
-        return keys;
-    }
-
-    public void setKeys(String keys) {
-        this.keys = keys;
     }
 
     public String getTypes() {
@@ -189,7 +176,6 @@ public class JobPo implements Serializable {
         return "Job{" +
         "id=" + id +
         ", taskid=" + taskid +
-        ", keys=" + keys +
         ", types=" + types +
         ", keywords=" + keywords +
         ", page=" + page +
@@ -204,7 +190,7 @@ public class JobPo implements Serializable {
 
     public Job toJob(){
         return new Job(id, null,
-                Arrays.stream(bounds.split("\\|")).map(Double::valueOf).toArray(Double[]::new),
+                Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new),
                 types, keywords, page, size);
     }
 }

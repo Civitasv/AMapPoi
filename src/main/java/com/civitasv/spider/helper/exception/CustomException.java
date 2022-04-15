@@ -25,6 +25,16 @@ public class CustomException extends Exception {
         this.extraMessage = extraMessage;
     }
 
+    public CustomException(CustomErrorCodeEnum iCostomErrorCodeEnum, Exception deException){
+        this(iCostomErrorCodeEnum);
+        addSuppressed(deException);
+    }
+
+    public CustomException(CustomErrorCodeEnum iCostomErrorCodeEnum, String extraMessage, Exception deException){
+        this(iCostomErrorCodeEnum, extraMessage);
+        addSuppressed(deException);
+    }
+
     public CustomErrorCodeEnum getCostomErrorCodeEnum() {
         return costomErrorCodeEnum;
     }

@@ -10,6 +10,8 @@ import com.civitasv.spider.model.POIJob;
 import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.bo.Task;
+import com.civitasv.spider.model.po.PoiPo;
+import com.civitasv.spider.model.po.TaskPo;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiService;
 import com.civitasv.spider.service.TaskService;
@@ -38,13 +40,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class POIViewModel {
     private final AMapDao mapDao;
     private ExecutorService worker, executorService;
+    private ExecutorCompletionService<Job> completionService;
     private final GeometryFactory geometryFactory;
     private final ViewHolder viewHolder;
     private final DataHolder dataHolder;
@@ -322,42 +324,9 @@ public class POIViewModel {
         return new Double[]{left, bottom, right, top};
     }
 
-    public void execute() {
+    public void execute(Task task) {
         worker = Executors.newSingleThreadExecutor();
-        // 判断是否有未完成的task
-        Task task  = taskService.getUnFinishedTask();
-
-        // 如果继续之前的任务
-        if(task != null){
-            // 初始化界面
-            viewHolder.keywords.setText(task.keywords);
-            viewHolder.types.setText(task.types);
-            viewHolder.keys.setText(String.join(",",task.aMapKeys));
-            viewHolder.outputDirectory.setText(task.outputDirectory);
-            viewHolder.threshold.setText(task.threshold.toString());
-            viewHolder.threadNum.setText(task.threadNum.toString());
-            viewHolder.tabs.getSelectionModel().select(task.boundryType.getCode());
-            viewHolder.userType.getSelectionModel().select(task.userType.getCode());
-            viewHolder.format.getSelectionModel().select(task.outputType.getCode());
-            String configContent = task.boundryConfig.split(":")[1];
-            switch (task.boundryType){
-                case ADCODE:
-                    viewHolder.adCode.setText(configContent);
-                    break;
-                case RECTANGLE:
-                    viewHolder.rectangle.setText(configContent.split(",")[0]);
-                    viewHolder.rectangleCoordinateType.getSelectionModel()
-                            .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
-                    break;
-                case CUSTOM:
-                    viewHolder.userFile.setText(configContent.split(",")[0]);
-                    viewHolder.userFileCoordinateType.getSelectionModel()
-                            .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
-                    break;
-            }
-        }
-        // 开始新的任务
-        else{
+        if(task == null){
             clearMessage();
             if (!check()) return;
             if (!aMapKeys()) return;
@@ -370,7 +339,6 @@ public class POIViewModel {
             alterThreadNum();
             perExecuteTime();
             analysis(true);
-            Predicate<? super POI.Info> filter = null;
             String boundryConfig = "";
 
             switch (dataHolder.tab) {
@@ -414,10 +382,13 @@ public class POIViewModel {
                 case "自定义":
                     if (!hasStart) return;
                     appendMessage("解析用户geojson文件中");
-                    Geometry boundary = getBoundaryByUserFile(viewHolder.userFile.getText(), viewHolder.userFileCoordinateType.getValue());
-                    if (boundary == null) {
+                    Geometry boundary = null;
+                    try {
+                        boundary = getBoundaryByUserFile(viewHolder.userFile.getText(), viewHolder.userFileCoordinateType.getValue());
+                    } catch (IOException e) {
+                        e.printStackTrace();
                         if (!hasStart) return;
-                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "geojson文件解析失败"));
+                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "geojson文件解析失败：" + e.getMessage()));
                         analysis(false);
                         return;
                     }
@@ -429,15 +400,20 @@ public class POIViewModel {
                     appendMessage("成功解析用户文件");
                     break;
             }
-
-            task = new Task(null, dataHolder.aMapKeys, dataHolder.types, dataHolder.keywords, dataHolder.threadNum,
-                    dataHolder.threshold, viewHolder.outputDirectory.getText(), OutputType.getOutputType(viewHolder.format.getValue()),
-                    UserType.getUserType(viewHolder.userType.getValue()),
-                    0, 0,0,0,
-                    0, boundryConfig, TaskStatus.UnStarted, dataHolder.boundary);
+            try {
+                task = new Task(null, dataHolder.aMapKeys, dataHolder.types, dataHolder.keywords, dataHolder.threadNum,
+                        dataHolder.threshold, viewHolder.outputDirectory.getText(), OutputType.getOutputType(viewHolder.format.getValue()),
+                        UserType.getUserType(viewHolder.userType.getValue()),
+                        0, 0,0,0,
+                        0, boundryConfig, TaskStatus.UnStarted, dataHolder.boundary);
+            } catch (IOException e) {
+                e.printStackTrace();
+                Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "task构建失败：" + e.getMessage()));
+            }
         }
-
-        Task finalTask = task;
+        TaskPo taskPo = task.toTaskPo();
+        taskService.save(taskPo);
+        Task finalTask = taskPo.toTask();
         worker.execute(() -> {
             getPoiData(finalTask);
             analysis(false);
@@ -493,11 +469,8 @@ public class POIViewModel {
         return new ArrayDeque<>(keyList);
     }
 
-    public static Geometry getBoundaryByUserFile(String path, CoordinateType type) {
+    public static Geometry getBoundaryByUserFile(String path, CoordinateType type) throws IOException {
         String filePath = FileUtil.readFile(path);
-        if (filePath == null) {
-            return null;
-        }
         return BoundaryUtil.getBoundaryByDataVGeoJSON(filePath, type);
     }
 
@@ -528,11 +501,9 @@ public class POIViewModel {
     }
 
     private void getPoiData(Task task) {
-        int threadNum = task.threadNum;
-        String keywords = task.keywords;
-        String types = task.types;
-        Queue<String> keys = task.aMapKeys;
 
+        task.taskStatus = TaskStatus.Preprocessing;
+        taskService.updateById(task.toTaskPo());
         // 1. 获取所有任务网格的第一页
         List<Job> firstPageJobs = new ArrayList<>(); // 网格剖分
 
@@ -549,28 +520,34 @@ public class POIViewModel {
         task.jobs.addAll(firstPageJobs);
         task.jobs.addAll(jobsAfterSecondPage);
 
+        // 保存新生成的job
+        jobService.saveBatch(BeanUtils.jobs2JobPos(task.jobs));
+        task.taskStatus = TaskStatus.Processing;
+        taskService.updateById(task.toTaskPo());
+
         // 转换为不可变对象
-        task.jobs = Collections.unmodifiableList(task.jobs);
+        task.jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs((jobService.list())));
 
         // 3. 开始爬取
         if (!hasStart) return;
-        appendMessage("开始POI爬取，" + (!keywords.isEmpty() ? "POI关键字：" + keywords : "") + (!types.isEmpty() ? (" POI类型：" + types) : ""));
+        appendMessage("开始POI爬取，" + (!task.keywords.isEmpty() ? "POI关键字：" + task.keywords : "") + (!task.types.isEmpty() ? (" POI类型：" + task.types) : ""));
 
-        executorService = Executors.newFixedThreadPool(threadNum);
+        executorService = Executors.newFixedThreadPool(task.threadNum);
 
-        List<Job> res = getPoiOfJobs(task.jobs);
-
-        executorService.shutdown();
-        appendMessage("该区域边界共含POI：" + res.size() + "条");
+        List<Job> res = Collections.emptyList();
+        try {
+            res = getPoiOfJobs(task.jobs, task);
+        } catch (CustomException e) {
+            task.taskStatus = TaskStatus.Pause;
+            taskService.save(task.toTaskPo());
+        }
+        List<PoiPo> poiPoList = poiService.list();
+        appendMessage("该区域边界共含POI：" + poiPoList.size() + "条");
         appendMessage("执行过滤算法中");
-        List<POI.Info> pois = res
-                .stream()
-                .flatMap(job->{
-            List<POI.Info> pois1 = job.poi.getPois();
-            pois1.stream().filter(task.filter);
-            return pois1.stream();
-        }).collect(Collectors.toList());
-        appendMessage("过滤成功，共获得POI：" + res.size() + "条");
+
+        List<POI.Info> pois = BeanUtils.poipo2Poi(poiPoList);
+        pois = pois.stream().filter(task.filter).collect(Collectors.toList());
+        appendMessage("过滤成功，共获得POI：" + pois.size() + "条");
 
         // 导出res
         switch (viewHolder.format.getValue()) {
@@ -584,6 +561,8 @@ public class POIViewModel {
             case "shp":
                 writeToShp(pois);
         }
+        task.taskStatus = TaskStatus.Success;
+        taskService.updateById(task.toTaskPo());
     }
 
     private boolean getAnalysisGrids(List<Job> analysisGrid, Double[] rect, Task task) {
@@ -608,7 +587,7 @@ public class POIViewModel {
         }
 
         if (poi.getCount() > threshold) {
-            appendMessage("超出阈值，继续四分");
+            appendMessage("超出阈值，继续四分，已包含" + analysisGrid.size() + "个任务");
             // 继续四分
             double itemWidth = (right - left) / 2;
             double itemHeight = (top - bottom) / 2;
@@ -619,9 +598,10 @@ public class POIViewModel {
                 }
             }
         } else {
-            Job job = new Job(null, task, rect, task.types, task.keywords, 1, 20);
+            Job job = new Job(null, task.id, rect, task.types, task.keywords, 1, 20);
             job.poi = poi;
             analysisGrid.add(job);  // new double[]{left, bottom, right, top});
+            appendMessage("已包含" + analysisGrid.size() + "个任务");
         }
         return result;
     }
@@ -633,13 +613,13 @@ public class POIViewModel {
             int total = firstPageJob.poi.getCount();
             int taskNum = total / size + 1;
             for (int page = 2; page <= taskNum; page++) {
-                jobs.add(new Job(null, firstPageJob.task, firstPageJob.bounds, firstPageJob.types, firstPageJob.keywords, page, firstPageJob.size));
+                jobs.add(new Job(null, firstPageJob.taskid, firstPageJob.bounds, firstPageJob.types, firstPageJob.keywords, page, firstPageJob.size));
             }
         }
         return jobs;
     }
 
-    private List<Job> getPoiOfJobs(List<Job> jobs) {
+    private List<Job> getPoiOfJobs(List<Job> jobs, Task task) throws CustomException {
         // 构造异步job
         List<Future<Job>> futures = new ArrayList<>();
         for (Job job : jobs) {
@@ -647,7 +627,7 @@ public class POIViewModel {
             String polygon = left + "," + top + "|" + right + "," + bottom;
             Future<Job> future = executorService.submit(() -> {
                 try {
-                    String key = getAMapKey(job.task.aMapKeys);
+                    String key = getAMapKey(task.aMapKeys);
                     job.poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
                     job.jobStatus = JobStatus.Success;
                     return job;
@@ -658,9 +638,9 @@ public class POIViewModel {
                         case RETURN_NULL_DATA:
                             job.jobStatus = JobStatus.GIVE_UP;
                             return job;
-                        case KEY_POOL_RUN_OUT_OF: case STOP_TASK:
-                            e.addSuppressed(e);
-                            throw new CustomException(e.getCostomErrorCodeEnum());
+                        case KEY_POOL_RUN_OUT_OF:
+                        case STOP_TASK:
+                            throw new CustomException(e.getCostomErrorCodeEnum(), e);
                         default:
                             job.jobStatus = JobStatus.Failed;
                             return job;
@@ -670,43 +650,49 @@ public class POIViewModel {
             futures.add(future);
         }
 
-        List<Job> result = new ArrayList<>(jobs.size());
         // 缓存机制
-        int count = 0;
         int saveThreshold = 50;
         List<Job> cached = new ArrayList<>();
         // 阻塞获取
         for (int i = 0; i < futures.size(); i++) {
+            cached.add(jobs.get(i));
             try {
                 // 执行一个爬取job
-                Job job = futures.get(i).get(20, TimeUnit.SECONDS);
-                job.jobStatus = JobStatus.Failed;
-                cached.add(job);
-                result.add(job);
-                if(++count == saveThreshold) {
-//                    poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
-                    count = 0;
-                    cached.clear();
-                }
+                futures.get(i).get(20, TimeUnit.SECONDS);
             } catch (TimeoutException | InterruptedException | ExecutionException e) {
                 // 超时处理
                 jobs.get(i).jobStatus = JobStatus.Failed;
-            } catch (Exception customException){
+            } catch (Exception e){
+                if(e instanceof CustomException){
+                    CustomException customException = (CustomException)e;
                 /*  在此处捕获到异常，两种可能：
                     1. key池被清空
                     2. 主动停止爬取任务。
                     剩余的任务都将失败，但后续可以继续爬取
                 */
-                appendMessage(customException.getMessage());
-                appendMessage("任务即将停止，正在保存任务状态...请不要关闭软件");
-                for (int j = i; j < jobs.size(); j++) {
-                    jobs.get(j).jobStatus = JobStatus.Failed;
+                    appendMessage(customException.getMessage());
+                    appendMessage("任务即将停止，正在保存任务状态...请不要关闭软件");
+                    for (int j = i; j < jobs.size(); j++) {
+                        Job job = jobs.get(j);
+                        job.jobStatus = JobStatus.Failed;
+                        cached.add(job);
+                    }
+                    jobService.saveBatch(BeanUtils.jobs2JobPos(cached));
+                    poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
+                    throw new CustomException(customException.getCostomErrorCodeEnum(), customException);
+                }else{
+                    throw e;
                 }
             }
-        }
-//        poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
 
-        return result;
+            if((i + 1) % saveThreshold == 0 || (i + 1) == futures.size()) {
+                jobService.saveBatch(BeanUtils.jobs2JobPos(cached));
+                poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
+                cached.clear();
+            }
+            appendMessage("已完成任务：" + (i + 1) + "/" + jobs.size() + "——— 已爬取");
+        }
+        return BeanUtils.jobpos2Jobs(jobService.list());
     }
 
     private synchronized String getAMapKey(Queue<String> keys) throws CustomException {
@@ -934,7 +920,6 @@ public class POIViewModel {
         return new GeoJSON(features);
     }
 
-
     private boolean parseRect(String text) {
         String pattern = "^(-?\\d{1,3}(\\.\\d+)?),\\s?(-?\\d{1,3}(\\.\\d+)?)#(-?\\d{1,3}(\\.\\d+)?),\\s?(-?\\d{1,3}(\\.\\d+)?)$";
         return Pattern.matches(pattern, text);
@@ -946,5 +931,11 @@ public class POIViewModel {
 
     private void appendMessage(String text) {
         Platform.runLater(() -> viewHolder.messageDetail.appendText(text + "\r\n"));
+    }
+
+    private void replaceLatestRowMessage(String text){
+        String allText = viewHolder.messageDetail.getText();
+        int start = allText.lastIndexOf("\n", allText.length() - 2);
+        Platform.runLater(() -> viewHolder.messageDetail.replaceText(new IndexRange(start + 1, allText.length()), text + "\r\n"));
     }
 }

@@ -1,8 +1,6 @@
 package com.civitasv.spider.model.po;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.civitasv.spider.helper.Enum.OutputType;
 import com.civitasv.spider.helper.Enum.TaskStatus;
 import com.civitasv.spider.helper.Enum.UserType;
@@ -27,8 +25,9 @@ public class TaskPo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId("id")
-    private Integer id;
+    @TableId(value="id",type= IdType.AUTO)
+    @TableField(value = "id" ,fill = FieldFill.INSERT)
+    private Long id;
 
     @TableField("keys")
     private String keys;
@@ -60,11 +59,11 @@ public class TaskPo implements Serializable {
     @TableField("request_excepted_times")
     private Integer requestExceptedTimes;
 
-    @TableField("poi_actial_sum")
-    private Integer poiActialSum;
+    @TableField("poi_actual_sum")
+    private Integer poiActualSum;
 
-    @TableField("poi_excetued_sum")
-    private Integer poiExcetuedSum;
+    @TableField("poi_excepted_sum")
+    private Integer poiExceptedSum;
 
     @TableField("total_executed_time")
     private Integer totalExecutedTime;
@@ -78,7 +77,7 @@ public class TaskPo implements Serializable {
     @TableField("bounds")
     private String bounds;
 
-    public TaskPo(Integer id, String keys, String types, String keywords, Integer threadnum, Integer threshold, Integer userType, String outputDirectory, Integer outputType, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExcetuedSum, Integer totalExecutedTime, Integer status, String boundConfig, String bounds) {
+    public TaskPo(Long id, String keys, String types, String keywords, Integer threadnum, Integer threshold, Integer userType, String outputDirectory, Integer outputType, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExceptedSum, Integer totalExecutedTime, Integer status, String boundConfig, String bounds) {
         this.id = id;
         this.keys = keys;
         this.types = types;
@@ -90,19 +89,19 @@ public class TaskPo implements Serializable {
         this.outputType = outputType;
         this.requestActualTimes = requestActualTimes;
         this.requestExceptedTimes = requestExceptedTimes;
-        this.poiActialSum = poiActialSum;
-        this.poiExcetuedSum = poiExcetuedSum;
+        this.poiActualSum = poiActialSum;
+        this.poiExceptedSum = poiExceptedSum;
         this.totalExecutedTime = totalExecutedTime;
         this.status = status;
         this.boundConfig = boundConfig;
         this.bounds = bounds;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -186,20 +185,20 @@ public class TaskPo implements Serializable {
         this.requestExceptedTimes = requestExceptedTimes;
     }
 
-    public Integer getPoiActialSum() {
-        return poiActialSum;
+    public Integer getPoiActualSum() {
+        return poiActualSum;
     }
 
-    public void setPoiActialSum(Integer poiActialSum) {
-        this.poiActialSum = poiActialSum;
+    public void setPoiActualSum(Integer poiActualSum) {
+        this.poiActualSum = poiActualSum;
     }
 
-    public Integer getPoiExcetuedSum() {
-        return poiExcetuedSum;
+    public Integer getPoiExceptedSum() {
+        return poiExceptedSum;
     }
 
-    public void setPoiExcetuedSum(Integer poiExcetuedSum) {
-        this.poiExcetuedSum = poiExcetuedSum;
+    public void setPoiExceptedSum(Integer poiExceptedSum) {
+        this.poiExceptedSum = poiExceptedSum;
     }
 
     public Integer getTotalExecutedTime() {
@@ -248,8 +247,8 @@ public class TaskPo implements Serializable {
                 ", outputType=" + outputType +
                 ", requestActualTimes=" + requestActualTimes +
                 ", requestExceptedTimes=" + requestExceptedTimes +
-                ", poiActialSum=" + poiActialSum +
-                ", poiExcetuedSum=" + poiExcetuedSum +
+                ", poiActialSum=" + poiActualSum +
+                ", poiExcetuedSum=" + poiExceptedSum +
                 ", totalExecutedTime=" + totalExecutedTime +
                 ", status=" + status +
                 ", boundConfig=" + boundConfig +
@@ -261,9 +260,9 @@ public class TaskPo implements Serializable {
         try {
            return new Task(id, queue, types, keywords, threadnum, threshold,outputDirectory,
                    OutputType.getOutputType(outputType), UserType.getUserType(userType), requestActualTimes,
-                    requestExceptedTimes, poiActialSum, poiExcetuedSum, totalExecutedTime, boundConfig,
+                    requestExceptedTimes, poiActualSum, poiExceptedSum, totalExecutedTime, boundConfig,
                    TaskStatus.getBoundryType(status),
-                   Arrays.stream(bounds.split("\\|")).map(Double::valueOf).toArray(Double[]::new));
+                   Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new));
         } catch (Exception e) {
             e.printStackTrace();
         }

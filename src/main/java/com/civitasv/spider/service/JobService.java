@@ -1,7 +1,8 @@
 package com.civitasv.spider.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.civitasv.spider.model.po.JobPo;
+
+import java.util.List;
 
 /**
  * <p>
@@ -11,6 +12,9 @@ import com.civitasv.spider.model.po.JobPo;
  * @author zhanghang
  * @since 2022-04-06 09:08:52
  */
-public interface JobService extends IService<JobPo> {
+public interface JobService {
     void clearTable();
+    List<JobPo> list();
+    boolean saveBatch(List<JobPo> jobPos);
+    int updateById(JobPo jobPo);
 }

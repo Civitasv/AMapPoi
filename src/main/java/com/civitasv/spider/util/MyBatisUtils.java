@@ -2,6 +2,7 @@ package com.civitasv.spider.util;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.civitasv.spider.mapper.JobMapper;
 import com.civitasv.spider.mapper.PoiMapper;
@@ -53,5 +54,9 @@ public class MyBatisUtils {
         dataSource.setUsername("");
         dataSource.setPassword("");
         return dataSource;
+    }
+
+    public static <T> void InjectionBaseMapper(IService<T> service){
+
     }
 }

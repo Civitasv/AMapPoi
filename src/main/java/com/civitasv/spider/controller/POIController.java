@@ -3,6 +3,14 @@ package com.civitasv.spider.controller;
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.db.Database;
 import com.civitasv.spider.helper.Enum.CoordinateType;
+import com.civitasv.spider.helper.Enum.TaskStatus;
+import com.civitasv.spider.model.bo.Task;
+import com.civitasv.spider.service.JobService;
+import com.civitasv.spider.service.PoiService;
+import com.civitasv.spider.service.TaskService;
+import com.civitasv.spider.service.serviceImpl.JobServiceImpl;
+import com.civitasv.spider.service.serviceImpl.PoiServiceImpl;
+import com.civitasv.spider.service.serviceImpl.TaskServiceImpl;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import com.sun.javafx.collections.ObservableListWrapper;
@@ -75,6 +83,11 @@ public class POIController {
     // 主界面
     private Stage mainStage;
 
+
+    private final TaskService taskService = new TaskServiceImpl();
+    private final JobService jobService = new JobServiceImpl();
+    private final PoiService poiService = new PoiServiceImpl();
+
     public Stage getMainStage() {
         return mainStage;
     }
@@ -95,6 +108,7 @@ public class POIController {
         stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         this.mainStage = stage;
         stage.show();
+        handleLastTask();
     }
 
     private void init() {
@@ -142,6 +156,62 @@ public class POIController {
         this.poiCate2.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCate3(newValue));
 
         this.poiCate3.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> getPoiCategory(newValue));
+    }
+
+    private boolean continueLastTaskByDialog(){
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("");
+        alert.setHeaderText("请确认");
+        alert.setContentText("您有未完成的任务，请确认是否继续爬取，点击是则继续爬取上一个任务，否则放弃任务");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.get() == ButtonType.OK;
+    }
+
+    public Task handleLastTask(){
+        // 判断是否有未完成的task
+        Task task  = taskService.getUnFinishedTask();
+        if(task == null){
+            jobService.clearTable();
+            poiService.clearTable();
+            return null;
+        }
+
+        if(!continueLastTaskByDialog()){
+            jobService.clearTable();
+            poiService.clearTable();
+            task.taskStatus = TaskStatus.Failed;
+            taskService.updateById(task.toTaskPo());
+            return null;
+        }
+
+        // 初始化界面
+        keywords.setText(task.keywords);
+        types.setText(task.types);
+        keys.setText(String.join(",",task.aMapKeys));
+        outputDirectory.setText(task.outputDirectory);
+        threshold.setText(task.threshold.toString());
+        threadNum.setText(task.threadNum.toString());
+        tabs.getSelectionModel().select(task.boundryType.getCode());
+        userType.getSelectionModel().select(task.userType.getCode());
+        format.getSelectionModel().select(task.outputType.getCode());
+        String configContent = task.boundryConfig.split(":")[1];
+        switch (task.boundryType){
+            case ADCODE:
+                adCode.setText(configContent);
+                break;
+            case RECTANGLE:
+                rectangle.setText(configContent.split(",")[0]);
+                rectangleCoordinateType.getSelectionModel()
+                        .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
+                break;
+            case CUSTOM:
+                userFile.setText(configContent.split(",")[0]);
+                userFileCoordinateType.getSelectionModel()
+                        .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
+                break;
+        }
+        return task;
     }
 
     private void refreshChoiceBoxCate1() {
@@ -204,7 +274,7 @@ public class POIController {
     }
 
     public void execute() {
-        poiViewModel.execute();
+        poiViewModel.execute(handleLastTask());
     }
 
     public void cancel() {

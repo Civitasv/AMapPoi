@@ -8,12 +8,13 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Task {
-    public Integer id;
+    public Long id;
     public Queue<String> aMapKeys;
     public String types;
     public String keywords;
@@ -32,12 +33,12 @@ public class Task {
     public String boundryConfig;
     public Predicate<? super POI.Info> filter;
     public List<Job> jobs;
-    public TaskStatus taskStatus = TaskStatus.UnStarted;
+    public TaskStatus taskStatus;
 
-    public Task(Integer id, Queue<String> aMapKeys, String types, String keywords, Integer threadNum, Integer threshold,
+    public Task(Long id, Queue<String> aMapKeys, String types, String keywords, Integer threadNum, Integer threshold,
                 String outputDirectory, OutputType outputType, UserType userType,
                 Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActualSum, Integer poiExecutedSum,
-                Integer totalExecutedTime, String boundryConfig, TaskStatus taskStatus, Double[] bounds) {
+                Integer totalExecutedTime, String boundryConfig, TaskStatus taskStatus, Double[] bounds) throws IOException {
         this.id = id;
         this.aMapKeys = aMapKeys;
         this.types = types;
@@ -85,7 +86,7 @@ public class Task {
                         CoordinateType.getBoundryType(filepathPlusType[1]));
                 filter = info -> {
                     if (info.location == null) return false;
-                    String[] lonlat = info.location.split(",");
+                    String[] lonlat = info.location.toString().split(",");
                     if (lonlat.length != 2) {
                         return false;
                     }

@@ -2,7 +2,8 @@ package com.civitasv.spider.service;
 
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.model.po.TaskPo;
-import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
  * <p>
@@ -12,7 +13,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @author zhanghang
  * @since 2022-04-06 09:08:52
  */
-public interface TaskService extends IService<TaskPo> {
-
-    public Task getUnFinishedTask();
+public interface TaskService {
+    Task getUnFinishedTask();
+    List<TaskPo> list();
+    int save(TaskPo taskPo);
+    int updateById(TaskPo taskPo);
 }

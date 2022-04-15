@@ -12,17 +12,31 @@ public class POI {
     private List<Info> pois;
 
     public static class Info {
-        public Integer oid;
-        public String id; // 唯一id
+        public Long oid;  // 对应id
+        public String id; // 唯一id 对应pid
         public String name; // 名称
         public String type; // 兴趣点类型
         public String typecode; // 兴趣点类型编码
-        public String address; // 地址
-        public String location; // 经纬度
+        public Object address; // 地址
+        public Object location; // 经纬度
         public Object tel; // 电话
-        public String pname; //  省份名称
-        public String cityname; // 城市名称
-        public String adname; // 区域名称
+        public Object pname; //  省份名称
+        public Object cityname; // 城市名称
+        public Object adname; // 区域名称
+
+        public Info(Long oid, String id, String name, String type, String typecode, Object address, Object location, Object tel, Object pname, Object cityname, Object adname) {
+            this.oid = oid;
+            this.id = id;
+            this.name = name;
+            this.type = type;
+            this.typecode = typecode;
+            this.address = address;
+            this.location = location;
+            this.tel = tel;
+            this.pname = pname;
+            this.cityname = cityname;
+            this.adname = adname;
+        }
 
         @Override
         public String toString() {
@@ -40,8 +54,8 @@ public class POI {
                     '}';
         }
 
-        public PoiPo toPoiPo(Integer jobid){
-            return new PoiPo(oid, id, jobid, name, type, typecode, address, location, tel.toString(), pname, cityname, adname);
+        public PoiPo toPoiPo(Long jobid){
+            return new PoiPo(oid, id, jobid, name, type, typecode, address.toString(), location.toString(), tel.toString(), pname.toString(), cityname.toString(), adname.toString());
         }
     }
 

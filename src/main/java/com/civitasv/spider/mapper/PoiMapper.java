@@ -14,6 +14,6 @@ import org.apache.ibatis.annotations.Update;
  */
 public interface PoiMapper extends BaseMapper<PoiPo> {
 
-    @Update("TRUNCATE TABLE tmp_truncate_table")
+    @Update("delete from poi; update sqlite_sequence set seq = 0 where name = 'poi';")
     void truncate();
 }

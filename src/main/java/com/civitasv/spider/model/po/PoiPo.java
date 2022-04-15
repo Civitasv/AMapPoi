@@ -1,7 +1,8 @@
 package com.civitasv.spider.model.po;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+import com.civitasv.spider.model.bo.POI;
+
 import java.io.Serializable;
 
 /**
@@ -17,14 +18,15 @@ public class PoiPo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableField("oid")
-    private Integer id;
-
-    @TableField("id")
-    private String pid;
+    @TableId(value="id",type= IdType.AUTO)
+    @TableField(value = "id" ,fill = FieldFill.INSERT)
+    private Long id;
 
     @TableField("jobid")
-    private Integer jobid;
+    private Long jobid;
+
+    @TableField("pid")
+    private String pid;
 
     @TableField("name")
     private String name;
@@ -53,7 +55,7 @@ public class PoiPo implements Serializable {
     @TableField("adname")
     private String adname;
 
-    public PoiPo(Integer id, String pid, Integer jobid, String name, String type, String typecode, String address, String location, String tel, String pname, String cityname, String adname) {
+    public PoiPo(Long id, String pid, Long jobid, String name, String type, String typecode, String address, String location, String tel, String pname, String cityname, String adname) {
         this.id = id;
         this.pid = pid;
         this.jobid = jobid;
@@ -68,19 +70,19 @@ public class PoiPo implements Serializable {
         this.adname = adname;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public Integer getJobid() {
+    public Long getJobid() {
         return jobid;
     }
 
-    public void setJobid(Integer jobid) {
+    public void setJobid(Long jobid) {
         this.jobid = jobid;
     }
 
@@ -171,5 +173,9 @@ public class PoiPo implements Serializable {
         ", cityname=" + cityname +
         ", adname=" + adname +
         "}";
+    }
+
+    public POI.Info toPoi(){
+        return new POI.Info(id, pid, name, type, typecode, address, location, tel, pname, cityname, adname);
     }
 }

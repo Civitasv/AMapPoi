@@ -1,10 +1,11 @@
 package com.civitasv.spider.util;
 
+import org.apache.commons.io.FileExistsException;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class FileUtil {
     /**
@@ -38,20 +39,15 @@ public class FileUtil {
      * @param path 文件完整路径
      * @return 文件字符串数据
      */
-    public static String readFile(String path) {
+    public static String readFile(String path) throws IOException {
         File file = new File(path);
         if (file.exists()) {
-            try {
-                StringBuilder res = new StringBuilder();
-                Files.lines(file.toPath())
-                        .forEach(res::append);
-                return res.toString();
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
+            StringBuilder res = new StringBuilder();
+            Files.lines(file.toPath())
+                    .forEach(res::append);
+            return res.toString();
         }
-        return null;
+        throw new FileExistsException("文件不存在：" + path);
     }
 
     /**
