@@ -1,6 +1,7 @@
 package com.civitasv.spider.model.bo;
 
 import com.civitasv.spider.model.po.PoiPo;
+import com.civitasv.spider.util.BeanUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +59,9 @@ public class POI {
 
         public PoiPo toPoiPo(Long jobid){
             try{
-                return new PoiPo(oid, id, jobid, name, type, typecode, address.toString(), location.toString(), tel.toString(), pname.toString(), cityname.toString(), adname.toString());
+                return new PoiPo(oid, id, jobid, name, type, typecode, BeanUtils.obj2String(address),
+                        BeanUtils.obj2String(location), BeanUtils.obj2String(tel), BeanUtils.obj2String(pname),
+                        BeanUtils.obj2String(cityname), BeanUtils.obj2String(adname));
             }catch (Exception e){
                 e.printStackTrace();
             }

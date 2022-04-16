@@ -508,7 +508,7 @@ public class POIViewModel {
         task.taskStatus = TaskStatus.Preprocessing;
         taskService.updateById(task.toTaskPo());
         // 1. 获取所有任务网格的第一页
-        List<Job> firstPageJobs = new ArrayList<>(); // 网格剖分
+        List<Job> firstPageJobs = Collections.synchronizedList(new CopyOnWriteArrayList<>()); // 网格剖分
 
         appendMessage("划分所有任务网格中");
         if (getAnalysisGrids(firstPageJobs, task.boundary, task)) {
@@ -561,43 +561,80 @@ public class POIViewModel {
         taskService.updateById(task.toTaskPo());
     }
 
-    private boolean getAnalysisGrids(List<Job> analysisGrid, Double[] rect, Task task) {
-        int threshold = task.threshold;
-        Queue<String> keys = task.aMapKeys;
-        String keywords = task.keywords;
-        String types = task.types;
-
-        if (!hasStart) return false;
+    private boolean getAnalysisGrids(List<Job> analysisGrid, Double[] beginRect, Task task) {
+        List<Double[]> rects = new ArrayList<>();
+        rects.add(beginRect);
         boolean result = true;
-        int page = 1, size = 20; // 页码、每页个数
-        Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
-        String polygon = left + "," + top + "|" + right + "," + bottom;
 
-        POI poi; // 访问第一页
-        try {
-            String key = getAMapKey(keys);
-            poi = getPoi(key, polygon, keywords, types, page, size);
-        } catch (CustomException e) {
-            appendMessage("四分失败，请重试!");
-            return false;
-        }
+        List<Double[]> nextRects = new ArrayList<>();
 
-        if (poi.getCount() > threshold) {
-            appendMessage("超出阈值，继续四分，已包含" + analysisGrid.size() + "个任务");
-            // 继续四分
-            double itemWidth = (right - left) / 2;
-            double itemHeight = (top - bottom) / 2;
-            for (int i = 0; i < 2; i++) {
-                for (int j = 0; j < 2; j++) {
-                    result = result && getAnalysisGrids(analysisGrid, new Double[]{left + i * itemWidth, bottom + j * itemHeight,
-                            left + (i + 1) * itemWidth, bottom + (j + 1) * itemHeight}, task);
+        ExecutorService executorService = Executors.newFixedThreadPool(task.threadNum);
+        CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(executorService);
+
+        while (rects.size() != 0){
+            for (Double[] rect : rects) {
+                if (!hasStart) return false;
+                int page = 1, size = 20; // 页码、每页个数
+                Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
+                String polygon = left + "," + top + "|" + right + "," + bottom;
+                try {
+                    String key = getAMapKey(task.aMapKeys);
+                    completionService.submit(() -> {
+                        HashMap<String, Object> res = new HashMap<>();
+                        POI poi = getPoi(key, polygon, task.keywords, task.types, page, size);
+                        res.put("poi", poi);
+                        res.put("rect", rect);
+                        return res;
+                    });
+                } catch (CustomException e) {
+                    appendMessage("四分失败，请重试!");
+                    return false;
                 }
             }
-        } else {
-            Job job = new Job(null, task.id, rect, task.types, task.keywords, 1, 20);
-            job.poi = poi;
-            analysisGrid.add(job);  // new double[]{left, bottom, right, top});
-            appendMessage("已包含" + analysisGrid.size() + "个任务");
+
+            int tryTimes = (int)(20 / 0.5);
+
+            for (int i = 0; i < rects.size(); i++) {
+                for (int j = 0; j < tryTimes; j++) {
+                    Future<Map<String, Object>> future;
+                    try {
+                        future = completionService.poll(500, TimeUnit.MILLISECONDS);
+                        if(future != null){
+                            Map<String, Object> res = future.get();
+                            POI poi = (POI) res.get("poi");
+                            Double[] rect = (Double[]) res.get("rect");
+                            if (poi.getCount() > task.threshold) {
+                                appendMessage("超出阈值，继续四分，已包含" + analysisGrid.size() + "个任务");
+                                // 继续四分
+                                Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
+                                double itemWidth = (right - left) / 2;
+                                double itemHeight = (top - bottom) / 2;
+                                for (int m = 0; m < 2; m++) {
+                                    for (int n = 0; n < 2; n++) {
+                                        Double[] bounds = {left + m * itemWidth, bottom + n * itemHeight,
+                                                left + (m + 1) * itemWidth, bottom + (n + 1) * itemHeight};
+                                        nextRects.add(bounds);
+                                    }
+                                }
+                            } else {
+                                Job job = new Job(null, task.id, rect, task.types, task.keywords, 1, 20);
+                                job.poi = poi;
+                                analysisGrid.add(job);  // new double[]{left, bottom, right, top});
+                                appendMessage("已包含" + analysisGrid.size() + "个任务");
+                            }
+                            break;
+                        }
+                        if((j + 1) == tryTimes){
+                            throw new TimeoutException();
+                        }
+                    } catch (TimeoutException | InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                        return false;
+                    }
+                }
+            }
+            rects = nextRects;
+            nextRects = new ArrayList<>();
         }
         return result;
     }
@@ -633,14 +670,15 @@ public class POIViewModel {
                     return job;
                 }catch (CustomException e){
                     // 执行完job对爬取结果的处理
-                    appendMessage(e.getMessage());
+                    // 如果主动停止，则不输出
+                    if(hasStart) appendMessage(e.getMessage());
                     switch (e.getCostomErrorCodeEnum()) {
                         case RETURN_NULL_DATA:
                             job.jobStatus = JobStatus.GIVE_UP;
                             return job;
                         case KEY_POOL_RUN_OUT_OF:
                         case STOP_TASK:
-                            saveUnFinishedJob(task,cached,unFinishedJob,e.getMessage());
+                            saveUnFinishedJob(task,cached,unFinishedJob);
                         default:
                             job.jobStatus = JobStatus.Failed;
                             return job;
@@ -675,13 +713,12 @@ public class POIViewModel {
                 }
             }
         } catch (TimeoutException | InterruptedException | ExecutionException e) {
-            saveUnFinishedJob(task, cached, unFinishedJob, e.getMessage());
+            saveUnFinishedJob(task, cached, unFinishedJob);
         }
         return BeanUtils.jobpos2Jobs(jobService.list());
     }
 
-    private void saveUnFinishedJob(Task task, List<Job> cached, ArrayList<Job> unFinishedJob, String message) {
-        appendMessage(message);
+    private void saveUnFinishedJob(Task task, List<Job> cached, ArrayList<Job> unFinishedJob) {
         appendMessage("任务即将停止，正在保存任务状态...请不要关闭软件");
         for (Job unJob : unFinishedJob) {
             unJob.jobStatus = JobStatus.Failed;

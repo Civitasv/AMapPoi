@@ -9,6 +9,7 @@ import net.sf.cglib.beans.BeanMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -68,5 +69,9 @@ public class BeanUtils {
         return poiPos.stream()
                 .map(PoiPo::toPoi)
                 .collect(toList());
+    }
+
+    public static String obj2String(Object obj){
+        return Objects.toString(obj,"");
     }
 }
