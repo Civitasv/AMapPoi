@@ -3,7 +3,6 @@ package com.civitasv.spider.service.serviceImpl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.civitasv.spider.helper.Enum.TaskStatus;
 import com.civitasv.spider.mapper.TaskMapper;
-import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.model.po.TaskPo;
 import com.civitasv.spider.service.JobService;
@@ -14,7 +13,6 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -36,21 +34,15 @@ public class TaskServiceImpl implements TaskService {
             TaskMapper taskMapper = session.getMapper(TaskMapper.class);
 
             QueryWrapper<TaskPo> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("status", TaskStatus.Pause).or()
-                    .eq("status", TaskStatus.Preprocessing).or()
-                    .eq("status", TaskStatus.Processing);
+            queryWrapper.orderByDesc("id").last("limit 1");
             TaskPo taskPo = taskMapper.selectOne(queryWrapper);
-            if(taskPo == null){
+            if(taskPo == null
+                    || TaskStatus.SOME_GIVE_UP.getCode().equals(taskPo.getStatus())
+                    || TaskStatus.SUCCESS.getCode().equals(taskPo.getStatus())){
                 return null;
             }
-            Task task = taskPo.toTask();
 
-            task.jobs = jobService.list().stream().map(jobPo -> {
-                Job job = jobPo.toJob();
-                job.taskid = task.id;
-                return job;
-            }).collect(Collectors.toList());
-            return task;
+            return taskPo.toTask();
         }
     }
 

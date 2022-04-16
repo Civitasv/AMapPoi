@@ -17,5 +17,8 @@ public interface JobService {
     List<JobPo> list();
     List<JobPo> listUnFinished();
     boolean saveBatch(List<JobPo> jobPos);
+
+    boolean updateBatch(List<JobPo> jobPos);
+
     int updateById(JobPo jobPo);
 }

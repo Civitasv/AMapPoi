@@ -14,7 +14,6 @@ import com.civitasv.spider.service.serviceImpl.TaskServiceImpl;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import com.sun.javafx.collections.ObservableListWrapper;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -94,11 +93,8 @@ public class POIController {
 
     private POIViewModel poiViewModel;
 
-    public void show() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("poi.fxml"));
-        Parent root = fxmlLoader.load();
-        POIController controller = fxmlLoader.getController();
-        controller.init();
+    public void show( Parent root) throws IOException {
+        init();
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("POIKit");
@@ -107,8 +103,12 @@ public class POIController {
         stage.setScene(scene);
         stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         this.mainStage = stage;
+        initStageHandler();
         stage.show();
-        handleLastTask();
+    }
+
+    private void initStageHandler(){
+        mainStage.setOnShown(event -> handleLastTask());
     }
 
     private void init() {
@@ -165,7 +165,8 @@ public class POIController {
         alert.setContentText("您有未完成的任务，请确认是否继续爬取，点击是则继续爬取上一个任务，否则放弃任务");
 
         Optional<ButtonType> result = alert.showAndWait();
-        return ButtonType.OK == result.get();
+
+        return !result.isPresent() || ButtonType.OK == result.get();
     }
 
     public Task handleLastTask(){
@@ -180,7 +181,7 @@ public class POIController {
         if(!continueLastTaskByDialog()){
             jobService.clearTable();
             poiService.clearTable();
-            task.taskStatus = TaskStatus.Failed;
+            task.taskStatus = TaskStatus.SOME_GIVE_UP;
             taskService.updateById(task.toTaskPo());
             return null;
         }

@@ -45,7 +45,8 @@ public class JobServiceImpl implements JobService {
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             JobMapper jobMapper = session.getMapper(JobMapper.class);
             QueryWrapper<JobPo> wrapper = new QueryWrapper<>();
-            wrapper.ne("status", JobStatus.Success.getCode());
+            wrapper.ne("status", JobStatus.SUCCESS.getCode());
+            wrapper.ne("status", JobStatus.GIVE_UP.getCode());
             return jobMapper.selectList(wrapper);
         }
     }
@@ -58,6 +59,23 @@ public class JobServiceImpl implements JobService {
             for (int i = 0; i < jobPos.size(); i++) {
                 JobPo jobPo = jobPos.get(i);
                 jobMapper.insert(jobPo);
+                if ((i + 1) % 1000 == 0 || i + 1 == jobPos.size()) {
+                    session.flushStatements();
+                }
+            }
+            session.commit();
+            return true;
+        }
+    }
+
+    @Override
+    public boolean updateBatch(List<JobPo> jobPos) {
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
+        try (SqlSession session = defaultMyBatis.openSession(ExecutorType.BATCH, false)) {
+            JobMapper jobMapper = session.getMapper(JobMapper.class);
+            for (int i = 0; i < jobPos.size(); i++) {
+                JobPo jobPo = jobPos.get(i);
+                jobMapper.updateById(jobPo);
                 if ((i + 1) % 1000 == 0 || i + 1 == jobPos.size()) {
                     session.flushStatements();
                 }
