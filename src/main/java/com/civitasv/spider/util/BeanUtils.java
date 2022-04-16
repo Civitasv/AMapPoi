@@ -46,7 +46,7 @@ public class BeanUtils {
     }
 
     public static List<PoiPo> jobs2Poipos(List<Job> jobs) {
-        return jobs.stream()
+        return jobs.stream().filter(job -> job.poi != null)
                 .flatMap(job -> job.poi.getPois()
                         .stream()
                         .map(poi -> poi.toPoiPo(job.id)))

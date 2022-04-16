@@ -38,6 +38,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
@@ -508,23 +510,23 @@ public class POIViewModel {
         task.taskStatus = TaskStatus.Preprocessing;
         taskService.updateById(task.toTaskPo());
         // 1. 获取所有任务网格的第一页
-        List<Job> firstPageJobs = Collections.synchronizedList(new CopyOnWriteArrayList<>()); // 网格剖分
+        List<Job> firstPageJobs = new ArrayList<>(); // 网格剖分
 
         appendMessage("划分所有任务网格中");
-        if (getAnalysisGrids(firstPageJobs, task.boundary, task)) {
-            appendMessage("任务网格切分成功，共有" + firstPageJobs.size() + "个任务网格");
-        } else {
+        if (!getAnalysisGrids(firstPageJobs, task.boundary, task)) {
             return;
         }
+        task.jobs.addAll(firstPageJobs);
+        jobService.saveBatch(BeanUtils.jobs2JobPos(firstPageJobs));
+        appendMessage("任务网格切分成功，共有" + firstPageJobs.size() + "个任务网格");
 
         // 2. 生成第二页之后的的Job
         List<Job> jobsAfterSecondPage = generateJobsAfterSecondPage(firstPageJobs);
-
-        task.jobs.addAll(firstPageJobs);
         task.jobs.addAll(jobsAfterSecondPage);
+        jobService.saveBatch(BeanUtils.jobs2JobPos(jobsAfterSecondPage));
+        appendMessage("任务构建成功，共有" + task.jobs.size() + "个任务");
 
-        // 保存新生成的job
-        jobService.saveBatch(BeanUtils.jobs2JobPos(task.jobs));
+        // 保存Task
         task.taskStatus = TaskStatus.Processing;
         taskService.updateById(task.toTaskPo());
 
@@ -575,14 +577,13 @@ public class POIViewModel {
             for (Double[] rect : rects) {
                 if (!hasStart) return false;
                 int page = 1, size = 20; // 页码、每页个数
-                Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
-                String polygon = left + "," + top + "|" + right + "," + bottom;
                 try {
                     String key = getAMapKey(task.aMapKeys);
                     completionService.submit(() -> {
                         HashMap<String, Object> res = new HashMap<>();
-                        POI poi = getPoi(key, polygon, task.keywords, task.types, page, size);
-                        res.put("poi", poi);
+                        Job job = new Job(null, task.id, rect, task.types, task.keywords, page, size);
+                        executeJob(job, task, true);
+                        res.put("job", job);
                         res.put("rect", rect);
                         return res;
                     });
@@ -593,7 +594,6 @@ public class POIViewModel {
             }
 
             int tryTimes = (int)(20 / 0.5);
-
             for (int i = 0; i < rects.size(); i++) {
                 for (int j = 0; j < tryTimes; j++) {
                     Future<Map<String, Object>> future;
@@ -601,9 +601,9 @@ public class POIViewModel {
                         future = completionService.poll(500, TimeUnit.MILLISECONDS);
                         if(future != null){
                             Map<String, Object> res = future.get();
-                            POI poi = (POI) res.get("poi");
+                            Job job = (Job) res.get("job");
                             Double[] rect = (Double[]) res.get("rect");
-                            if (poi.getCount() > task.threshold) {
+                            if (job.poi.getCount() > task.threshold) {
                                 appendMessage("超出阈值，继续四分，已包含" + analysisGrid.size() + "个任务");
                                 // 继续四分
                                 Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
@@ -617,8 +617,6 @@ public class POIViewModel {
                                     }
                                 }
                             } else {
-                                Job job = new Job(null, task.id, rect, task.types, task.keywords, 1, 20);
-                                job.poi = poi;
                                 analysisGrid.add(job);  // new double[]{left, bottom, right, top});
                                 appendMessage("已包含" + analysisGrid.size() + "个任务");
                             }
@@ -664,9 +662,7 @@ public class POIViewModel {
             String polygon = left + "," + top + "|" + right + "," + bottom;
             completionService.submit(() -> {
                 try {
-                    String key = getAMapKey(task.aMapKeys);
-                    job.poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
-                    job.jobStatus = JobStatus.Success;
+                    executeJob(job, task, false);
                     return job;
                 }catch (CustomException e){
                     // 执行完job对爬取结果的处理
@@ -674,10 +670,11 @@ public class POIViewModel {
                     if(hasStart) appendMessage(e.getMessage());
                     switch (e.getCostomErrorCodeEnum()) {
                         case RETURN_NULL_DATA:
-                            job.jobStatus = JobStatus.GIVE_UP;
+                            job.jobStatus = JobStatus.Failed;
                             return job;
                         case KEY_POOL_RUN_OUT_OF:
                         case STOP_TASK:
+                            // 暂定本次爬取
                             saveUnFinishedJob(task,cached,unFinishedJob);
                         default:
                             job.jobStatus = JobStatus.Failed;
@@ -743,12 +740,58 @@ public class POIViewModel {
         return key;
     }
 
+    private boolean executeJob(Job job, Task task, boolean isAnalysising) throws CustomException {
+        double left = job.bounds[0], bottom = job.bounds[1], right = job.bounds[2], top = job.bounds[3];
+        String polygon = left + "," + top + "|" + right + "," + bottom;
+        String key = getAMapKey(task.aMapKeys);
+        LocalDateTime startTime = LocalDateTime.now();//获取开始时间
+        POI poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
+        LocalDateTime endTime = LocalDateTime.now(); //获取结束时间
+        int totalExecutedTime = (int) Duration.between(startTime, endTime).toMillis();
+        job.poi = poi;
+        job.jobStatus = JobStatus.Success; // 设置执行状态为Success
+
+        // 如果getPoi抛出异常，则后续代码不进行
+        // 统计Job的相关数据
+        // 设置Job的实际统计量
+        job.plusRequestActualTimes(); // 增加执行次数
+        job.plusPoiActualSum(poi.getPois().size()); // 增加实际获取的poi数量
+
+        // 设置Job的期望统计量
+        job.poiExceptedSum = poi.getCount() < job.size ? poi.getCount() : job.size; // 设置期望poi数量
+
+        // 设置Job的执行时间
+        job.totalExecutedTime = totalExecutedTime; // 统计执行总时间
+
+        // 统计Task的相关数据
+        // 设置task的实际统计量
+        task.plusRequestActualTimes(); // 增加执行次数
+        task.plusPoiActualSum(poi.getPois().size());
+
+        // 设置task的期望统计量
+        if(isAnalysising){
+            task.plusPoiExceptedSum(poi.getCount());
+            task.requestExceptedTimes = (poi.getCount() / job.size) + 1;
+        }
+        return true;
+    }
+
     private POI getPoi(String key, String polygon, String keywords, String types, int page, int size) throws CustomException {
         if (!hasStart) {
             throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
         }
-        long startTime = System.currentTimeMillis();   //获取开始时间
+        LocalDateTime startTime = LocalDateTime.now();//获取开始时间
         POI poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
+        LocalDateTime endTime = LocalDateTime.now(); //获取结束时间
+        if (Duration.between(startTime, endTime).toMillis() < dataHolder.perExecuteTime) { // 严格控制每次执行perExecuteTime
+            try {
+                TimeUnit.MILLISECONDS.sleep(dataHolder.perExecuteTime - Duration.between(startTime, endTime).toMillis());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 异常情况处理
         if (poi == null || !CustomErrorCodeEnum.OK.equals(CustomErrorCodeEnum.getBoundryType(10000))) {
             if (poi == null) {
                 throw new CustomException(CustomErrorCodeEnum.RETURN_NULL_DATA,
@@ -762,14 +805,6 @@ public class POIViewModel {
                 } else {
                     throw new CustomException(gaodePoiErrorEnum);
                 }
-            }
-        }
-        long endTime = System.currentTimeMillis(); //获取结束时间
-        if (endTime - startTime < dataHolder.perExecuteTime) { // 严格控制每次执行perExecuteTime
-            try {
-                TimeUnit.MILLISECONDS.sleep(dataHolder.perExecuteTime - (endTime - startTime));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
         return poi;

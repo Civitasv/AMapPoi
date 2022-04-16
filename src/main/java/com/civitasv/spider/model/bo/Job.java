@@ -15,11 +15,11 @@ public class Job {
     public Integer page;
     public Integer size;
     public JobStatus jobStatus = JobStatus.UnStarted;
-    public Integer requestActualTimes;
-    public Integer requestExceptedTimes;
-    public Integer poiActualSSum;
-    public Integer poiExceptedSum;
-    public Integer totalExecutedTime;
+    public Integer requestActualTimes = 0;
+    public Integer requestExceptedTimes = 1;
+    public Integer poiActualSSum = 0;
+    public Integer poiExceptedSum = 0;
+    public Integer totalExecutedTime = 0;
     public POI poi;
 
     public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size) {
@@ -32,6 +32,23 @@ public class Job {
         this.size = size;
     }
 
+    public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size, JobStatus jobStatus, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActualSSum, Integer poiExceptedSum, Integer totalExecutedTime, POI poi) {
+        this.id = id;
+        this.taskid = taskid;
+        this.bounds = bounds;
+        this.types = types;
+        this.keywords = keywords;
+        this.page = page;
+        this.size = size;
+        this.jobStatus = jobStatus;
+        this.requestActualTimes = requestActualTimes;
+        this.requestExceptedTimes = requestExceptedTimes;
+        this.poiActualSSum = poiActualSSum;
+        this.poiExceptedSum = poiExceptedSum;
+        this.totalExecutedTime = totalExecutedTime;
+        this.poi = poi;
+    }
+
     public JobPo toJobPo(){
         try{
             return new JobPo(id, taskid, types,
@@ -41,5 +58,13 @@ public class Job {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public int plusRequestActualTimes(){
+        return ++requestActualTimes;
+    }
+
+    public int plusPoiActualSum(int plusPoiNum){
+        return poiActualSSum += plusPoiNum;
     }
 }

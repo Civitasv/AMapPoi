@@ -15,6 +15,7 @@ import java.util.List;
 public interface JobService {
     void clearTable();
     List<JobPo> list();
+    List<JobPo> listUnFinished();
     boolean saveBatch(List<JobPo> jobPos);
     int updateById(JobPo jobPo);
 }

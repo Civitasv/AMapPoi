@@ -1,6 +1,7 @@
 package com.civitasv.spider.service.serviceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.civitasv.spider.helper.Enum.JobStatus;
 import com.civitasv.spider.mapper.JobMapper;
 import com.civitasv.spider.model.po.JobPo;
 import com.civitasv.spider.service.JobService;
@@ -35,6 +36,17 @@ public class JobServiceImpl implements JobService {
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             JobMapper jobMapper = session.getMapper(JobMapper.class);
             return jobMapper.selectList(new QueryWrapper<>());
+        }
+    }
+
+    @Override
+    public List<JobPo> listUnFinished() {
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
+        try (SqlSession session = defaultMyBatis.openSession(true)) {
+            JobMapper jobMapper = session.getMapper(JobMapper.class);
+            QueryWrapper<JobPo> wrapper = new QueryWrapper<>();
+            wrapper.ne("status", JobStatus.Success.getCode());
+            return jobMapper.selectList(wrapper);
         }
     }
 
