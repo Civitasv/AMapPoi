@@ -199,7 +199,7 @@ public class POIController {
         String configContent = task.boundryConfig.split(":")[1];
         switch (task.boundryType){
             case ADCODE:
-                adCode.setText(configContent);
+                adCode.setText(configContent.split(",")[0]);
                 break;
             case RECTANGLE:
                 rectangle.setText(configContent.split(",")[0]);

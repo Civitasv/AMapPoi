@@ -6,10 +6,10 @@ import com.civitasv.spider.helper.Enum.*;
 import com.civitasv.spider.helper.exception.CustomException;
 import com.civitasv.spider.model.Feature;
 import com.civitasv.spider.model.GeoJSON;
-import com.civitasv.spider.model.POIJob;
 import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.bo.Task;
+import com.civitasv.spider.model.po.JobPo;
 import com.civitasv.spider.model.po.TaskPo;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiService;
@@ -20,7 +20,6 @@ import com.civitasv.spider.service.serviceImpl.TaskServiceImpl;
 import com.civitasv.spider.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.opencsv.CSVWriter;
 import javafx.application.Platform;
 import javafx.scene.control.*;
 import org.geotools.data.DataUtilities;
@@ -33,7 +32,6 @@ import org.opengis.feature.simple.SimpleFeatureType;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -328,20 +326,20 @@ public class POIViewModel {
 
     public void execute(Task task) {
         worker = Executors.newSingleThreadExecutor();
-        if(task == null){
-            clearMessage();
-            if (!check()) return;
-            if (!aMapKeys()) return;
-            if (!threadNum()) return;
-            if (!threshold()) return;
-            if (!keywords()) return;
-            if (!types()) return;
-            if (!qps()) return;
-            if (!tab()) return;
-            alterThreadNum();
-            perExecuteTime();
-            analysis(true);
+        clearMessage();
+        if (!check()) return;
+        if (!aMapKeys()) return;
+        if (!threadNum()) return;
+        if (!threshold()) return;
+        if (!keywords()) return;
+        if (!types()) return;
+        if (!qps()) return;
+        if (!tab()) return;
+        alterThreadNum();
+        perExecuteTime();
+        analysis(true);
 
+        if(task == null){
             String boundryConfig = "";
             switch (dataHolder.tab) {
                 case "行政区":
@@ -416,18 +414,14 @@ public class POIViewModel {
                 Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "task构建失败：" + e.getMessage()));
                 return;
             }
-        }else{
-            perExecuteTime();
-            analysis(true);
         }
 
         aMapKeys = new ArrayDeque<>(task.aMapKeys);
-
         Task finalTask = task;
         worker.execute(() -> {
             executorService = Executors.newFixedThreadPool(finalTask.threadNum);
             completionService = new ExecutorCompletionService<>(executorService);
-            getPoiData(finalTask);
+            executeTask(finalTask);
             analysis(false);
         });
     }
@@ -512,7 +506,11 @@ public class POIViewModel {
         return null;
     }
 
-    private void getPoiData(Task task) {
+    /**
+     * 执行爬取任务
+     * @param task task对象
+     */
+    private void executeTask(Task task) {
         if(TaskStatus.UnStarted.equals(task.taskStatus) | TaskStatus.Preprocessing.equals(task.taskStatus)){
             task.taskStatus = TaskStatus.Preprocessing;
             taskService.updateById(task.toTaskPo());
@@ -523,8 +521,8 @@ public class POIViewModel {
             if (!getAnalysisGrids(firstPageJobs, task.boundary, task)) {
                 return;
             }
-            task.jobs.addAll(firstPageJobs);
             jobService.saveBatch(BeanUtils.jobs2JobPos(firstPageJobs));
+            task.jobs.addAll(firstPageJobs);
             appendMessage("任务网格切分成功，共有" + firstPageJobs.size() + "个任务网格");
 
             // 2. 生成第二页之后的的Job
@@ -542,7 +540,7 @@ public class POIViewModel {
         if (!hasStart) return;
         appendMessage("开始POI爬取，" + (!task.keywords.isEmpty() ? "POI关键字：" + task.keywords : "") + (!task.types.isEmpty() ? (" POI类型：" + task.types) : ""));
 
-        List<POI.Info> pois = getPoiOfJobsWithReTry(task);
+        List<POI.Info> pois = getPoiOfJobsWithReTry(task, 3);
 
         appendMessage("该区域边界共含POI：" + pois.size() + "条");
         appendMessage("执行过滤算法中");
@@ -565,6 +563,13 @@ public class POIViewModel {
         taskService.updateById(task.toTaskPo());
     }
 
+    /**
+     * 基于指定阈值生成任务格网，同时爬取第一页
+     * @param analysisGrid 存储Job的容器
+     * @param beginRect 初始矩形范围
+     * @param task task对象
+     * @return 是否划分成功
+     */
     private boolean getAnalysisGrids(List<Job> analysisGrid, Double[] beginRect, Task task) {
         List<Double[]> rects = new ArrayList<>();
         rects.add(beginRect);
@@ -637,6 +642,11 @@ public class POIViewModel {
         return true;
     }
 
+    /**
+     * 生成第二页往后的Job
+     * @param analysisGrid 存储job的容器
+     * @return 生成的Job
+     */
     private List<Job> generateJobsAfterSecondPage(List<Job> analysisGrid){
         int size = 20; // 每页个数
         List<Job> jobs = new ArrayList<>();
@@ -650,8 +660,15 @@ public class POIViewModel {
         return jobs;
     }
 
-    private List<POI.Info> getPoiOfJobsWithReTry(Task task){
+    /**
+     * 重试，默认重试三次
+     * @param task task对象
+     * @param retryTimes 重试次数
+     * @return 爬到的poi数据
+     */
+    private List<POI.Info> getPoiOfJobsWithReTry(Task task, int retryTimes){
         List<Job> jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs((jobService.listUnFinished())));
+        int i = 0;
         while (hasStart){
             getPoiOfJobs(jobs, task);
             jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs(jobService.listUnFinished()));
@@ -659,10 +676,22 @@ public class POIViewModel {
                 task.taskStatus = TaskStatus.SUCCESS;
                 break;
             }
+            appendMessage("正在重试：第" + ++i + "次");
+            if(i == retryTimes){
+                List<JobPo> unFinishedJobs = jobService.listUnFinished();
+                appendMessage("已重试三次" + "重试失败，还有" + unFinishedJobs.size() + "个Job未爬取");
+                appendMessage("请重新点击执行，尝试爬取，或放弃尝试，直接使用输出的文件");
+            }
         }
         return BeanUtils.poipo2Poi(poiService.list());
     }
 
+    /**
+     * 构造异步任务，并行爬取
+     * @param jobs 待爬取的job
+     * @param task task对象
+     * @return 爬取到的poi数据
+     */
     private List<POI.Info> getPoiOfJobs(List<Job> jobs, Task task){
         // 缓存机制
         int saveThreshold = 50;
@@ -729,6 +758,12 @@ public class POIViewModel {
         return BeanUtils.poipo2Poi(poiService.list());
     }
 
+    /**
+     * 保存未完成的Jobs
+     * @param task task对象
+     * @param cached 缓存容器
+     * @param unFinishedJob 未完成的Job
+     */
     private void saveUnFinishedJob(Task task, List<Job> cached, ArrayList<Job> unFinishedJob) {
         appendMessage("任务即将停止，正在保存任务状态...请不要关闭软件");
         for (Job unJob : unFinishedJob) {
@@ -743,6 +778,12 @@ public class POIViewModel {
         taskService.updateById(task.toTaskPo());
     }
 
+    /**
+     * 获取单个Key，每个key的均匀使用
+     * @param keys 候选key值容器
+     * @return 选定的key值
+     * @throws CustomException 如果未获取到key（例如没有可选key），抛出该异常
+     */
     private synchronized String getAMapKey(Queue<String> keys) throws CustomException {
         if (keys.isEmpty()) {
             return null;
@@ -755,6 +796,14 @@ public class POIViewModel {
         return key;
     }
 
+    /**
+     * 执行一个Job，并统计相关指标
+     * @param job 等待执行的job
+     * @param task task对象
+     * @param isAnalysing 是否用于分析，为true时，为计算task的期望字段
+     * @return 是否执行成功
+     * @throws CustomException 如果爬取失败，抛出该异常
+     */
     private boolean executeJob(Job job, Task task, boolean isAnalysing) throws CustomException {
         double left = job.bounds[0], bottom = job.bounds[1], right = job.bounds[2], top = job.bounds[3];
         String polygon = left + "," + top + "|" + right + "," + bottom;
@@ -791,6 +840,17 @@ public class POIViewModel {
         return true;
     }
 
+    /**
+     * 爬取单个Job的Poi
+     * @param key key
+     * @param polygon 矩形范围
+     * @param keywords 关键字
+     * @param types 类型
+     * @param page 页数
+     * @param size 单页数据量
+     * @return 爬取到的poi对象
+     * @throws CustomException 如果爬取失败，则抛出该异常
+     */
     private POI getPoi(String key, String polygon, String keywords, String types, int page, int size) throws CustomException {
         if (!hasStart) {
             throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
@@ -839,30 +899,6 @@ public class POIViewModel {
                 break;
         }
         return filename.length() > 200 ? filename.substring(0, 200) + "等." + format : filename + "." + format;
-    }
-
-    private void writeToFailJobsTxt(List<POIJob> allFailJobs) {
-        if (!hasStart) return;
-        // 准备失败网格文件
-        String filename = viewHolder.outputDirectory.getText();
-        File failJobsFile = FileUtil.getNewFile(filename + "/fail_jobs.csv");
-        if (failJobsFile == null) {
-            appendMessage("输出路径有误，请检查后重试！");
-            return;
-        }
-        try {
-            CSVWriter writer = new CSVWriter(new FileWriter(failJobsFile));
-            writer.writeNext(new String[]{"polygon", "types", "keywords", "page", "size"});
-            for (POIJob item : allFailJobs) {
-                String[] entries = {item.polygon, item.types, item.keywords, String.valueOf(item.page), String.valueOf(item.size)};
-                writer.writeNext(entries);
-            }
-            writer.close();
-            appendMessage("失败任务写入成功，结果存储于" + failJobsFile.getAbsolutePath());
-        } catch (IOException e) {
-            e.printStackTrace();
-            appendMessage("写入失败");
-        }
     }
 
     private void writeToCsvOrTxt(List<POI.Info> res, String format) {
