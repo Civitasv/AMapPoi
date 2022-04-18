@@ -506,12 +506,17 @@ public class POIViewModel {
         return null;
     }
 
+    private boolean continueLargeTaskByDialog(int jobSize){
+        return MessageUtil.alertConfirmationDialog("", null,
+                "该Task需要至少执行" + jobSize + "次请求，如想继续爬取，请点击确认，否则请点击取消", "继续", "放弃");
+    }
+
     /**
      * 执行爬取任务
      * @param task task对象
      */
     private void executeTask(Task task) {
-        if(TaskStatus.UnStarted.equals(task.taskStatus) | TaskStatus.Preprocessing.equals(task.taskStatus)){
+        if(TaskStatus.UnStarted.equals(task.taskStatus) | TaskStatus.Preprocessing.equals(task.taskStatus)) {
             task.taskStatus = TaskStatus.Preprocessing;
             taskService.updateById(task.toTaskPo());
             // 1. 获取所有任务网格的第一页
@@ -529,7 +534,12 @@ public class POIViewModel {
             List<Job> jobsAfterSecondPage = generateJobsAfterSecondPage(firstPageJobs);
             task.jobs.addAll(jobsAfterSecondPage);
             jobService.saveBatch(BeanUtils.jobs2JobPos(jobsAfterSecondPage));
+
             appendMessage("任务构建成功，共有" + task.jobs.size() + "个任务");
+            if(task.jobs.size() > 10000 && !continueLargeTaskByDialog(task.jobs.size())) {
+                analysis(false);
+                return;
+            }
 
             // 保存Task
             task.taskStatus = TaskStatus.Processing;
@@ -561,6 +571,9 @@ public class POIViewModel {
                 writeToShp(pois);
         }
         taskService.updateById(task.toTaskPo());
+
+        Platform.runLater(() -> {});
+
     }
 
     /**
@@ -672,15 +685,16 @@ public class POIViewModel {
         while (hasStart){
             getPoiOfJobs(jobs, task);
             jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs(jobService.listUnFinished()));
-            if(jobs.size() == 0){
-                task.taskStatus = TaskStatus.SUCCESS;
+            if(jobs.size() == 0) {
+                task.taskStatus = TaskStatus.Success;
                 break;
             }
             appendMessage("正在重试：第" + ++i + "次");
             if(i == retryTimes){
                 List<JobPo> unFinishedJobs = jobService.listUnFinished();
                 appendMessage("已重试三次" + "重试失败，还有" + unFinishedJobs.size() + "个Job未爬取");
-                appendMessage("请重新点击执行，尝试爬取，或放弃尝试，直接使用输出的文件");
+                appendMessage("请重新点击执行，尝试爬取，或放弃尝试");
+                task.taskStatus = TaskStatus.Some_Failed;
             }
         }
         return BeanUtils.poipo2Poi(poiService.list());
@@ -709,9 +723,6 @@ public class POIViewModel {
                     // 如果主动停止，则不输出
                     if(hasStart) appendMessage(e.getMessage());
                     switch (e.getCostomErrorCodeEnum()) {
-                        case RETURN_NULL_DATA:
-                            job.jobStatus = JobStatus.Failed;
-                            return job;
                         case KEY_POOL_RUN_OUT_OF:
                         case STOP_TASK:
                             // 暂定本次爬取

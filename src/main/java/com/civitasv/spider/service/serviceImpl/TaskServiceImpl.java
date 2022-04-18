@@ -37,8 +37,8 @@ public class TaskServiceImpl implements TaskService {
             queryWrapper.orderByDesc("id").last("limit 1");
             TaskPo taskPo = taskMapper.selectOne(queryWrapper);
             if(taskPo == null
-                    || TaskStatus.SOME_GIVE_UP.getCode().equals(taskPo.getStatus())
-                    || TaskStatus.SUCCESS.getCode().equals(taskPo.getStatus())){
+                    || TaskStatus.Give_Up.getCode().equals(taskPo.getStatus())
+                    || TaskStatus.Success.getCode().equals(taskPo.getStatus())){
                 return null;
             }
 

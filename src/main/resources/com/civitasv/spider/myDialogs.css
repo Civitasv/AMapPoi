@@ -28,3 +28,34 @@
     -fx-font-weight: bold;
     -fx-text-fill: #eeeeee;
 }
+
+.dialog-pane {
+    -fx-background-color: #393e46;
+}
+
+.dialog-pane .label {
+    -fx-text-fill: #393e46;
+}
+
+.dialog-pane:header .header-panel {
+    -fx-background-color: #393e46;
+}
+
+.dialog-pane:header .header-panel .label {
+    -fx-font-style: italic;
+    -fx-font-size: 2em;
+}
+
+.dialog-pane .button{
+    -fx-background-color:#222831;
+    -fx-text-fill:white;
+    -fx-wrap-text: true;
+    -fx-effect: dropshadow( three-pass-box, #dedede, 10.0, 0.0, 0.0, 0.0);
+    -fx-cursor:hand;
+}
+
+.dialog-pane .button:hover{
+    -fx-background-color:white;
+    -fx-text-fill:black;
+    -fx-font-weight:bold;
+}

@@ -5,8 +5,9 @@ public enum TaskStatus {
     Preprocessing(1, "预处理"),
     Processing(2, "处理中"),
     Pause(3, "暂停"),
-    SUCCESS(4, "成功"),
-    SOME_GIVE_UP(5, "部分任务被放弃");
+    Success(4, "成功"),
+    Some_Failed(5, "部分任务失败，可以重试"),
+    Give_Up(6, "用户确认放弃任务，导出错误文件");
 
     private final String description;
     private final Integer code;

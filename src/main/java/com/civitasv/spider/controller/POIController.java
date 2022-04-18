@@ -82,7 +82,6 @@ public class POIController {
     // 主界面
     private Stage mainStage;
 
-
     private final TaskService taskService = new TaskServiceImpl();
     private final JobService jobService = new JobServiceImpl();
     private final PoiService poiService = new PoiServiceImpl();
@@ -92,6 +91,8 @@ public class POIController {
     }
 
     private POIViewModel poiViewModel;
+
+    private boolean skipHint = false;
 
     public void show( Parent root) throws IOException {
         init();
@@ -108,7 +109,13 @@ public class POIController {
     }
 
     private void initStageHandler(){
-        mainStage.setOnShown(event -> handleLastTask());
+        mainStage.setOnShown(event -> {
+            if(handleLastTask(false) != null){
+                skipHint = true;
+                execute();
+                skipHint = false;
+            }
+        });
     }
 
     private void init() {
@@ -159,17 +166,11 @@ public class POIController {
     }
 
     private boolean continueLastTaskByDialog(){
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("");
-        alert.setHeaderText("请确认");
-        alert.setContentText("您有未完成的任务，请确认是否继续爬取，点击是则继续爬取上一个任务，否则放弃任务");
-
-        Optional<ButtonType> result = alert.showAndWait();
-
-        return !result.isPresent() || ButtonType.OK == result.get();
+        return MessageUtil.alertConfirmationDialog("", null,
+                "您有未完成的任务，请确认是否继续爬取，点击是则继续爬取上一个任务，否则放弃任务", "继续", "放弃");
     }
 
-    public Task handleLastTask(){
+    public Task handleLastTask(boolean skipHint){
         // 判断是否有未完成的task
         Task task  = taskService.getUnFinishedTask();
         if(task == null){
@@ -178,10 +179,10 @@ public class POIController {
             return null;
         }
 
-        if(!continueLastTaskByDialog()){
+        if(!skipHint && !continueLastTaskByDialog()){
             jobService.clearTable();
             poiService.clearTable();
-            task.taskStatus = TaskStatus.SOME_GIVE_UP;
+            task.taskStatus = TaskStatus.Give_Up;
             taskService.updateById(task.toTaskPo());
             return null;
         }
@@ -275,7 +276,7 @@ public class POIController {
     }
 
     public void execute() {
-        poiViewModel.execute(handleLastTask());
+        poiViewModel.execute(handleLastTask(skipHint));
     }
 
     public void cancel() {

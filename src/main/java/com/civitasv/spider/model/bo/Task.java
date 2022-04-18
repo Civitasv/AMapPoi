@@ -152,17 +152,17 @@ public class Task {
         return null;
     }
 
-    public int plusRequestActualTimes(){
+    public synchronized int plusRequestActualTimes(){
         return ++requestActualTimes;
     }
 
-    public int plusPoiActualSum(int plusPoiNum){
+    public synchronized int plusPoiActualSum(int plusPoiNum){
         return poiActualSum += plusPoiNum;
     }
 
-    public int plusTotalExecutedTime(int plusExecutedTime){
+    public synchronized int plusTotalExecutedTime(int plusExecutedTime){
         return totalExecutedTime += plusExecutedTime;
     }
 
-    public int plusPoiExceptedSum(int plusPoiNum){return poiExecutedSum += plusPoiNum;}
+    public synchronized int plusPoiExceptedSum(int plusPoiNum){return poiExecutedSum += plusPoiNum;}
 }
