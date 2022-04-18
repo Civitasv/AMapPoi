@@ -53,13 +53,10 @@ public class JobPo implements Serializable {
     @TableField("poi_excetued_sum")
     private Integer poiExcetuedSum;
 
-    @TableField("total_executed_time")
-    private Integer totalExecutedTime;
-
     @TableField("bounds")
     private String bounds;
 
-    public JobPo(Long id, Long taskid, String types, String keywords, Integer page, Integer size, Integer status, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExcetuedSum, Integer totalExecutedTime, String bounds) {
+    public JobPo(Long id, Long taskid, String types, String keywords, Integer page, Integer size, Integer status, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExcetuedSum, String bounds) {
         this.id = id;
         this.taskid = taskid;
         this.types = types;
@@ -71,7 +68,6 @@ public class JobPo implements Serializable {
         this.requestExceptedTimes = requestExceptedTimes;
         this.poiActialSum = poiActialSum;
         this.poiExcetuedSum = poiExcetuedSum;
-        this.totalExecutedTime = totalExecutedTime;
         this.bounds = bounds;
     }
 
@@ -155,14 +151,6 @@ public class JobPo implements Serializable {
         this.poiExcetuedSum = poiExcetuedSum;
     }
 
-    public Integer getTotalExecutedTime() {
-        return totalExecutedTime;
-    }
-
-    public void setTotalExecutedTime(Integer totalExecutedTime) {
-        this.totalExecutedTime = totalExecutedTime;
-    }
-
     public String getBounds() {
         return bounds;
     }
@@ -184,7 +172,6 @@ public class JobPo implements Serializable {
         ", requestExceptedTimes=" + requestExceptedTimes +
         ", poiActialSum=" + poiActialSum +
         ", poiExcetuedSum=" + poiExcetuedSum +
-        ", totalExecutedTime=" + totalExecutedTime +
         "}";
     }
 

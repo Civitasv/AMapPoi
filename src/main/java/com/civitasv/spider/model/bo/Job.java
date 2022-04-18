@@ -19,7 +19,6 @@ public class Job {
     public Integer requestExceptedTimes = 1;
     public Integer poiActualSSum = 0;
     public Integer poiExceptedSum = 0;
-    public Integer totalExecutedTime = 0;
     public POI poi;
 
     public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size) {
@@ -32,7 +31,7 @@ public class Job {
         this.size = size;
     }
 
-    public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size, JobStatus jobStatus, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActualSSum, Integer poiExceptedSum, Integer totalExecutedTime, POI poi) {
+    public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size, JobStatus jobStatus, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActualSSum, Integer poiExceptedSum, POI poi) {
         this.id = id;
         this.taskid = taskid;
         this.bounds = bounds;
@@ -45,7 +44,6 @@ public class Job {
         this.requestExceptedTimes = requestExceptedTimes;
         this.poiActualSSum = poiActualSSum;
         this.poiExceptedSum = poiExceptedSum;
-        this.totalExecutedTime = totalExecutedTime;
         this.poi = poi;
     }
 
@@ -53,7 +51,7 @@ public class Job {
         try{
             return new JobPo(id, taskid, types,
                     keywords,page, size, jobStatus.getCode(), requestExceptedTimes, requestActualTimes,poiExceptedSum,
-                    poiActualSSum, totalExecutedTime, Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
+                    poiActualSSum, Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
         }catch (Exception e){
             e.printStackTrace();
         }

@@ -517,6 +517,10 @@ public class POIViewModel {
      */
     private void executeTask(Task task) {
         if(TaskStatus.UnStarted.equals(task.taskStatus) | TaskStatus.Preprocessing.equals(task.taskStatus)) {
+            // 清空数据表
+            jobService.clearTable();
+            poiService.clearTable();
+
             task.taskStatus = TaskStatus.Preprocessing;
             taskService.updateById(task.toTaskPo());
             // 1. 获取所有任务网格的第一页
@@ -592,6 +596,8 @@ public class POIViewModel {
         ExecutorService executorService = Executors.newFixedThreadPool(task.threadNum);
         CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(executorService);
 
+        int requestTimesForPreProcessing = 0;
+
         while (rects.size() != 0){
             for (Double[] rect : rects) {
                 if (!hasStart) return false;
@@ -600,9 +606,10 @@ public class POIViewModel {
                     completionService.submit(() -> {
                         HashMap<String, Object> res = new HashMap<>();
                         Job job = new Job(null, task.id, rect, task.types, task.keywords, page, size);
-                        executeJob(job, task, true);
+                        executeJob(job);
                         res.put("job", job);
                         res.put("rect", rect);
+                        statistics(job, task);
                         return res;
                     });
                 } catch (Exception e) {
@@ -622,6 +629,8 @@ public class POIViewModel {
                             Job job = (Job) res.get("job");
                             Double[] rect = (Double[]) res.get("rect");
                             if (job.poi.getCount() > task.threshold) {
+                                requestTimesForPreProcessing++;
+                                task.plusRequestActualTimes();
                                 appendMessage("超出阈值，继续四分，已包含" + analysisGrid.size() + "个任务");
                                 // 继续四分
                                 Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
@@ -636,6 +645,10 @@ public class POIViewModel {
                                 }
                             } else {
                                 analysisGrid.add(job);  // new double[]{left, bottom, right, top});
+                                POI poi = job.poi;
+                                task.plusPoiExceptedSum(poi.getCount());
+                                task.plusRequestExceptedTimes((poi.getCount() / job.size) + 1);
+                                job.poiExceptedSum = Math.min(poi.getCount(), job.size);
                                 appendMessage("已包含" + analysisGrid.size() + "个任务");
                             }
                             break;
@@ -652,6 +665,8 @@ public class POIViewModel {
             rects = nextRects;
             nextRects = new ArrayList<>();
         }
+        appendMessage("用于额外探测的请求有 " + requestTimesForPreProcessing + " 次");
+        task.plusRequestExceptedTimes(requestTimesForPreProcessing);
         return true;
     }
 
@@ -661,13 +676,15 @@ public class POIViewModel {
      * @return 生成的Job
      */
     private List<Job> generateJobsAfterSecondPage(List<Job> analysisGrid){
-        int size = 20; // 每页个数
         List<Job> jobs = new ArrayList<>();
         for (Job firstPageJob : analysisGrid) {
             int total = firstPageJob.poi.getCount();
+            int size = firstPageJob.size;
             int taskNum = total / size + 1;
             for (int page = 2; page <= taskNum; page++) {
-                jobs.add(new Job(null, firstPageJob.taskid, firstPageJob.bounds, firstPageJob.types, firstPageJob.keywords, page, firstPageJob.size));
+                Job job = new Job(null, firstPageJob.taskid, firstPageJob.bounds, firstPageJob.types, firstPageJob.keywords, page, firstPageJob.size);
+                job.poiExceptedSum = page == taskNum ? total % size : size;
+                jobs.add(job);
             }
         }
         return jobs;
@@ -684,6 +701,9 @@ public class POIViewModel {
         int i = 0;
         while (hasStart){
             getPoiOfJobs(jobs, task);
+            if(!hasStart){
+                return BeanUtils.poipo2Poi(poiService.list());
+            }
             jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs(jobService.listUnFinished()));
             if(jobs.size() == 0) {
                 task.taskStatus = TaskStatus.Success;
@@ -716,7 +736,8 @@ public class POIViewModel {
         for (Job job : jobs) {
             completionService.submit(() -> {
                 try {
-                    executeJob(job, task, false);
+                    executeJob(job);
+                    statistics(job, task);
                     return job;
                 }catch (CustomException e){
                     // 执行完job对爬取结果的处理
@@ -808,47 +829,38 @@ public class POIViewModel {
     }
 
     /**
-     * 执行一个Job，并统计相关指标
+     * 执行一个Job
      * @param job 等待执行的job
-     * @param task task对象
-     * @param isAnalysing 是否用于分析，为true时，为计算task的期望字段
      * @return 是否执行成功
      * @throws CustomException 如果爬取失败，抛出该异常
      */
-    private boolean executeJob(Job job, Task task, boolean isAnalysing) throws CustomException {
+    private boolean executeJob(Job job) throws CustomException {
         double left = job.bounds[0], bottom = job.bounds[1], right = job.bounds[2], top = job.bounds[3];
         String polygon = left + "," + top + "|" + right + "," + bottom;
         String key = getAMapKey(aMapKeys);
-        LocalDateTime startTime = LocalDateTime.now();//获取开始时间
         POI poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
-        LocalDateTime endTime = LocalDateTime.now(); //获取结束时间
-        int totalExecutedTime = (int) Duration.between(startTime, endTime).toMillis();
         job.poi = poi;
         job.jobStatus = JobStatus.SUCCESS; // 设置执行状态为Success
+        return true;
+    }
 
+    /**
+     * 统计相关指标
+     * @param job 被统计的job对象
+     * @param task task对象
+     */
+    private void statistics(Job job, Task task) {
+        POI poi = job.poi;
         // 如果getPoi抛出异常，则后续代码不进行
         // 统计Job的相关数据
         // 设置Job的实际统计量
         job.plusRequestActualTimes(); // 增加执行次数
         job.plusPoiActualSum(poi.getPois().size()); // 增加实际获取的poi数量
 
-        // 设置Job的期望统计量
-        job.poiExceptedSum = poi.getCount() < job.size ? poi.getCount() : job.size; // 设置期望poi数量
-
-        // 设置Job的执行时间
-        job.totalExecutedTime = totalExecutedTime; // 统计执行总时间
-
         // 统计Task的相关数据
         // 设置task的实际统计量
         task.plusRequestActualTimes(); // 增加执行次数
         task.plusPoiActualSum(poi.getPois().size());
-
-        // 设置task的期望统计量
-        if(isAnalysing){
-            task.plusPoiExceptedSum(poi.getCount());
-            task.requestExceptedTimes = (poi.getCount() / job.size) + 1;
-        }
-        return true;
     }
 
     /**

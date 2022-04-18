@@ -151,18 +151,21 @@ public class Task {
         }
         return null;
     }
+    public int plusRequestExceptedTimes(int plusRequestNum){
+        return requestExceptedTimes += plusRequestNum;
+    }
 
-    public synchronized int plusRequestActualTimes(){
+    public int plusRequestActualTimes(){
         return ++requestActualTimes;
     }
 
-    public synchronized int plusPoiActualSum(int plusPoiNum){
+    public int plusPoiExceptedSum(int plusPoiNum){return poiExecutedSum += plusPoiNum;}
+
+    public int plusPoiActualSum(int plusPoiNum){
         return poiActualSum += plusPoiNum;
     }
 
-    public synchronized int plusTotalExecutedTime(int plusExecutedTime){
+    public int plusTotalExecutedTime(int plusExecutedTime){
         return totalExecutedTime += plusExecutedTime;
     }
-
-    public synchronized int plusPoiExceptedSum(int plusPoiNum){return poiExecutedSum += plusPoiNum;}
 }
