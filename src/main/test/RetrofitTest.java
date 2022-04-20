@@ -34,6 +34,10 @@ public class RetrofitTest {
             List<TaskPo> taskPos = taskMapper.selectList(new QueryWrapper<>());
             System.out.println(taskPos);
         }
+    }
 
+    @Test
+    public void testInteger(){
+        System.out.println(new Integer(0) == 0);
     }
 }

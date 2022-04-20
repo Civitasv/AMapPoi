@@ -1,6 +1,7 @@
 package com.civitasv.spider.model.po;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.civitasv.spider.helper.Enum.JobStatus;
 import com.civitasv.spider.model.bo.Job;
 
 import java.io.Serializable;
@@ -47,16 +48,16 @@ public class JobPo implements Serializable {
     @TableField("request_excepted_times")
     private Integer requestExceptedTimes;
 
-    @TableField("poi_actial_sum")
-    private Integer poiActialSum;
+    @TableField("poi_actual_sum")
+    private Integer poiActualSum;
 
-    @TableField("poi_excetued_sum")
-    private Integer poiExcetuedSum;
+    @TableField("poi_excepted_sum")
+    private Integer poiExceptedSum;
 
     @TableField("bounds")
     private String bounds;
 
-    public JobPo(Long id, Long taskid, String types, String keywords, Integer page, Integer size, Integer status, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActialSum, Integer poiExcetuedSum, String bounds) {
+    public JobPo(Long id, Long taskid, String types, String keywords, Integer page, Integer size, Integer status, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActualSum, Integer poiExceptedSum, String bounds) {
         this.id = id;
         this.taskid = taskid;
         this.types = types;
@@ -66,8 +67,8 @@ public class JobPo implements Serializable {
         this.status = status;
         this.requestActualTimes = requestActualTimes;
         this.requestExceptedTimes = requestExceptedTimes;
-        this.poiActialSum = poiActialSum;
-        this.poiExcetuedSum = poiExcetuedSum;
+        this.poiActualSum = poiActualSum;
+        this.poiExceptedSum = poiExceptedSum;
         this.bounds = bounds;
     }
 
@@ -127,6 +128,14 @@ public class JobPo implements Serializable {
         this.status = status;
     }
 
+    public Integer getRequestActualTimes() {
+        return requestActualTimes;
+    }
+
+    public void setRequestActualTimes(Integer requestActualTimes) {
+        this.requestActualTimes = requestActualTimes;
+    }
+
     public Integer getRequestExceptedTimes() {
         return requestExceptedTimes;
     }
@@ -135,20 +144,20 @@ public class JobPo implements Serializable {
         this.requestExceptedTimes = requestExceptedTimes;
     }
 
-    public Integer getPoiActialSum() {
-        return poiActialSum;
+    public Integer getPoiActualSum() {
+        return poiActualSum;
     }
 
-    public void setPoiActialSum(Integer poiActialSum) {
-        this.poiActialSum = poiActialSum;
+    public void setPoiActualSum(Integer poiActualSum) {
+        this.poiActualSum = poiActualSum;
     }
 
-    public Integer getPoiExcetuedSum() {
-        return poiExcetuedSum;
+    public Integer getPoiExceptedSum() {
+        return poiExceptedSum;
     }
 
-    public void setPoiExcetuedSum(Integer poiExcetuedSum) {
-        this.poiExcetuedSum = poiExcetuedSum;
+    public void setPoiExceptedSum(Integer poiExceptedSum) {
+        this.poiExceptedSum = poiExceptedSum;
     }
 
     public String getBounds() {
@@ -161,25 +170,28 @@ public class JobPo implements Serializable {
 
     @Override
     public String toString() {
-        return "Job{" +
-        "id=" + id +
-        ", taskid=" + taskid +
-        ", types=" + types +
-        ", keywords=" + keywords +
-        ", page=" + page +
-        ", size=" + size +
-        ", status=" + status +
-        ", requestExceptedTimes=" + requestExceptedTimes +
-        ", poiActialSum=" + poiActialSum +
-        ", poiExcetuedSum=" + poiExcetuedSum +
-        "}";
+        return "JobPo{" +
+                "id=" + id +
+                ", taskid=" + taskid +
+                ", types='" + types + '\'' +
+                ", keywords='" + keywords + '\'' +
+                ", page=" + page +
+                ", size=" + size +
+                ", status=" + status +
+                ", requestActualTimes=" + requestActualTimes +
+                ", requestExceptedTimes=" + requestExceptedTimes +
+                ", poiActualSum=" + poiActualSum +
+                ", poiExceptedSum=" + poiExceptedSum +
+                ", bounds='" + bounds + '\'' +
+                '}';
     }
 
     public Job toJob(){
         try{
             return new Job(id, null,
                     Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new),
-                    types, keywords, page, size);
+                    types, keywords, page, size, JobStatus.getJobStatus(status), requestActualTimes,
+                    requestExceptedTimes,poiActualSum,poiExceptedSum,null);
         }catch (Exception e){
             e.printStackTrace();
         }

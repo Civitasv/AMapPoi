@@ -59,13 +59,15 @@ public class POIViewModel {
 
     public POIViewModel(TextField threadNum, TextField keywords, TextArea keys, TextField types,
                         TextField adCode, TextField rectangle, TextField threshold, ChoiceBox<String> format,
-                        TextField outputDirectory, TextArea messageDetail, TextField userFile, TextField failJobsFile, TabPane tabs,
-                        Button directoryBtn, Button execute, Button poiType, ChoiceBox<String> userType,
-                        ChoiceBox<CoordinateType> rectangleCoordinateType, ChoiceBox<CoordinateType> userFileCoordinateType,
-                        MenuItem wechat, MenuItem joinQQ) {
+                        TextField outputDirectory, TextArea messageDetail, TextField userFile, TextField failJobsFile,
+                        TabPane tabs, Button directoryBtn, Button execute, Button poiType, ChoiceBox<String> userType,
+                        ChoiceBox<CoordinateType> rectangleCoordinateType,ChoiceBox<CoordinateType> userFileCoordinateType,
+                        MenuItem wechat, MenuItem joinQQ,ChoiceBox<String> poiCate1, ChoiceBox<String> poiCate2,
+                        ChoiceBox<String> poiCate3, Button poiAdd) {
         this.viewHolder = new ViewHolder(threadNum, keywords, keys, types, adCode,
                 rectangle, threshold, format, outputDirectory, messageDetail, userFile, failJobsFile, tabs, directoryBtn,
-                execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ);
+                execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ,
+                poiCate1, poiCate2, poiCate3, poiAdd);
         this.dataHolder = new DataHolder();
         this.geometryFactory = new GeometryFactory();
         this.mapDao = new AMapDaoImpl();
@@ -95,12 +97,12 @@ public class POIViewModel {
         public MenuItem wechat; // 微信
         public MenuItem joinQQ; // QQ群
 
-        public ViewHolder(TextField threadNum, TextField keywords, TextArea keys, TextField types,
-                          TextField adCode, TextField rectangle, TextField threshold, ChoiceBox<String> format,
-                          TextField outputDirectory, TextArea messageDetail, TextField userFile, TextField failJobsFile, TabPane tabs,
-                          Button directoryBtn, Button execute, Button poiType, ChoiceBox<String> userType,
-                          ChoiceBox<CoordinateType> rectangleCoordinateType, ChoiceBox<CoordinateType> userFileCoordinateType,
-                          MenuItem wechat, MenuItem joinQQ) {
+        public ChoiceBox<String> poiCate1; // POI大类
+        public ChoiceBox<String> poiCate2; // POI中类
+        public ChoiceBox<String> poiCate3; // POI小类
+        public Button poiAdd; // poi添加
+
+        public ViewHolder(TextField threadNum, TextField keywords, TextArea keys, TextField types, TextField adCode, TextField rectangle, TextField threshold, ChoiceBox<String> format, TextField outputDirectory, TextArea messageDetail, TextField userFile, TextField failJobsFile, TabPane tabs, Button directoryBtn, Button execute, Button poiType, ChoiceBox<String> userType, ChoiceBox<CoordinateType> rectangleCoordinateType, ChoiceBox<CoordinateType> userFileCoordinateType, MenuItem wechat, MenuItem joinQQ, ChoiceBox<String> poiCate1, ChoiceBox<String> poiCate2, ChoiceBox<String> poiCate3, Button poiAdd) {
             this.threadNum = threadNum;
             this.keywords = keywords;
             this.keys = keys;
@@ -122,6 +124,10 @@ public class POIViewModel {
             this.userFileCoordinateType = userFileCoordinateType;
             this.wechat = wechat;
             this.joinQQ = joinQQ;
+            this.poiCate1 = poiCate1;
+            this.poiCate2 = poiCate2;
+            this.poiCate3 = poiCate3;
+            this.poiAdd = poiAdd;
         }
     }
 
@@ -460,6 +466,10 @@ public class POIViewModel {
             viewHolder.directoryBtn.setDisable(isAnalysis);
             viewHolder.poiType.setDisable(isAnalysis);
             viewHolder.userType.setDisable(isAnalysis);
+            viewHolder.poiCate1.setDisable(isAnalysis);
+            viewHolder.poiCate2.setDisable(isAnalysis);
+            viewHolder.poiCate3.setDisable(isAnalysis);
+            viewHolder.poiAdd.setDisable(isAnalysis);
         });
     }
 
@@ -497,7 +507,6 @@ public class POIViewModel {
                 }
                 if (leftTop.length == 2 && rightBottom.length == 2) {
                     return new Double[]{leftTopLonlat[0], rightBottomLonlat[1], rightBottomLonlat[0], leftTopLonlat[1]};
-
                 }
             } catch (NumberFormatException e) {
                 return null;
@@ -664,7 +673,7 @@ public class POIViewModel {
         for (Job job : analysisGrid) {
             POI poi = job.poi;
             task.plusPoiExceptedSum(poi.getCount());
-            task.plusRequestExceptedTimes((poi.getCount() / job.size) + 1);
+            task.plusRequestExceptedTimes((int) Math.ceil(poi.getCount() * 1.0 / job.size));
             job.poiExceptedSum = Math.min(poi.getCount(), job.size);
         }
 
@@ -689,10 +698,10 @@ public class POIViewModel {
         for (Job firstPageJob : analysisGrid) {
             int total = firstPageJob.poi.getCount();
             int size = firstPageJob.size;
-            int taskNum = total / size + 1;
+            int taskNum = (int) Math.ceil(total * 1.0 / size);
             for (int page = 2; page <= taskNum; page++) {
                 Job job = new Job(null, firstPageJob.taskid, firstPageJob.bounds, firstPageJob.types, firstPageJob.keywords, page, firstPageJob.size);
-                job.poiExceptedSum = page == taskNum ? total % size : size;
+                job.poiExceptedSum = page == taskNum ? total - size * (taskNum - 1) : size;
                 jobs.add(job);
             }
         }

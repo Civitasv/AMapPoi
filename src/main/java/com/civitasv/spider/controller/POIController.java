@@ -68,6 +68,7 @@ public class POIController {
     public ChoiceBox<String> poiCate1; // POI大类
     public ChoiceBox<String> poiCate2; // POI中类
     public ChoiceBox<String> poiCate3; // POI小类
+    public Button poiAdd; // poi添加
 
     // 数据库操作对象
     private Database database;
@@ -124,7 +125,8 @@ public class POIController {
     private void init() {
         this.poiViewModel = new POIViewModel(threadNum, keywords, keys, types, adCode,
                 rectangle, threshold, format, outputDirectory, messageDetail, userFile,failJobsFile, tabs, directoryBtn,
-                execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ);
+                execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ,
+                poiCate1, poiCate2, poiCate3, poiAdd);
         this.threadNum.setTextFormatter(getFormatter());
         this.threshold.setTextFormatter(getFormatter());
         this.adCode.setTextFormatter(getFormatter());
@@ -257,6 +259,7 @@ public class POIController {
             return;
         }
         String text = this.types.getText();
+        text = text.replace(" ", "");
         Set<String> types = Arrays.stream(text.split(",")).collect(Collectors.toSet());
         if(!types.contains(curCategoryId)){
             if(!StringUtils.isEmpty(text)) {

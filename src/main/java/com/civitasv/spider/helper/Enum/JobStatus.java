@@ -22,7 +22,7 @@ public enum JobStatus {
         return code;
     }
 
-    public static JobStatus getUserType(String description){
+    public static JobStatus getJobStatus(String description){
         for (JobStatus value : JobStatus.values()) {
             if(value.description.equals(description)){
                 return value;
@@ -31,7 +31,7 @@ public enum JobStatus {
         throw new IllegalArgumentException("没有符合该描述的枚举值");
     }
 
-    public static JobStatus getUserType(Integer code){
+    public static JobStatus getJobStatus(Integer code){
         for (JobStatus value : JobStatus.values()) {
             if(value.code.equals(code)){
                 return value;

@@ -17,7 +17,7 @@ public class Job {
     public JobStatus jobStatus = JobStatus.UnStarted;
     public Integer requestActualTimes = 0;
     public Integer requestExceptedTimes = 1;
-    public Integer poiActualSSum = 0;
+    public Integer poiActualSum = 0;
     public Integer poiExceptedSum = 0;
     public POI poi;
 
@@ -31,7 +31,7 @@ public class Job {
         this.size = size;
     }
 
-    public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size, JobStatus jobStatus, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActualSSum, Integer poiExceptedSum, POI poi) {
+    public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size, JobStatus jobStatus, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActualSum, Integer poiExceptedSum, POI poi) {
         this.id = id;
         this.taskid = taskid;
         this.bounds = bounds;
@@ -42,7 +42,7 @@ public class Job {
         this.jobStatus = jobStatus;
         this.requestActualTimes = requestActualTimes;
         this.requestExceptedTimes = requestExceptedTimes;
-        this.poiActualSSum = poiActualSSum;
+        this.poiActualSum = poiActualSum;
         this.poiExceptedSum = poiExceptedSum;
         this.poi = poi;
     }
@@ -50,8 +50,8 @@ public class Job {
     public JobPo toJobPo(){
         try{
             return new JobPo(id, taskid, types,
-                    keywords,page, size, jobStatus.getCode(), requestExceptedTimes, requestActualTimes,poiExceptedSum,
-                    poiActualSSum, Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
+                    keywords,page, size, jobStatus.getCode(),requestActualTimes, requestExceptedTimes, poiActualSum, poiExceptedSum
+                    , Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -63,6 +63,6 @@ public class Job {
     }
 
     public int plusPoiActualSum(int plusPoiNum){
-        return poiActualSSum += plusPoiNum;
+        return poiActualSum += plusPoiNum;
     }
 }
