@@ -9,8 +9,8 @@ import com.civitasv.spider.model.GeoJSON;
 import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.bo.Task;
-import com.civitasv.spider.model.po.JobPo;
 import com.civitasv.spider.model.po.TaskPo;
+import com.civitasv.spider.model.po.JobPo;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiService;
 import com.civitasv.spider.service.TaskService;
@@ -523,21 +523,23 @@ public class POIViewModel {
 
             task.taskStatus = TaskStatus.Preprocessing;
             taskService.updateById(task.toTaskPo());
-            // 1. 获取所有任务网格的第一页
-            List<Job> firstPageJobs = new ArrayList<>(); // 网格剖分
 
+            // 1. 获取所有任务网格的第一页
             appendMessage("划分所有任务网格中");
-            if (!getAnalysisGrids(firstPageJobs, task.boundary, task)) {
+            List<Job> firstPageJobs;
+            try {
+                firstPageJobs = getAnalysisGrids(task.boundary, task);
+            } catch (CustomException e) {
+                e.printStackTrace();
+                if(hasStart) appendMessage(e.getMessage());
                 return;
             }
-            jobService.saveBatch(BeanUtils.jobs2JobPos(firstPageJobs));
             task.jobs.addAll(firstPageJobs);
             appendMessage("任务网格切分成功，共有" + firstPageJobs.size() + "个任务网格");
 
             // 2. 生成第二页之后的的Job
             List<Job> jobsAfterSecondPage = generateJobsAfterSecondPage(firstPageJobs);
             task.jobs.addAll(jobsAfterSecondPage);
-            jobService.saveBatch(BeanUtils.jobs2JobPos(jobsAfterSecondPage));
 
             appendMessage("任务构建成功，共有" + task.jobs.size() + "个任务");
             if(task.jobs.size() > 10000 && !continueLargeTaskByDialog(task.jobs.size())) {
@@ -581,13 +583,14 @@ public class POIViewModel {
     }
 
     /**
-     * 基于指定阈值生成任务格网，同时爬取第一页
-     * @param analysisGrid 存储Job的容器
+     * 爬取第一页生成poi爬取格网，每个格网的数据量小于阈值。
      * @param beginRect 初始矩形范围
      * @param task task对象
-     * @return 是否划分成功
+     * @return 划分格网的第一页Job
      */
-    private boolean getAnalysisGrids(List<Job> analysisGrid, Double[] beginRect, Task task) {
+    private List<Job> getAnalysisGrids(Double[] beginRect, Task task) throws CustomException {
+        List<Job> analysisGrid = new ArrayList<>();
+
         List<Double[]> rects = new ArrayList<>();
         rects.add(beginRect);
 
@@ -596,26 +599,21 @@ public class POIViewModel {
         ExecutorService executorService = Executors.newFixedThreadPool(task.threadNum);
         CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(executorService);
 
-        int requestTimesForPreProcessing = 0;
+        int page = 1, size = 20; // 页码、每页个数
 
         while (rects.size() != 0){
             for (Double[] rect : rects) {
-                if (!hasStart) return false;
-                int page = 1, size = 20; // 页码、每页个数
-                try {
-                    completionService.submit(() -> {
-                        HashMap<String, Object> res = new HashMap<>();
-                        Job job = new Job(null, task.id, rect, task.types, task.keywords, page, size);
-                        executeJob(job);
-                        res.put("job", job);
-                        res.put("rect", rect);
-                        statistics(job, task);
-                        return res;
-                    });
-                } catch (Exception e) {
-                    appendMessage("四分失败，请重试!");
-                    return false;
+                if (!hasStart){
+                    throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
                 }
+                completionService.submit(() -> {
+                    HashMap<String, Object> res = new HashMap<>();
+                    Job job = new Job(null, task.id, rect, task.types, task.keywords, page, size);
+                    executeJob(job);
+                    res.put("job", job);
+                    res.put("rect", rect);
+                    return res;
+                });
             }
 
             int tryTimes = (int)(20 / 0.5);
@@ -625,12 +623,11 @@ public class POIViewModel {
                     try {
                         future = completionService.poll(500, TimeUnit.MILLISECONDS);
                         if(future != null){
+                            task.plusRequestActualTimes(); //增加请求次数
                             Map<String, Object> res = future.get();
                             Job job = (Job) res.get("job");
                             Double[] rect = (Double[]) res.get("rect");
                             if (job.poi.getCount() > task.threshold) {
-                                requestTimesForPreProcessing++;
-                                task.plusRequestActualTimes();
                                 appendMessage("超出阈值，继续四分，已包含" + analysisGrid.size() + "个任务");
                                 // 继续四分
                                 Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
@@ -645,10 +642,7 @@ public class POIViewModel {
                                 }
                             } else {
                                 analysisGrid.add(job);  // new double[]{left, bottom, right, top});
-                                POI poi = job.poi;
-                                task.plusPoiExceptedSum(poi.getCount());
-                                task.plusRequestExceptedTimes((poi.getCount() / job.size) + 1);
-                                job.poiExceptedSum = Math.min(poi.getCount(), job.size);
+                                statistics(job, task);
                                 appendMessage("已包含" + analysisGrid.size() + "个任务");
                             }
                             break;
@@ -658,16 +652,31 @@ public class POIViewModel {
                         }
                     } catch (TimeoutException | InterruptedException | ExecutionException e) {
                         e.printStackTrace();
-                        return false;
+                        throw new CustomException(CustomErrorCodeEnum.TIME_OUT, e);
                     }
                 }
             }
             rects = nextRects;
             nextRects = new ArrayList<>();
         }
+
+        // 统计请求相关参数
+        for (Job job : analysisGrid) {
+            POI poi = job.poi;
+            task.plusPoiExceptedSum(poi.getCount());
+            task.plusRequestExceptedTimes((poi.getCount() / job.size) + 1);
+            job.poiExceptedSum = Math.min(poi.getCount(), job.size);
+        }
+
+        int requestTimesForPreProcessing = task.requestActualTimes - analysisGrid.size();
         appendMessage("用于额外探测的请求有 " + requestTimesForPreProcessing + " 次");
         task.plusRequestExceptedTimes(requestTimesForPreProcessing);
-        return true;
+
+        // 保存第一页的数据
+        taskService.updateById(task.toTaskPo());
+        jobService.saveBatch(BeanUtils.jobs2JobPos(analysisGrid));
+        poiService.saveBatch(BeanUtils.jobs2Poipos(analysisGrid));
+        return analysisGrid;
     }
 
     /**
@@ -687,6 +696,8 @@ public class POIViewModel {
                 jobs.add(job);
             }
         }
+        // 保存未爬取的其他job
+        jobService.saveBatch(BeanUtils.jobs2JobPos(jobs));
         return jobs;
     }
 
@@ -737,7 +748,6 @@ public class POIViewModel {
             completionService.submit(() -> {
                 try {
                     executeJob(job);
-                    statistics(job, task);
                     return job;
                 }catch (CustomException e){
                     // 执行完job对爬取结果的处理
@@ -766,6 +776,7 @@ public class POIViewModel {
                     Future<Job> future = completionService.poll(500, TimeUnit.MILLISECONDS);
                     if(future != null){
                         Job job = future.get();
+                        statistics(job, task);
                         cached.add(job);
                         unFinishedJob.remove(job);
                         break;

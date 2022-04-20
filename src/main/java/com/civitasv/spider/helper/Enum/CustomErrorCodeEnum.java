@@ -5,7 +5,8 @@ public enum CustomErrorCodeEnum {
     // 自定义Error
     KEY_POOL_RUN_OUT_OF(90001, "key池已耗尽，无法继续获取POI...","请更换新的key，或暂停任务，第二天再尝试爬取poi"),
     RETURN_NULL_DATA(90002,"网络请求返回为null","请求参数错误"),
-    STOP_TASK(90003,"主动暂停任务",""),
+    STOP_TASK(90003,"主动暂停任务","请重启任务"),
+    TIME_OUT(90004,"请求超时","请重新尝试"),
 
     // 高德Error
     OK(10000,"请求正常", "请求正常"),
