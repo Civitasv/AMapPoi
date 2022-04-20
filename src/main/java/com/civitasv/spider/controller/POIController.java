@@ -6,9 +6,11 @@ import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.helper.Enum.TaskStatus;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.service.JobService;
+import com.civitasv.spider.service.PoiCategoryService;
 import com.civitasv.spider.service.PoiService;
 import com.civitasv.spider.service.TaskService;
 import com.civitasv.spider.service.serviceImpl.JobServiceImpl;
+import com.civitasv.spider.service.serviceImpl.PoiCategoryServiceImpl;
 import com.civitasv.spider.service.serviceImpl.PoiServiceImpl;
 import com.civitasv.spider.service.serviceImpl.TaskServiceImpl;
 import com.civitasv.spider.util.MessageUtil;
@@ -32,10 +34,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class POIController {
     private static Scene scene;
@@ -85,6 +87,7 @@ public class POIController {
     private final TaskService taskService = new TaskServiceImpl();
     private final JobService jobService = new JobServiceImpl();
     private final PoiService poiService = new PoiServiceImpl();
+    private final PoiCategoryService poiCategoryService =  new PoiCategoryServiceImpl();
 
     public Stage getMainStage() {
         return mainStage;
@@ -218,46 +221,34 @@ public class POIController {
 
     private void refreshChoiceBoxCate1() {
         List<String> arrCate1;
-        try {
-            // 获取POI大类
-            arrCate1 = database.getPoiCategory1();
-            this.poiCate1.setItems(new ObservableListWrapper<>(arrCate1));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        // 获取POI大类
+        arrCate1 = poiCategoryService.getPoiCategory1();
+        this.poiCate1.setItems(new ObservableListWrapper<>(arrCate1));
     }
 
     private void refreshChoiceBoxCate2(String cate1) {
         this.cate1 = cate1;
         List<String> arrCate2;
-        try {
-            arrCate2 = database.getPoiCategory2(this.cate1);
-            this.poiCate2.setItems(new ObservableListWrapper<>(arrCate2));
-            this.poiCate2.setValue("");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+
+        arrCate2 = poiCategoryService.getPoiCategory2(this.cate1);
+        this.poiCate2.setItems(new ObservableListWrapper<>(arrCate2));
+        this.poiCate2.setValue("");
     }
 
     private void refreshChoiceBoxCate3(String cate2) {
         this.cate2 = cate2;
         List<String> arrCate3;
-        try {
-            arrCate3 = database.getPoiCategory3(this.cate1, this.cate2);
-            this.poiCate3.setItems(new ObservableListWrapper<>(arrCate3));
-            this.poiCate3.setValue("");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        arrCate3 = poiCategoryService.getPoiCategory3(this.cate1, this.cate2);
+        this.poiCate3.setItems(new ObservableListWrapper<>(arrCate3));
+        this.poiCate3.setValue("");
     }
 
     private void getPoiCategory(String cate3) {
-        this.cate3 = cate3;
-        try {
-            this.curCategoryId = database.getPoiCategoryId(this.cate1, this.cate2, this.cate3);
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if(StringUtils.isEmpty(cate3)){
+            return;
         }
+        this.cate3 = cate3;
+        this.curCategoryId = poiCategoryService.getPoiCategoryId(this.cate1, this.cate2, this.cate3);
     }
 
     public void addPoiCategory() {
@@ -265,9 +256,15 @@ public class POIController {
             MessageUtil.alert(Alert.AlertType.ERROR, "类型错误", null, "请完整选择POI类型！");
             return;
         }
-        this.choosedPoiCategory.add(this.curCategoryId);
-        String splitSetWithComma = StringUtils.join(choosedPoiCategory.toArray(), ",");
-        this.types.setText(splitSetWithComma);
+        String text = this.types.getText();
+        Set<String> types = Arrays.stream(text.split(",")).collect(Collectors.toSet());
+        if(!types.contains(curCategoryId)){
+            if(!StringUtils.isEmpty(text)) {
+                this.types.setText(text + "," + curCategoryId);
+            }else{
+                this.types.setText(curCategoryId);
+            }
+        }
     }
 
     private TextFormatter<Integer> getFormatter() {

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.civitasv.spider.mapper.JobMapper;
+import com.civitasv.spider.mapper.PoiCategoryMapper;
 import com.civitasv.spider.mapper.PoiMapper;
 import com.civitasv.spider.mapper.TaskMapper;
 import org.apache.ibatis.datasource.pooled.PooledDataSource;
@@ -40,6 +41,7 @@ public class MyBatisUtils {
         configuration.addMapper(JobMapper.class);
         configuration.addMapper(TaskMapper.class);
         configuration.addMapper(PoiMapper.class);
+        configuration.addMapper(PoiCategoryMapper.class);
         configuration.setLogImpl(StdOutImpl.class);
         return new MybatisSqlSessionFactoryBuilder().build(configuration);
     }
