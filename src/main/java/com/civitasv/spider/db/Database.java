@@ -16,7 +16,7 @@ public class Database {
     private static final Logger LOGGER = Logger.getLogger(Database.class.getSimpleName());
 
     // database URL
-    private String url = "jdbc:sqlite:" + "src\\main\\resources\\com\\civitasv\\spider\\db\\poi.db";
+    private String url = "jdbc:sqlite:" + "target/classes/com/civitasv/spider/db/poi.db";
 
     // Constructor
     public Database() {

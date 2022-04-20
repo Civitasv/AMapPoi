@@ -23,7 +23,7 @@
 
         <!--数据库链接地址账号密码-->
         <jdbcConnection driverClass="org.sqlite.JDBC"
-                        connectionURL="jdbc:sqlite:src/main/resources/com/civitasv/spider/db/poi.db"
+                        connectionURL="jdbc:sqlite:target/classes/com/civitasv/spider/db/poi.db"
                         userId=""
                         password="">
         </jdbcConnection>

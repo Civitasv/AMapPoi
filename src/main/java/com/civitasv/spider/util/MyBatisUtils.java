@@ -47,7 +47,7 @@ public class MyBatisUtils {
     public static DataSource dataSource() {
         PooledDataSource dataSource = new PooledDataSource();
         dataSource.setDriver("org.sqlite.JDBC");
-        dataSource.setUrl("jdbc:sqlite:src/main/resources/com/civitasv/spider/db/poi.db");
+        dataSource.setUrl("jdbc:sqlite:target/classes/com/civitasv/spider/db/poi.db");
         dataSource.setUsername("");
         dataSource.setPassword("");
         return dataSource;
