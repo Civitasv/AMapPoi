@@ -3,7 +3,9 @@ package com.civitasv.spider.controller;
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.db.Database;
 import com.civitasv.spider.helper.Enum.CoordinateType;
+import com.civitasv.spider.helper.Enum.CustomErrorCodeEnum;
 import com.civitasv.spider.helper.Enum.TaskStatus;
+import com.civitasv.spider.helper.exception.CustomException;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiCategoryService;
@@ -116,10 +118,14 @@ public class POIController {
 
     private void initStageHandler(){
         mainStage.setOnShown(event -> {
-            if(handleLastTask(false) != null){
-                skipHint = true;
-                execute();
-                skipHint = false;
+            try {
+                if(handleLastTask(false) != null){
+                    skipHint = true;
+                    execute();
+                    skipHint = false;
+                }
+            } catch (CustomException e) {
+                e.printStackTrace();
             }
         });
     }
@@ -183,10 +189,16 @@ public class POIController {
                         "任务状态：" + taskStatus.getDescription() + "\n" +
                         "完成度：" + (allJobSize - unFinishJobSize) + "/" + allJobSize + " \n" +
                         "点击是则继续爬取上一个任务，否则放弃任务",
-                "继续", "放弃");
+                "是", "否");
     }
 
-    public Task handleLastTask(boolean skipHint){
+    private boolean startNewTaskByDialog(){
+        return MessageUtil.alertConfirmationDialog("开启新任务", null,
+                "是否使用当前参数开启新任务？",
+                "是", "否");
+    }
+
+    public Task handleLastTask(boolean skipHint) throws CustomException {
         // 判断是否有未完成的task
         Task task  = taskService.getUnFinishedTask();
         if(task == null){
@@ -200,6 +212,9 @@ public class POIController {
             poiService.clearTable();
             task.taskStatus = TaskStatus.Give_Up;
             taskService.updateById(task.toTaskPo());
+            if(!startNewTaskByDialog()){
+                throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
+            }
             return null;
         }
 
@@ -304,7 +319,11 @@ public class POIController {
     }
 
     public void execute() {
-        poiViewModel.execute(handleLastTask(skipHint));
+        try {
+            poiViewModel.execute(handleLastTask(skipHint));
+        } catch (CustomException e) {
+            e.printStackTrace();
+        }
     }
 
     public void cancel() {
