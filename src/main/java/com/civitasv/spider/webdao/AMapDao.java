@@ -1,4 +1,4 @@
-package com.civitasv.spider.dao;
+package com.civitasv.spider.webdao;
 
 import com.civitasv.spider.model.Geocodes;
 import com.civitasv.spider.model.bo.POI;

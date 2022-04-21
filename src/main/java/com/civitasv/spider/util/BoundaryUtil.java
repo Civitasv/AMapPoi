@@ -1,7 +1,7 @@
 package com.civitasv.spider.util;
 
-import com.civitasv.spider.dao.DataVDao;
-import com.civitasv.spider.dao.impl.DataVDaoImpl;
+import com.civitasv.spider.webdao.DataVDao;
+import com.civitasv.spider.webdao.impl.DataVDaoImpl;
 import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.google.gson.JsonObject;
 import org.geotools.feature.FeatureCollection;
@@ -18,7 +18,6 @@ import java.util.Map;
 public class BoundaryUtil {
     private final static GeometryFactory geometryFactory = new GeometryFactory();
     private final static DataVDao dataVDao = new DataVDaoImpl();
-
 
     /**
      * 根据行政区代码获取城市外接矩形区域范围和行政区名称

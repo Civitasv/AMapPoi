@@ -1,7 +1,7 @@
 package com.civitasv.spider.viewmodel;
 
-import com.civitasv.spider.dao.AMapDao;
-import com.civitasv.spider.dao.impl.AMapDaoImpl;
+import com.civitasv.spider.webdao.AMapDao;
+import com.civitasv.spider.webdao.impl.AMapDaoImpl;
 import com.civitasv.spider.helper.Enum.*;
 import com.civitasv.spider.helper.exception.CustomException;
 import com.civitasv.spider.model.Feature;
