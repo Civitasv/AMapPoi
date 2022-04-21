@@ -13,6 +13,7 @@ import com.civitasv.spider.service.serviceImpl.JobServiceImpl;
 import com.civitasv.spider.service.serviceImpl.PoiCategoryServiceImpl;
 import com.civitasv.spider.service.serviceImpl.PoiServiceImpl;
 import com.civitasv.spider.service.serviceImpl.TaskServiceImpl;
+import com.civitasv.spider.util.GitHubUtils;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import com.sun.javafx.collections.ObservableListWrapper;
@@ -34,8 +35,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
-import java.util.*;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -382,5 +385,9 @@ public class POIController {
 
     public void starsMe() throws URISyntaxException, IOException {
         Desktop.getDesktop().browse(new URI("https://github.com/Civitasv/AMapPoi"));
+    }
+
+    public void updateVersion(){
+        GitHubUtils.tryGetLatestRelease(true);
     }
 }
