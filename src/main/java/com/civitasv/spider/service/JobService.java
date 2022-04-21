@@ -1,5 +1,6 @@
 package com.civitasv.spider.service;
 
+import com.civitasv.spider.helper.Enum.JobStatus;
 import com.civitasv.spider.model.po.JobPo;
 
 import java.util.List;
@@ -21,4 +22,7 @@ public interface JobService {
     boolean updateBatch(List<JobPo> jobPos);
 
     int updateById(JobPo jobPo);
+    int count();
+    int count(JobStatus taskStatus);
+    int countUnFinished();
 }

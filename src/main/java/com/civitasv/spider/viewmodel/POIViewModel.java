@@ -9,8 +9,8 @@ import com.civitasv.spider.model.GeoJSON;
 import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.bo.Task;
-import com.civitasv.spider.model.po.TaskPo;
 import com.civitasv.spider.model.po.JobPo;
+import com.civitasv.spider.model.po.TaskPo;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiService;
 import com.civitasv.spider.service.TaskService;
@@ -516,8 +516,19 @@ public class POIViewModel {
     }
 
     private boolean continueLargeTaskByDialog(int jobSize){
-        return MessageUtil.alertConfirmationDialog("", null,
-                "该Task需要至少执行" + jobSize + "次请求，如想继续爬取，请点击确认，否则请点击取消", "继续", "放弃");
+        final FutureTask<Boolean> query = new FutureTask<>(() ->
+                MessageUtil.alertConfirmationDialog("任务量提示", "任务量过大，请选择是否继续进行爬取",
+                        "该Task需要至少执行" + jobSize + "次请求，如想继续爬取，请点击确认，否则请点击取消",
+                        "继续", "放弃"));
+
+        Platform.runLater(query);
+        try {
+            // 阻塞本线程
+            return query.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -551,7 +562,8 @@ public class POIViewModel {
             task.jobs.addAll(jobsAfterSecondPage);
 
             appendMessage("任务构建成功，共有" + task.jobs.size() + "个任务");
-            if(task.jobs.size() > 10000 && !continueLargeTaskByDialog(task.jobs.size())) {
+            int requestLeastCount = jobsAfterSecondPage.size();
+            if(requestLeastCount > 1000 && !continueLargeTaskByDialog(requestLeastCount)) {
                 analysis(false);
                 return;
             }
@@ -587,8 +599,16 @@ public class POIViewModel {
         }
         taskService.updateById(task.toTaskPo());
 
-        Platform.runLater(() -> {});
-
+        int allJobSize = jobService.count();
+        int unFinishJobSize = jobService.countUnFinished();
+        List<POI.Info> finalPois = pois;
+        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "结果分析",
+                "任务结果分析",
+                "poi爬取任务结果如下：\n" +
+                        "任务状态：" + task.taskStatus + "\n" +
+                        "完成度：" + (allJobSize - unFinishJobSize) + "/" + allJobSize + " \n" +
+                        "总计爬取poi数量：" + finalPois.size() + "\n"
+        ));
     }
 
     /**
@@ -717,10 +737,11 @@ public class POIViewModel {
      * @return 爬到的poi数据
      */
     private List<POI.Info> getPoiOfJobsWithReTry(Task task, int retryTimes){
+        int allJobCount = jobService.count();
         List<Job> jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs((jobService.listUnFinished())));
         int i = 0;
         while (hasStart){
-            getPoiOfJobs(jobs, task);
+            getPoiOfJobs(jobs, task, allJobCount);
             if(!hasStart){
                 return BeanUtils.poipo2Poi(poiService.list());
             }
@@ -742,18 +763,19 @@ public class POIViewModel {
 
     /**
      * 构造异步任务，并行爬取
-     * @param jobs 待爬取的job
+     * @param unFinishedJobs 待爬取的job
      * @param task task对象
      * @return 爬取到的poi数据
      */
-    private List<POI.Info> getPoiOfJobs(List<Job> jobs, Task task){
+    private List<POI.Info> getPoiOfJobs(List<Job> unFinishedJobs, Task task, int allJobsCount){
+        int finishedJobsCount = allJobsCount - unFinishedJobs.size();
         // 缓存机制
         int saveThreshold = 50;
         List<Job> cached = new ArrayList<>();
-        ArrayList<Job> unFinishedJob = new ArrayList<>(jobs);
+        ArrayList<Job> unFinishedJob = new ArrayList<>(unFinishedJobs);
 
         // 构造异步job
-        for (Job job : jobs) {
+        for (Job job : unFinishedJobs) {
             completionService.submit(() -> {
                 try {
                     executeJob(job);
@@ -779,7 +801,7 @@ public class POIViewModel {
         // 阻塞获取
         try {
             int tryTimes = (int)(20 / 0.5);
-            for (int i = 0; i < jobs.size(); i++) {
+            for (int i = 0; i < unFinishedJobs.size(); i++) {
                 // 执行一个爬取job
                 for (int j = 0; j < tryTimes; j++) {
                     Future<Job> future = completionService.poll(500, TimeUnit.MILLISECONDS);
@@ -794,8 +816,8 @@ public class POIViewModel {
                         throw new TimeoutException();
                     }
                 }
-                appendMessage("已完成任务：" + (i + 1) + "/" + jobs.size());
-                if((i + 1) % saveThreshold == 0 || (i + 1) == jobs.size()) {
+                appendMessage("已完成任务：" + (finishedJobsCount + i + 1) + "/" + allJobsCount);
+                if((i + 1) % saveThreshold == 0 || (i + 1) == unFinishedJobs.size()) {
                     appendMessage("正在写入数据，请稍等...");
                     taskService.updateById(task.toTaskPo());
                     jobService.updateBatch(BeanUtils.jobs2JobPos(cached));

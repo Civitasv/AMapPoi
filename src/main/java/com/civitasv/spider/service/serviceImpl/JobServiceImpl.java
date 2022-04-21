@@ -93,4 +93,36 @@ public class JobServiceImpl implements JobService {
             return jobMapper.updateById(jobPo);
         }
     }
+
+    @Override
+    public int count() {
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
+        try (SqlSession session = defaultMyBatis.openSession(true)) {
+            JobMapper jobMapper = session.getMapper(JobMapper.class);
+            return jobMapper.selectCount(new QueryWrapper<>());
+        }
+    }
+
+    @Override
+    public int count(JobStatus jobStatus) {
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
+        try (SqlSession session = defaultMyBatis.openSession(true)) {
+            JobMapper jobMapper = session.getMapper(JobMapper.class);
+            QueryWrapper<JobPo> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("status", jobStatus.getCode());
+            return jobMapper.selectCount(queryWrapper);
+        }
+    }
+
+    @Override
+    public int countUnFinished() {
+        SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
+        try (SqlSession session = defaultMyBatis.openSession(true)) {
+            JobMapper jobMapper = session.getMapper(JobMapper.class);
+            QueryWrapper<JobPo> wrapper = new QueryWrapper<>();
+            wrapper.ne("status", JobStatus.SUCCESS.getCode());
+            wrapper.ne("status", JobStatus.GIVE_UP.getCode());
+            return jobMapper.selectCount(wrapper);
+        }
+    }
 }

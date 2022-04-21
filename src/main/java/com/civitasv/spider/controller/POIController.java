@@ -170,9 +170,13 @@ public class POIController {
         this.poiCate3.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> getPoiCategory(newValue));
     }
 
-    private boolean continueLastTaskByDialog(){
-        return MessageUtil.alertConfirmationDialog("", null,
-                "您有未完成的任务，请确认是否继续爬取，点击是则继续爬取上一个任务，否则放弃任务", "继续", "放弃");
+    private boolean continueLastTaskByDialog(TaskStatus taskStatus, int allJobSize, int unFinishJobSize){
+        return MessageUtil.alertConfirmationDialog("未完成任务提示", "上一次任务未完成",
+                "您有未完成的任务，请确认是否继续爬取\n" +
+                        "任务状态：" + taskStatus.getDescription() + "\n" +
+                        "完成度：" + (allJobSize - unFinishJobSize) + "/" + allJobSize + " \n" +
+                        "点击是则继续爬取上一个任务，否则放弃任务",
+                "继续", "放弃");
     }
 
     public Task handleLastTask(boolean skipHint){
@@ -184,7 +188,7 @@ public class POIController {
             return null;
         }
 
-        if(!skipHint && !continueLastTaskByDialog()){
+        if(!skipHint && !continueLastTaskByDialog(task.taskStatus, jobService.count(), jobService.countUnFinished())){
             jobService.clearTable();
             poiService.clearTable();
             task.taskStatus = TaskStatus.Give_Up;
