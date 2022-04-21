@@ -515,7 +515,10 @@ public class POIViewModel {
         return null;
     }
 
-    private boolean continueLargeTaskByDialog(int jobSize){
+    private boolean continueLargeTaskByDialog(int jobSize, int hintCount){
+        if(jobSize < hintCount){
+            return true;
+        }
         final FutureTask<Boolean> query = new FutureTask<>(() ->
                 MessageUtil.alertConfirmationDialog("任务量提示", "任务量过大，请选择是否继续进行爬取",
                         "该Task需要至少执行" + jobSize + "次请求，如想继续爬取，请点击确认，否则请点击取消",
@@ -561,9 +564,9 @@ public class POIViewModel {
             List<Job> jobsAfterSecondPage = generateJobsAfterSecondPage(firstPageJobs);
             task.jobs.addAll(jobsAfterSecondPage);
 
-            appendMessage("任务构建成功，共有" + task.jobs.size() + "个任务");
+            appendMessage("任务构建成功，共有" + task.jobs.size() + "个任务，还有" + jobsAfterSecondPage.size() + "个任务等待完成");
             int requestLeastCount = jobsAfterSecondPage.size();
-            if(requestLeastCount > 1000 && !continueLargeTaskByDialog(requestLeastCount)) {
+            if(!continueLargeTaskByDialog(requestLeastCount,5000)) {
                 analysis(false);
                 return;
             }
@@ -602,10 +605,11 @@ public class POIViewModel {
         int allJobSize = jobService.count();
         int unFinishJobSize = jobService.countUnFinished();
         List<POI.Info> finalPois = pois;
-        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "结果分析",
+        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.INFORMATION, "结果分析",
                 "任务结果分析",
                 "poi爬取任务结果如下：\n" +
-                        "任务状态：" + task.taskStatus + "\n" +
+                        "任务状态：" + task.taskStatus.getDescription() + "\n" +
+                        "任务状态：" + task.taskStatus.getDescription() + "\n" +
                         "完成度：" + (allJobSize - unFinishJobSize) + "/" + allJobSize + " \n" +
                         "总计爬取poi数量：" + finalPois.size() + "\n"
         ));
@@ -737,11 +741,10 @@ public class POIViewModel {
      * @return 爬到的poi数据
      */
     private List<POI.Info> getPoiOfJobsWithReTry(Task task, int retryTimes){
-        int allJobCount = jobService.count();
         List<Job> jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs((jobService.listUnFinished())));
         int i = 0;
         while (hasStart){
-            getPoiOfJobs(jobs, task, allJobCount);
+            getPoiOfJobs(jobs, task, jobService.count());
             if(!hasStart){
                 return BeanUtils.poipo2Poi(poiService.list());
             }
@@ -933,7 +936,7 @@ public class POIViewModel {
 
         // 异常情况处理
         if (poi == null || !CustomErrorCodeEnum.OK.equals(CustomErrorCodeEnum.getBoundryType(10000))) {
-            if (poi == null) {
+            if (poi == null || poi.getCount() == null || poi.getPois() == null || poi.getInfocode() == null || poi.getStatus() == null) {
                 throw new CustomException(CustomErrorCodeEnum.RETURN_NULL_DATA,
                         "错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
             } else {
@@ -996,7 +999,7 @@ public class POIViewModel {
 
     private void writeToGeoJson(List<POI.Info> res) {
         if (!hasStart) return;
-        String filename = filename(".json");
+        String filename = filename("json");
         GeoJSON geoJSON = parseResult(res);
         File jsonFile = FileUtil.getNewFile(filename);
         if (jsonFile == null) {
@@ -1017,7 +1020,7 @@ public class POIViewModel {
 
     private void writeToShp(List<POI.Info> res) {
         if (!hasStart) return;
-        String filename = filename(".shp");
+        String filename = filename("shp");
         appendMessage("正在写入数据，请等待");
         try {
             final SimpleFeatureType type =

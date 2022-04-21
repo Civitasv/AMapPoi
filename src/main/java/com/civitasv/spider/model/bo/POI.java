@@ -69,7 +69,7 @@ public class POI {
         }
     }
 
-    public int getStatus() {
+    public Integer getStatus() {
         return status;
     }
 
@@ -81,7 +81,7 @@ public class POI {
         return infocode;
     }
 
-    public int getCount() {
+    public Integer getCount() {
         return count;
     }
 

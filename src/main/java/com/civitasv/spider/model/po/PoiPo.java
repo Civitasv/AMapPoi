@@ -19,7 +19,6 @@ public class PoiPo implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(value="id",type= IdType.AUTO)
-    @TableField(value = "id" ,fill = FieldFill.INSERT)
     private Long id;
 
     @TableField("jobid")

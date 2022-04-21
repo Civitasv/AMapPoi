@@ -80,7 +80,6 @@ public class POIController {
     // 大中小类
     private String cate1, cate2, cate3;
     private String curCategoryId;
-    Set<String> choosedPoiCategory;
 
     // 主界面
     private Stage mainStage;
@@ -127,9 +126,12 @@ public class POIController {
                 rectangle, threshold, format, outputDirectory, messageDetail, userFile,failJobsFile, tabs, directoryBtn,
                 execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ,
                 poiCate1, poiCate2, poiCate3, poiAdd);
-        this.threadNum.setTextFormatter(getFormatter());
-        this.threshold.setTextFormatter(getFormatter());
-        this.adCode.setTextFormatter(getFormatter());
+        this.threadNum.setTextFormatter(getFormatterOnlyNumber());
+        this.threshold.setTextFormatter(getFormatterOnlyNumber());
+        this.adCode.setTextFormatter(getFormatterOnlyNumber());
+        this.types.setTextFormatter(getFormatter_NumberPlusComma());
+        this.keys.setTextFormatter(getFormatter_NumberPlusCommaPlusEnglish());
+
         List<CoordinateType> list = Arrays.asList(CoordinateType.WGS84, CoordinateType.BD09, CoordinateType.GCJ02);
         this.rectangleCoordinateType.setItems(new ObservableListWrapper<>(list));
         this.userFileCoordinateType.setItems(new ObservableListWrapper<>(list));
@@ -155,7 +157,6 @@ public class POIController {
          * added by leon
          */
         this.database = new Database();
-        this.choosedPoiCategory = new HashSet<>();
 
         // 设置key
         this.keys.setText("");
@@ -168,6 +169,9 @@ public class POIController {
         this.poiCate2.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCate3(newValue));
 
         this.poiCate3.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> getPoiCategory(newValue));
+
+        // messageDetail 设置为不可编辑
+        messageDetail.setEditable(false);
     }
 
     private boolean continueLastTaskByDialog(TaskStatus taskStatus, int allJobSize, int unFinishJobSize){
@@ -274,9 +278,26 @@ public class POIController {
         }
     }
 
-    private TextFormatter<Integer> getFormatter() {
+    private TextFormatter<Integer> getFormatterOnlyNumber() {
+        return getFormatter("\\d*", "\\s");
+    }
+
+    private TextFormatter<Integer> getFormatter_NumberPlusComma() {
+        return getFormatter("[\\d\\,]*","\\s");
+    }
+
+    private TextFormatter<Integer> getFormatter_NumberPlusCommaPlusEnglish() {
+        return getFormatter("[\\d\\,a-zA-Z]*", "\\s");
+    }
+
+    private TextFormatter<Integer> getFormatter(String passRegex) {
         return new TextFormatter<>(
-                c -> Pattern.matches("\\d*", c.getText()) ? c : null);
+                c -> Pattern.matches(passRegex, c.getText()) ? c : null);
+    }
+
+    private TextFormatter<Integer> getFormatter(String passRegex, String rejectRegex) {
+        return new TextFormatter<>(
+                c -> Pattern.matches(passRegex, c.getText()) && !Pattern.matches(rejectRegex, c.getText()) ? c : null);
     }
 
     public void execute() {
@@ -326,8 +347,11 @@ public class POIController {
             outputDirectory.setText(file.getAbsolutePath());
     }
 
+    public void openQPSPage() throws URISyntaxException, IOException {
+        Desktop.getDesktop().browse(new URI("https://console.amap.com/dev/flow/manage"));
+    }
+
     public void openPOITypes() {
-        choosedPoiCategory.clear();
         this.types.setText("");
     }
 
