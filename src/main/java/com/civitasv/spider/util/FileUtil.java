@@ -50,14 +50,6 @@ public class FileUtil {
         throw new FileExistsException("文件不存在：" + path);
     }
 
-    public static String readFile(String path, String prefix) throws IOException {
-        if(!path.startsWith(prefix)){
-            throw new IllegalArgumentException("path前缀与prefix参数不符");
-        }
-        path = path.substring(path.indexOf(prefix) + prefix.length());
-        return readFile(path);
-    }
-
     public static boolean pathExist(String path){
         File file = new File(path);
         return file.exists();
