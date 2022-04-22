@@ -22,7 +22,6 @@ import com.civitasv.spider.util.GitHubUtils;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import com.sun.javafx.collections.ObservableListWrapper;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
@@ -106,7 +105,7 @@ public class POIController extends AbstractController {
 
     private boolean skipHint = false;
 
-    public void show(Parent root) throws IOException {
+    public void show() throws IOException {
         init();
         Stage stage = new Stage();
         stage.setResizable(false);
