@@ -55,6 +55,8 @@ public class POIViewModel {
     private final JobService jobService = new JobServiceImpl();
     private final PoiService poiService = new PoiServiceImpl();
 
+    private boolean haveSavedUnfinishedJobs = false;
+
     private boolean hasStart;
 
     public POIViewModel(TextField threadNum, TextField keywords, TextArea keys, TextField types,
@@ -331,6 +333,7 @@ public class POIViewModel {
     }
 
     public void execute(Task task) {
+        haveSavedUnfinishedJobs = false;
         worker = Executors.newSingleThreadExecutor();
         clearMessage();
         if (!check()) return;
@@ -539,11 +542,11 @@ public class POIViewModel {
      * @param task task对象
      */
     private void executeTask(Task task) {
+        test = 0;
         if(TaskStatus.UnStarted.equals(task.taskStatus) | TaskStatus.Preprocessing.equals(task.taskStatus)) {
             // 清空数据表
             jobService.clearTable();
             poiService.clearTable();
-
             task.taskStatus = TaskStatus.Preprocessing;
             taskService.updateById(task.toTaskPo());
 
@@ -642,10 +645,25 @@ public class POIViewModel {
                 completionService.submit(() -> {
                     HashMap<String, Object> res = new HashMap<>();
                     Job job = new Job(null, task.id, rect, task.types, task.keywords, page, size);
-                    executeJob(job);
-                    res.put("job", job);
-                    res.put("rect", rect);
-                    return res;
+                    try {
+                        executeJob(job);
+                        res.put("job", job);
+                        res.put("rect", rect);
+                        return res;
+                    } catch (CustomException e){
+                        // 执行完job对爬取结果的处理
+                        // 如果主动停止，则不输出
+                        synchronized (this){
+                            appendMessage(e.getMessage());
+                            // 暂定本次爬取
+                            analysis(false);
+                            job.jobStatus = JobStatus.Failed;
+                            job.errorCodeEnum = e.getCostomErrorCodeEnum();
+                            res.put("job", job);
+                            res.put("rect", rect);
+                            return res;
+                        }
+                    }
                 });
             }
 
@@ -660,6 +678,9 @@ public class POIViewModel {
                             Map<String, Object> res = future.get();
                             Job job = (Job) res.get("job");
                             Double[] rect = (Double[]) res.get("rect");
+                            if(job.jobStatus == JobStatus.Failed){
+                                throw new CustomException(job.errorCodeEnum);
+                            }
                             if (job.poi.getCount() > task.threshold) {
                                 appendMessage("超出阈值，继续四分，已包含" + analysisGrid.size() + "个任务");
                                 // 继续四分
@@ -759,6 +780,7 @@ public class POIViewModel {
                 appendMessage("已重试三次" + "重试失败，还有" + unFinishedJobs.size() + "个Job未爬取");
                 appendMessage("请重新点击执行，尝试爬取，或放弃尝试");
                 task.taskStatus = TaskStatus.Some_Failed;
+                break;
             }
         }
         return BeanUtils.poipo2Poi(poiService.list());
@@ -784,18 +806,21 @@ public class POIViewModel {
                     executeJob(job);
                     return job;
                 }catch (CustomException e){
-                    // 执行完job对爬取结果的处理
-                    // 如果主动停止，则不输出
-                    if(hasStart) appendMessage(e.getMessage());
-                    switch (e.getCostomErrorCodeEnum()) {
-                        case KEY_POOL_RUN_OUT_OF:
-                        case STOP_TASK:
-                            // 暂定本次爬取
-                            analysis(false);
-                            saveUnFinishedJob(task,cached,unFinishedJob);
-                        default:
-                            job.jobStatus = JobStatus.Failed;
-                            return job;
+                    synchronized (this) {
+                        // 执行完job对爬取结果的处理
+                        // 如果主动停止，则不输出
+                        if(hasStart) appendMessage(e.getMessage());
+                        switch (e.getCostomErrorCodeEnum()) {
+                            case KEY_POOL_RUN_OUT_OF:
+                            case STOP_TASK:
+                                // 暂定本次爬取
+                                analysis(false);
+                            case RETURN_NULL_DATA:
+                            default:
+                                job.jobStatus = JobStatus.Failed;
+                                job.errorCodeEnum = e.getCostomErrorCodeEnum();
+                                return job;
+                        }
                     }
                 }
             });
@@ -808,9 +833,12 @@ public class POIViewModel {
                 // 执行一个爬取job
                 for (int j = 0; j < tryTimes; j++) {
                     Future<Job> future = completionService.poll(500, TimeUnit.MILLISECONDS);
+                    if(!hasStart) break;
                     if(future != null){
                         Job job = future.get();
-                        statistics(job, task);
+                        if(job.jobStatus == JobStatus.SUCCESS){
+                            statistics(job, task);
+                        }
                         cached.add(job);
                         unFinishedJob.remove(job);
                         break;
@@ -824,7 +852,10 @@ public class POIViewModel {
                     appendMessage("正在写入数据，请稍等...");
                     taskService.updateById(task.toTaskPo());
                     jobService.updateBatch(BeanUtils.jobs2JobPos(cached));
-                    poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
+                    poiService.saveBatch(BeanUtils.jobs2Poipos(
+                            cached.stream()
+                                    .filter(job -> job.jobStatus.equals(JobStatus.SUCCESS))
+                                    .collect(Collectors.toList())));
                     cached.clear();
                 }
             }
@@ -841,7 +872,10 @@ public class POIViewModel {
      * @param cached 缓存容器
      * @param unFinishedJob 未完成的Job
      */
-    private void saveUnFinishedJob(Task task, List<Job> cached, ArrayList<Job> unFinishedJob) {
+    private synchronized void saveUnFinishedJob(Task task, List<Job> cached, ArrayList<Job> unFinishedJob) {
+        if(haveSavedUnfinishedJobs){
+            return;
+        }
         appendMessage("任务即将停止，正在保存任务状态...请不要关闭软件");
         for (Job unJob : unFinishedJob) {
             unJob.jobStatus = JobStatus.Failed;
@@ -849,10 +883,15 @@ public class POIViewModel {
         }
         taskService.updateById(task.toTaskPo());
         jobService.updateBatch(BeanUtils.jobs2JobPos(cached));
-        poiService.saveBatch(BeanUtils.jobs2Poipos(cached));
+        poiService.saveBatch(BeanUtils.jobs2Poipos(
+                cached.stream()
+                        .filter(job -> job.jobStatus.equals(JobStatus.SUCCESS))
+                        .collect(Collectors.toList()))
+        );
 
         task.taskStatus = TaskStatus.Pause;
         taskService.updateById(task.toTaskPo());
+        haveSavedUnfinishedJobs = true;
     }
 
     /**
@@ -884,11 +923,20 @@ public class POIViewModel {
         String polygon = left + "," + top + "|" + right + "," + bottom;
         String key = getAMapKey(aMapKeys);
         POI poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
+
+        test++;
+        if(test > 200){
+            throw new CustomException(CustomErrorCodeEnum.KEY_POOL_RUN_OUT_OF);
+        }
+
         job.poi = poi;
         job.jobStatus = JobStatus.SUCCESS; // 设置执行状态为Success
+
+
         return true;
     }
 
+    private int test = 0;
     /**
      * 统计相关指标
      * @param job 被统计的job对象
@@ -937,8 +985,7 @@ public class POIViewModel {
         // 异常情况处理
         if (poi == null || !CustomErrorCodeEnum.OK.equals(CustomErrorCodeEnum.getBoundryType(10000))) {
             if (poi == null || poi.getCount() == null || poi.getPois() == null || poi.getInfocode() == null || poi.getStatus() == null) {
-                throw new CustomException(CustomErrorCodeEnum.RETURN_NULL_DATA,
-                        "错误数据---" + keywords + "--" + types + "--" + page + "--" + size);
+                throw new CustomException(CustomErrorCodeEnum.RETURN_NULL_DATA);
             } else {
                 CustomErrorCodeEnum gaodePoiErrorEnum = CustomErrorCodeEnum.getBoundryType(Integer.parseInt(poi.getInfocode()));
                 if (CustomErrorCodeEnum.INVALID_USER_KEY.equals(gaodePoiErrorEnum)) {

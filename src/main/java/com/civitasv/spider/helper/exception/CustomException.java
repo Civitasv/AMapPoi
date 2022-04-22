@@ -10,18 +10,20 @@ public class CustomException extends Exception {
 //    携带的额外信息
     private String extraMessage = null;
 
-    public CustomException(CustomErrorCodeEnum iCostomErrorCodeEnum){
+    public CustomException(CustomErrorCodeEnum customErrorCodeEnum){
 //        将getMessage()方法的返回值与自定义异常信息同步
-        super("errorCode :" + iCostomErrorCodeEnum.getCode() + ";\n" +
-                "errorMessage" + ":" + iCostomErrorCodeEnum.getDescription());
-        costomErrorCodeEnum = iCostomErrorCodeEnum;
+        super("errorCode: " + customErrorCodeEnum.getCode() + "\n" +
+                "errorMessage: " + customErrorCodeEnum.getDescription() + "\n" +
+                "helpInfo:" + customErrorCodeEnum.getHelpinfo());
+        costomErrorCodeEnum = customErrorCodeEnum;
     }
 
-    public CustomException(CustomErrorCodeEnum costomErrorCodeEnum, String extraMessage){
+    public CustomException(CustomErrorCodeEnum customErrorCodeEnum, String extraMessage){
 //        将getMessage()方法的返回值与自定义异常信息同步
-        super("errorCode : " + costomErrorCodeEnum.getCode() + ";\n" +
-                "errorMessage" + " : " + costomErrorCodeEnum.getDescription() + " --- " + extraMessage);
-        this.costomErrorCodeEnum = costomErrorCodeEnum;
+        super("errorCode : " + customErrorCodeEnum.getCode() + ";\n" +
+                "errorMessage" + " : " + customErrorCodeEnum.getDescription() + " --- " + extraMessage + "\n" +
+                "helpInfo:" + customErrorCodeEnum.getHelpinfo());
+        this.costomErrorCodeEnum = customErrorCodeEnum;
         this.extraMessage = extraMessage;
     }
 

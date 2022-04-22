@@ -1,5 +1,6 @@
 package com.civitasv.spider.model.bo;
 
+import com.civitasv.spider.helper.Enum.CustomErrorCodeEnum;
 import com.civitasv.spider.helper.Enum.JobStatus;
 import com.civitasv.spider.model.po.JobPo;
 
@@ -20,6 +21,7 @@ public class Job {
     public Integer poiActualSum = 0;
     public Integer poiExceptedSum = 0;
     public POI poi;
+    public CustomErrorCodeEnum errorCodeEnum;
 
     public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size) {
         this.id = id;
