@@ -1,6 +1,8 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
+import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.db.Database;
 import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.helper.Enum.CustomErrorCodeEnum;
@@ -15,6 +17,7 @@ import com.civitasv.spider.service.serviceImpl.JobServiceImpl;
 import com.civitasv.spider.service.serviceImpl.PoiCategoryServiceImpl;
 import com.civitasv.spider.service.serviceImpl.PoiServiceImpl;
 import com.civitasv.spider.service.serviceImpl.TaskServiceImpl;
+import com.civitasv.spider.util.ControllerUtils;
 import com.civitasv.spider.util.GitHubUtils;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
@@ -44,7 +47,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class POIController {
+public class POIController extends AbstractController {
     private static Scene scene;
 
     public TextField threadNum; // 线程数目
@@ -77,6 +80,7 @@ public class POIController {
 
     // 数据库操作对象
     private Database database;
+    private ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
 
     public Database getDatabase() {
         return database;
@@ -102,7 +106,7 @@ public class POIController {
 
     private boolean skipHint = false;
 
-    public void show( Parent root) throws IOException {
+    public void show(Parent root) throws IOException {
         init();
         Stage stage = new Stage();
         stage.setResizable(false);
@@ -183,36 +187,37 @@ public class POIController {
         messageDetail.setEditable(false);
     }
 
-    private boolean continueLastTaskByDialog(TaskStatus taskStatus, int allJobSize, int unFinishJobSize){
+    private boolean continueLastTaskByAlert(Task task, int allJobSize, int unFinishJobSize){
         return MessageUtil.alertConfirmationDialog("未完成任务提示", "上一次任务未完成",
                 "您有未完成的任务，请确认是否继续爬取\n" +
-                        "任务状态：" + taskStatus.getDescription() + "\n" +
-                        "完成度：" + (allJobSize - unFinishJobSize) + "/" + allJobSize + " \n" +
+                        "任务状态：" + task.taskStatus.getDescription() + "\n" +
+                        "完成度：" + (TaskStatus.Processing.equals(task.taskStatus) ?
+                        (allJobSize - unFinishJobSize) + "/" + allJobSize : "任务正在预处理...") + " \n" +
                         "点击是则继续爬取上一个任务，否则放弃任务",
                 "是", "否");
     }
 
-    private boolean startNewTaskByDialog(){
+    private boolean startNewTaskByAlert(){
         return MessageUtil.alertConfirmationDialog("开启新任务", null,
                 "是否使用当前参数开启新任务？",
                 "是", "否");
     }
 
-    public Task handleLastTask(boolean skipHint) throws CustomException {
+    public Task handleLastTask(boolean skipAlert) throws CustomException {
         // 判断是否有未完成的task
         Task task  = taskService.getUnFinishedTask();
-        if(task == null){
+        if(task == null) {
             jobService.clearTable();
             poiService.clearTable();
             return null;
         }
 
-        if(!skipHint && !continueLastTaskByDialog(task.taskStatus, jobService.count(), jobService.countUnFinished())){
+        if(!skipAlert && !continueLastTaskByAlert(task, jobService.count(), jobService.countUnFinished())){
             jobService.clearTable();
             poiService.clearTable();
             task.taskStatus = TaskStatus.Give_Up;
             taskService.updateById(task.toTaskPo());
-            if(!startNewTaskByDialog()){
+            if(!StringUtils.isEmpty(outputDirectory.getText()) && !startNewTaskByAlert()){
                 throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
             }
             return null;
@@ -331,7 +336,7 @@ public class POIController {
     }
 
     public void openCityChoose() throws IOException {
-        CityChooseController controller = new CityChooseController();
+        CityChooseController controller = controllerFactory.createController(CityChooseController.class);
         controller.show(this);
     }
 
@@ -369,6 +374,10 @@ public class POIController {
             outputDirectory.setText(file.getAbsolutePath());
     }
 
+    public void openDir() throws URISyntaxException, IOException {
+        Desktop.getDesktop().browse(new URI("file:/" + outputDirectory.getText()));
+    }
+
     public void openQPSPage() throws URISyntaxException, IOException {
         Desktop.getDesktop().browse(new URI("https://console.amap.com/dev/flow/manage"));
     }
@@ -378,28 +387,30 @@ public class POIController {
     }
 
     public void openGeocoding() throws IOException {
-        GeocodingController controller = new GeocodingController();
+        GeocodingController controller = controllerFactory.createController(GeocodingController.class);
         controller.show();
     }
 
     public void openSpatialTransform() throws IOException {
-        SpatialDataTransformController controller = new SpatialDataTransformController();
+        SpatialDataTransformController controller = controllerFactory.createController(SpatialDataTransformController.class);
         controller.show();
     }
 
     public void openCoordinateTransform() throws IOException {
-        CoordinateTransformController controller = new CoordinateTransformController();
+        CoordinateTransformController controller = controllerFactory.createController(CoordinateTransformController.class);
         controller.show();
     }
 
     public void openAbout(boolean isQQ) throws IOException {
-        AboutController controller = new AboutController();
+        AboutController controller = controllerFactory.createController(AboutController.class);
         controller.show(isQQ);
     }
 
     public void openDonate() throws IOException {
-        DonateController controller = new DonateController();
-        controller.show();
+        DonateController controller = controllerFactory.createController(DonateController.class);
+        controller.show("icon/zhifubao.jpg");
+        DonateController controller2 = controllerFactory.createController(DonateController.class);
+        controller2.show("icon/zhifubao2.jpg");
     }
 
     public void starsMe() throws URISyntaxException, IOException {

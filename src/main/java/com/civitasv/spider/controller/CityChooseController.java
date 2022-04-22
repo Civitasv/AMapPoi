@@ -1,10 +1,9 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
+import com.civitasv.spider.controller.helper.AbstractController;
 import com.civitasv.spider.model.City;
 import com.civitasv.spider.util.MessageUtil;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -24,7 +23,7 @@ import java.util.Objects;
  * Created by leon
  * 2022-03-19
  */
-public class CityChooseController {
+public class CityChooseController extends AbstractController {
     // 该页面依赖于 POI 查询页面存在
     private POIController parent;
     public TreeView<City> cityTree;
@@ -32,11 +31,8 @@ public class CityChooseController {
     private String selectCityCode;
 
     public void show(POIController parent) throws IOException{
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("choose-city.fxml"));
-        Parent root = fxmlLoader.load();
-        CityChooseController controller = fxmlLoader.getController();
-        controller.parent = parent;
-        controller.initTreeView();
+        this.parent = parent;
+        initTreeView();
 
         Stage stage = new Stage();
         // 设为模态

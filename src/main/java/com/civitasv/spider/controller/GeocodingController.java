@@ -1,15 +1,14 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.webdao.AMapDao;
-import com.civitasv.spider.webdao.impl.AMapDaoImpl;
+import com.civitasv.spider.controller.helper.AbstractController;
 import com.civitasv.spider.model.Geocodes;
 import com.civitasv.spider.util.*;
+import com.civitasv.spider.webdao.AMapDao;
+import com.civitasv.spider.webdao.impl.AMapDaoImpl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -29,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
-public class GeocodingController {
+public class GeocodingController extends AbstractController {
     private static Scene scene;
     // 输入文件
     public TextField inputFile;
@@ -57,17 +56,14 @@ public class GeocodingController {
     private int perExecuteTime;
 
     public void show() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("geocoding.fxml"));
-        Parent root = fxmlLoader.load();
-        GeocodingController controller = fxmlLoader.getController();
-        controller.init();
+        init();
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("地理编码");
         scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
         stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 

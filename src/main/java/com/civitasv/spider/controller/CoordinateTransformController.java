@@ -6,8 +6,6 @@ import com.civitasv.spider.util.FileUtil;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.util.SpatialDataTransformUtil;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -31,7 +29,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class CoordinateTransformController {
+public class CoordinateTransformController extends AboutController {
     private static Scene scene;
 
     public TextField inputFile;
@@ -43,8 +41,6 @@ public class CoordinateTransformController {
     private ExecutorService worker;
 
     public void show() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-coordinate.fxml"));
-        Parent root = fxmlLoader.load();
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("坐标转换");
