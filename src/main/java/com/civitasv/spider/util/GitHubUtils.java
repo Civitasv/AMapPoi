@@ -8,6 +8,7 @@ import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
 import java.awt.*;
+import java.io.File;
 import java.net.URI;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -28,8 +29,9 @@ public class GitHubUtils {
         worker.submit(()->{
             try {
                 GitHubRelease gitHubReleaseLatest = GitHubUtils.getGitHubReleaseLatest();
-                String versionFilePath = Objects.requireNonNull(MainApplication.class.getResource("version")).toString();
-                String currentVersion = FileUtil.readFile(versionFilePath, "file:/");
+                String versionFilePath = Objects.requireNonNull(MainApplication.class.getResource("version")).toURI().getPath();
+                versionFilePath = new File(versionFilePath).getPath();
+                String currentVersion = FileUtil.readFile(versionFilePath);
                 if(currentVersion.equals(gitHubReleaseLatest.getTag_name())){
                     if(showWhenNoNewVersion){
                         Platform.runLater(()->MessageUtil.alert(Alert.AlertType.INFORMATION,
