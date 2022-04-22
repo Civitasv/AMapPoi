@@ -1,12 +1,27 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
+import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.db.Database;
-import com.civitasv.spider.helper.CoordinateType;
+import com.civitasv.spider.helper.Enum.CoordinateType;
+import com.civitasv.spider.helper.Enum.CustomErrorCodeEnum;
+import com.civitasv.spider.helper.Enum.TaskStatus;
+import com.civitasv.spider.helper.exception.CustomException;
+import com.civitasv.spider.model.bo.Task;
+import com.civitasv.spider.service.JobService;
+import com.civitasv.spider.service.PoiCategoryService;
+import com.civitasv.spider.service.PoiService;
+import com.civitasv.spider.service.TaskService;
+import com.civitasv.spider.service.serviceImpl.JobServiceImpl;
+import com.civitasv.spider.service.serviceImpl.PoiCategoryServiceImpl;
+import com.civitasv.spider.service.serviceImpl.PoiServiceImpl;
+import com.civitasv.spider.service.serviceImpl.TaskServiceImpl;
+import com.civitasv.spider.util.ControllerUtils;
+import com.civitasv.spider.util.GitHubUtils;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import com.sun.javafx.collections.ObservableListWrapper;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -25,12 +40,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
-import java.util.*;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-public class POIController {
+public class POIController extends AbstractController {
     private static Scene scene;
 
     public TextField threadNum; // 线程数目
@@ -59,9 +76,11 @@ public class POIController {
     public ChoiceBox<String> poiCate1; // POI大类
     public ChoiceBox<String> poiCate2; // POI中类
     public ChoiceBox<String> poiCate3; // POI小类
+    public Button poiAdd; // poi添加
 
     // 数据库操作对象
     private Database database;
+    private ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
 
     public Database getDatabase() {
         return database;
@@ -70,10 +89,14 @@ public class POIController {
     // 大中小类
     private String cate1, cate2, cate3;
     private String curCategoryId;
-    Set<String> choosedPoiCategory;
 
     // 主界面
     private Stage mainStage;
+
+    private final TaskService taskService = new TaskServiceImpl();
+    private final JobService jobService = new JobServiceImpl();
+    private final PoiService poiService = new PoiServiceImpl();
+    private final PoiCategoryService poiCategoryService =  new PoiCategoryServiceImpl();
 
     public Stage getMainStage() {
         return mainStage;
@@ -81,11 +104,10 @@ public class POIController {
 
     private POIViewModel poiViewModel;
 
-    public void show() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("poi.fxml"));
-        Parent root = fxmlLoader.load();
-        POIController controller = fxmlLoader.getController();
-        controller.init();
+    private boolean skipHint = false;
+
+    public void show(Parent root) throws IOException {
+        init();
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("POIKit");
@@ -94,16 +116,35 @@ public class POIController {
         stage.setScene(scene);
         stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         this.mainStage = stage;
+        initStageHandler();
         stage.show();
+    }
+
+    private void initStageHandler(){
+        mainStage.setOnShown(event -> {
+            try {
+                if(handleLastTask(false) != null){
+                    skipHint = true;
+                    execute();
+                    skipHint = false;
+                }
+            } catch (CustomException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private void init() {
         this.poiViewModel = new POIViewModel(threadNum, keywords, keys, types, adCode,
                 rectangle, threshold, format, outputDirectory, messageDetail, userFile,failJobsFile, tabs, directoryBtn,
-                execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ);
-        this.threadNum.setTextFormatter(getFormatter());
-        this.threshold.setTextFormatter(getFormatter());
-        this.adCode.setTextFormatter(getFormatter());
+                execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ,
+                poiCate1, poiCate2, poiCate3, poiAdd);
+        this.threadNum.setTextFormatter(getFormatterOnlyNumber());
+        this.threshold.setTextFormatter(getFormatterOnlyNumber());
+        this.adCode.setTextFormatter(getFormatterOnlyNumber());
+        this.types.setTextFormatter(getFormatter_NumberPlusComma());
+        this.keys.setTextFormatter(getFormatter_NumberPlusCommaPlusEnglish());
+
         List<CoordinateType> list = Arrays.asList(CoordinateType.WGS84, CoordinateType.BD09, CoordinateType.GCJ02);
         this.rectangleCoordinateType.setItems(new ObservableListWrapper<>(list));
         this.userFileCoordinateType.setItems(new ObservableListWrapper<>(list));
@@ -129,7 +170,6 @@ public class POIController {
          * added by leon
          */
         this.database = new Database();
-        this.choosedPoiCategory = new HashSet<>();
 
         // 设置key
         this.keys.setText("");
@@ -142,50 +182,106 @@ public class POIController {
         this.poiCate2.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCate3(newValue));
 
         this.poiCate3.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> getPoiCategory(newValue));
+
+        // messageDetail 设置为不可编辑
+        messageDetail.setEditable(false);
+    }
+
+    private boolean continueLastTaskByAlert(Task task, int allJobSize, int unFinishJobSize){
+        return MessageUtil.alertConfirmationDialog("未完成任务提示", "上一次任务未完成",
+                "您有未完成的任务，请确认是否继续爬取\n" +
+                        "任务状态：" + task.taskStatus.getDescription() + "\n" +
+                        "完成度：" + (TaskStatus.Processing.equals(task.taskStatus) ?
+                        (allJobSize - unFinishJobSize) + "/" + allJobSize : "任务正在预处理...") + " \n" +
+                        "点击是则继续爬取上一个任务，否则放弃任务",
+                "是", "否");
+    }
+
+    private boolean startNewTaskByAlert(){
+        return MessageUtil.alertConfirmationDialog("开启新任务", null,
+                "是否使用当前参数开启新任务？",
+                "是", "否");
+    }
+
+    public Task handleLastTask(boolean skipAlert) throws CustomException {
+        // 判断是否有未完成的task
+        Task task  = taskService.getUnFinishedTask();
+        if(task == null) {
+            jobService.clearTable();
+            poiService.clearTable();
+            return null;
+        }
+
+        if(!skipAlert && !continueLastTaskByAlert(task, jobService.count(), jobService.countUnFinished())){
+            jobService.clearTable();
+            poiService.clearTable();
+            task.taskStatus = TaskStatus.Give_Up;
+            taskService.updateById(task.toTaskPo());
+            if(!StringUtils.isEmpty(outputDirectory.getText()) && !startNewTaskByAlert()){
+                throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
+            }
+            return null;
+        }
+
+        // 初始化界面
+        keywords.setText(task.keywords);
+        types.setText(task.types);
+        keys.setText(String.join(",",task.aMapKeys));
+        outputDirectory.setText(task.outputDirectory);
+        threshold.setText(task.threshold.toString());
+        threadNum.setText(task.threadNum.toString());
+        tabs.getSelectionModel().select(task.boundryType.getCode());
+        userType.getSelectionModel().select(task.userType.getCode());
+        format.getSelectionModel().select(task.outputType.getCode());
+        String configContent = task.boundryConfig.split(":")[1];
+        switch (task.boundryType){
+            case ADCODE:
+                adCode.setText(configContent.split(",")[0]);
+                break;
+            case RECTANGLE:
+                rectangle.setText(configContent.split(",")[0]);
+                rectangleCoordinateType.getSelectionModel()
+                        .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
+                break;
+            case CUSTOM:
+                userFile.setText(configContent.split(",")[0]);
+                userFileCoordinateType.getSelectionModel()
+                        .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
+                break;
+        }
+        return task;
     }
 
     private void refreshChoiceBoxCate1() {
         List<String> arrCate1;
-        try {
-            // 获取POI大类
-            arrCate1 = database.getPoiCategory1();
-            this.poiCate1.setItems(new ObservableListWrapper<>(arrCate1));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        // 获取POI大类
+        arrCate1 = poiCategoryService.getPoiCategory1();
+        this.poiCate1.setItems(new ObservableListWrapper<>(arrCate1));
     }
 
     private void refreshChoiceBoxCate2(String cate1) {
         this.cate1 = cate1;
         List<String> arrCate2;
-        try {
-            arrCate2 = database.getPoiCategory2(this.cate1);
-            this.poiCate2.setItems(new ObservableListWrapper<>(arrCate2));
-            this.poiCate2.setValue("");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+
+        arrCate2 = poiCategoryService.getPoiCategory2(this.cate1);
+        this.poiCate2.setItems(new ObservableListWrapper<>(arrCate2));
+        this.poiCate2.setValue("");
     }
 
     private void refreshChoiceBoxCate3(String cate2) {
         this.cate2 = cate2;
         List<String> arrCate3;
-        try {
-            arrCate3 = database.getPoiCategory3(this.cate1, this.cate2);
-            this.poiCate3.setItems(new ObservableListWrapper<>(arrCate3));
-            this.poiCate3.setValue("");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        arrCate3 = poiCategoryService.getPoiCategory3(this.cate1, this.cate2);
+        this.poiCate3.setItems(new ObservableListWrapper<>(arrCate3));
+        this.poiCate3.setValue("");
     }
 
     private void getPoiCategory(String cate3) {
-        this.cate3 = cate3;
-        try {
-            this.curCategoryId = database.getPoiCategoryId(this.cate1, this.cate2, this.cate3);
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if(StringUtils.isEmpty(cate3)){
+            return;
         }
+        this.cate3 = cate3;
+        this.curCategoryId = poiCategoryService.getPoiCategoryId(this.cate1, this.cate2, this.cate3);
     }
 
     public void addPoiCategory() {
@@ -193,18 +289,46 @@ public class POIController {
             MessageUtil.alert(Alert.AlertType.ERROR, "类型错误", null, "请完整选择POI类型！");
             return;
         }
-        this.choosedPoiCategory.add(this.curCategoryId);
-        String splitSetWithComma = StringUtils.join(choosedPoiCategory.toArray(), ",");
-        this.types.setText(splitSetWithComma);
+        String text = this.types.getText();
+        text = text.replace(" ", "");
+        Set<String> types = Arrays.stream(text.split(",")).collect(Collectors.toSet());
+        if(!types.contains(curCategoryId)){
+            if(!StringUtils.isEmpty(text)) {
+                this.types.setText(text + "," + curCategoryId);
+            }else{
+                this.types.setText(curCategoryId);
+            }
+        }
     }
 
-    private TextFormatter<Integer> getFormatter() {
+    private TextFormatter<Integer> getFormatterOnlyNumber() {
+        return getFormatter("\\d*", "\\s");
+    }
+
+    private TextFormatter<Integer> getFormatter_NumberPlusComma() {
+        return getFormatter("[\\d\\,]*","\\s");
+    }
+
+    private TextFormatter<Integer> getFormatter_NumberPlusCommaPlusEnglish() {
+        return getFormatter("[\\d\\,a-zA-Z]*", "\\s");
+    }
+
+    private TextFormatter<Integer> getFormatter(String passRegex) {
         return new TextFormatter<>(
-                c -> Pattern.matches("\\d*", c.getText()) ? c : null);
+                c -> Pattern.matches(passRegex, c.getText()) ? c : null);
+    }
+
+    private TextFormatter<Integer> getFormatter(String passRegex, String rejectRegex) {
+        return new TextFormatter<>(
+                c -> Pattern.matches(passRegex, c.getText()) && !Pattern.matches(rejectRegex, c.getText()) ? c : null);
     }
 
     public void execute() {
-        poiViewModel.execute();
+        try {
+            poiViewModel.execute(handleLastTask(skipHint));
+        } catch (CustomException e) {
+            e.printStackTrace();
+        }
     }
 
     public void cancel() {
@@ -212,7 +336,7 @@ public class POIController {
     }
 
     public void openCityChoose() throws IOException {
-        CityChooseController controller = new CityChooseController();
+        CityChooseController controller = controllerFactory.createController(CityChooseController.class);
         controller.show(this);
     }
 
@@ -250,37 +374,50 @@ public class POIController {
             outputDirectory.setText(file.getAbsolutePath());
     }
 
+    public void openDir() throws URISyntaxException, IOException {
+        Desktop.getDesktop().browse(new URI("file:/" + outputDirectory.getText()));
+    }
+
+    public void openQPSPage() throws URISyntaxException, IOException {
+        Desktop.getDesktop().browse(new URI("https://console.amap.com/dev/flow/manage"));
+    }
+
     public void openPOITypes() {
-        choosedPoiCategory.clear();
         this.types.setText("");
     }
 
     public void openGeocoding() throws IOException {
-        GeocodingController controller = new GeocodingController();
+        GeocodingController controller = controllerFactory.createController(GeocodingController.class);
         controller.show();
     }
 
     public void openSpatialTransform() throws IOException {
-        SpatialDataTransformController controller = new SpatialDataTransformController();
+        SpatialDataTransformController controller = controllerFactory.createController(SpatialDataTransformController.class);
         controller.show();
     }
 
     public void openCoordinateTransform() throws IOException {
-        CoordinateTransformController controller = new CoordinateTransformController();
+        CoordinateTransformController controller = controllerFactory.createController(CoordinateTransformController.class);
         controller.show();
     }
 
     public void openAbout(boolean isQQ) throws IOException {
-        AboutController controller = new AboutController();
+        AboutController controller = controllerFactory.createController(AboutController.class);
         controller.show(isQQ);
     }
 
     public void openDonate() throws IOException {
-        DonateController controller = new DonateController();
-        controller.show();
+        DonateController controller = controllerFactory.createController(DonateController.class);
+        controller.show("icon/zhifubao.jpg");
+        DonateController controller2 = controllerFactory.createController(DonateController.class);
+        controller2.show("icon/zhifubao2.jpg");
     }
 
     public void starsMe() throws URISyntaxException, IOException {
         Desktop.getDesktop().browse(new URI("https://github.com/Civitasv/AMapPoi"));
+    }
+
+    public void updateVersion(){
+        GitHubUtils.tryGetLatestRelease(true);
     }
 }

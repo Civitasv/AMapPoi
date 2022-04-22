@@ -1,14 +1,14 @@
 package com.civitasv.spider.util;
 
 import com.civitasv.spider.MainApplication;
-import javafx.application.Platform;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
-import java.awt.*;
+import java.util.Optional;
 
 /**
  * 消息提示
@@ -34,5 +34,22 @@ public class MessageUtil {
         Stage stage = (Stage) dialogPane.getScene().getWindow();
         stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
         alert.showAndWait();
+    }
+
+    public static boolean alertConfirmationDialog(String title, String header, String content, String fooText, String barText){
+        ButtonType foo = new ButtonType(fooText, ButtonBar.ButtonData.OK_DONE);
+        ButtonType bar = new ButtonType(barText, ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, content, foo, bar);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.getStylesheets().add(
+                MainApplication.class.getResource("myDialogs.css").toExternalForm());
+        dialogPane.getStyleClass().add("myDialog");
+        Stage stage = (Stage) dialogPane.getScene().getWindow();
+        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && foo.equals(result.get());
     }
 }

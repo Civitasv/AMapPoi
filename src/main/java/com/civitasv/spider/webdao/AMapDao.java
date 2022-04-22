@@ -1,10 +1,7 @@
-package com.civitasv.spider.dao;
+package com.civitasv.spider.webdao;
 
 import com.civitasv.spider.model.Geocodes;
-import com.civitasv.spider.model.POI;
-import retrofit2.http.Query;
-
-import java.util.Map;
+import com.civitasv.spider.model.bo.POI;
 
 public interface AMapDao {
     Geocodes.Response geocoding(String key, String address, String city);

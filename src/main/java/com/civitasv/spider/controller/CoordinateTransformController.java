@@ -1,10 +1,11 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.util.*;
+import com.civitasv.spider.util.CoordinateTransformUtil;
+import com.civitasv.spider.util.FileUtil;
+import com.civitasv.spider.util.MessageUtil;
+import com.civitasv.spider.util.SpatialDataTransformUtil;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -24,10 +25,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class CoordinateTransformController {
+public class CoordinateTransformController extends AboutController {
     private static Scene scene;
 
     public TextField inputFile;
@@ -39,15 +41,13 @@ public class CoordinateTransformController {
     private ExecutorService worker;
 
     public void show() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-coordinate.fxml"));
-        Parent root = fxmlLoader.load();
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("坐标转换");
         scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
         stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 
@@ -91,8 +91,11 @@ public class CoordinateTransformController {
             }
             // 根据输入文件格式转换
             if ("geojson".equals(inputFormat) || "json".equals(inputFormat)) { // 如果是geojson
-                String geojson = FileUtil.readFile(inputFile.getText());
-                if (geojson == null) {
+                String geojson;
+                try {
+                    geojson = FileUtil.readFile(inputFile.getText());
+                } catch (IOException e) {
+                    e.printStackTrace();
                     appendMessage("无法读取geojson文件，请检查后重试！");
                     analysis(false);
                     return;
@@ -132,9 +135,12 @@ public class CoordinateTransformController {
                     analysis(false);
                     return;
                 }
-                String geojson = FileUtil.readFile(temp.getAbsolutePath());
-                if (geojson == null) {
-                    appendMessage("shp格式有误，请检查后重试！");
+                String geojson;
+                try {
+                    geojson = FileUtil.readFile(temp.getAbsolutePath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    appendMessage("shp格式有误，请检查后重试！" + e.getMessage());
                     analysis(false);
                     return;
                 }

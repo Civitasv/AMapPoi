@@ -1,14 +1,12 @@
-package com.civitasv.spider.dao.impl;
+package com.civitasv.spider.webdao.impl;
 
 import com.civitasv.spider.api.RetrofitAMapClient;
-import com.civitasv.spider.dao.AMapDao;
+import com.civitasv.spider.webdao.AMapDao;
 import com.civitasv.spider.model.Geocodes;
-import com.civitasv.spider.model.POI;
+import com.civitasv.spider.model.bo.POI;
 import retrofit2.Call;
 
 import java.io.IOException;
-import java.net.SocketTimeoutException;
-import java.util.concurrent.TimeoutException;
 
 public class AMapDaoImpl implements AMapDao {
     @Override

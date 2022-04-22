@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.civitasv</groupId>
     <artifactId>spider</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>v1.0.1-alpha</version>
     <repositories>
         <repository>
             <id>osgeo</id>
@@ -26,6 +26,10 @@
         <cglib.version>3.3.0</cglib.version>
         <geotools.version>25.0</geotools.version>
         <sqlite.version>3.36.0.3</sqlite.version>
+        <opencsv.version>5.5.2</opencsv.version>
+        <mybatis-plus.version>3.4.1</mybatis-plus.version>
+        <velocity-engine-core.version>2.3</velocity-engine-core.version>
+        <slf4j.version>1.7.36</slf4j.version>
     </properties>
     <dependencies>
         <dependency>
@@ -82,7 +86,28 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>5.5.2</version>
+            <version>${opencsv.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity-engine-core</artifactId>
+            <version>${velocity-engine-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -95,7 +120,35 @@
                     <release>${maven.compiler.release}</release>
                 </configuration>
             </plugin>
-
+            <plugin>
+                <groupId>org.mybatis.generator</groupId>
+                <artifactId>mybatis-generator-maven-plugin</artifactId>
+                <version>1.3.7</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.mybatis.generator</groupId>
+                        <artifactId>mybatis-generator-core</artifactId>
+                        <version>1.3.7</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>Generate MyBatis Artifacts</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!--允许移动生成的文件 -->
+                    <verbose>true</verbose>
+                    <!-- 是否覆盖 -->
+                    <overwrite>true</overwrite>
+                    <!-- 自动生成的配置 -->
+                    <configurationFile>generatorConfig.xml</configurationFile>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

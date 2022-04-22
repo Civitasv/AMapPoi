@@ -1,9 +1,7 @@
-package com.civitasv.spider.dao.impl;
+package com.civitasv.spider.webdao.impl;
 
-import com.civitasv.spider.api.RetrofitAMapClient;
 import com.civitasv.spider.api.RetrofitDataVClient;
-import com.civitasv.spider.dao.DataVDao;
-import com.civitasv.spider.model.Geocodes;
+import com.civitasv.spider.webdao.DataVDao;
 import com.google.gson.JsonObject;
 import retrofit2.Call;
 

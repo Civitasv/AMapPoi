@@ -1,35 +1,38 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+import com.civitasv.spider.controller.helper.AbstractController;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.Objects;
 
-public class DonateController {
+public class DonateController extends AbstractController {
     public ImageView about;
 
-    public void show() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("donate.fxml"));
-        Parent root = fxmlLoader.load();
-        DonateController controller = fxmlLoader.getController();
-        controller.init();
+    private String imagePath;
+
+    public DonateController() {
+    }
+
+    public void show(String imagePath) throws IOException {
+        this.imagePath = imagePath;
+        init();
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("捐赠");
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
         stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 
     private void init() {
-        Image image = new Image(MainApplication.class.getResourceAsStream("icon/zhifubao.jpg"));
+        Image image = new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream(imagePath)));
         about.setImage(image);
     }
 }

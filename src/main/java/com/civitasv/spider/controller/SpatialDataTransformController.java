@@ -1,12 +1,11 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
+import com.civitasv.spider.controller.helper.AbstractController;
 import com.civitasv.spider.util.FileUtil;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.util.SpatialDataTransformUtil;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -17,6 +16,7 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
  * <p>
  * csv shp geojson 互相转换
  */
-public class SpatialDataTransformController {
+public class SpatialDataTransformController extends AbstractController {
     private static Scene scene;
     public TextField inputFile;
     public ChoiceBox<String> format;
@@ -35,17 +35,14 @@ public class SpatialDataTransformController {
     private ExecutorService worker;
 
     public void show() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("transform-spatial-data.fxml"));
-        Parent root = fxmlLoader.load();
-        SpatialDataTransformController controller = fxmlLoader.getController();
-        controller.init();
+        init();
         Stage stage = new Stage();
         stage.setResizable(false);
         stage.setTitle("格式转换");
         scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
         stage.setScene(scene);
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 
