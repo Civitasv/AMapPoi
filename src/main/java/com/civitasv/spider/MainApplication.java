@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class MainApplication extends Application {
+    public static boolean isDEV = true;
 
     @Override
     public void init() throws Exception {

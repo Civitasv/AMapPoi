@@ -20,21 +20,25 @@ public class GitHubUtils {
     private final static String username = "Civitasv";
     private final static String repoName = "AMapPoi";
 
-    public static GitHubRelease getGitHubReleaseLatest(){
+    public static GitHubRelease getGitHubReleaseLatest() {
         return gitHubDao.getReleaseInfo(username, repoName);
     }
 
-    public static void tryGetLatestRelease(boolean showWhenNoNewVersion){
+    public static void tryGetLatestRelease(boolean showWhenNoNewVersion) {
         ExecutorService worker = Executors.newSingleThreadExecutor();
-        worker.submit(()->{
+        worker.submit(() -> {
             try {
                 GitHubRelease gitHubReleaseLatest = GitHubUtils.getGitHubReleaseLatest();
-                String versionFilePath = Objects.requireNonNull(MainApplication.class.getResource("version")).toURI().getPath();
+                String versionFilePath = MainApplication.isDEV
+                        ? Objects.requireNonNull(MainApplication.class.getResource("version")).toURI().getPath()
+                        : "app/assets/version";
+                System.out.println(versionFilePath);
                 versionFilePath = new File(versionFilePath).getPath();
+                System.out.println(versionFilePath);
                 String currentVersion = FileUtil.readFile(versionFilePath);
-                if(currentVersion.equals(gitHubReleaseLatest.getTag_name())){
-                    if(showWhenNoNewVersion){
-                        Platform.runLater(()->MessageUtil.alert(Alert.AlertType.INFORMATION,
+                if (currentVersion.equals(gitHubReleaseLatest.getTag_name())) {
+                    if (showWhenNoNewVersion) {
+                        Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.INFORMATION,
                                 "检查新版本",
                                 "检查新版本",
                                 "当前软件已经为最新版本，无需更新"));
@@ -55,7 +59,7 @@ public class GitHubUtils {
                 if (query.get()) {
                     Desktop.getDesktop().browse(new URI(gitHubReleaseLatest.getHtml_url()));
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         });

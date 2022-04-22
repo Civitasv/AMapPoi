@@ -2,6 +2,8 @@ package com.civitasv.spider.util;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
+import com.civitasv.spider.MainApplication;
+import com.civitasv.spider.db.Database;
 import com.civitasv.spider.mapper.JobMapper;
 import com.civitasv.spider.mapper.PoiCategoryMapper;
 import com.civitasv.spider.mapper.PoiMapper;
@@ -17,12 +19,13 @@ import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 
 public class MyBatisUtils {
 
     private static SqlSessionFactory mybatisPlusSqlSessionFactory;
 
-    public static SqlSessionFactory getDefaultMyBatis(){
+    public static SqlSessionFactory getDefaultMyBatis() {
         String resource = "com/civitasv/spider/mybatis-config.xml";
         InputStream inputStream = null;
         try {
@@ -34,7 +37,7 @@ public class MyBatisUtils {
     }
 
     public static SqlSessionFactory getDefaultMybatisPlus() {
-        if(mybatisPlusSqlSessionFactory != null){
+        if (mybatisPlusSqlSessionFactory != null) {
             return mybatisPlusSqlSessionFactory;
         }
         DataSource dataSource = dataSource();
@@ -53,7 +56,7 @@ public class MyBatisUtils {
     public static DataSource dataSource() {
         PooledDataSource dataSource = new PooledDataSource();
         dataSource.setDriver("org.sqlite.JDBC");
-        dataSource.setUrl("jdbc:sqlite:target/classes/com/civitasv/spider/db/poi.db");
+        dataSource.setUrl(Database.url);
         dataSource.setUsername("");
         dataSource.setPassword("");
         return dataSource;
