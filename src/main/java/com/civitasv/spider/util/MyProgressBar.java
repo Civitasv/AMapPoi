@@ -3,8 +3,6 @@ package com.civitasv.spider.util;
 import javafx.application.Platform;
 import javafx.scene.control.TextArea;
 
-import java.text.DecimalFormat;
-
 /**
  * 进度条
  */

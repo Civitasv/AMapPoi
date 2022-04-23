@@ -1,6 +1,9 @@
 package com.civitasv.spider.model.po;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.civitasv.spider.helper.Enum.JobStatus;
 import com.civitasv.spider.model.bo.Job;
 
@@ -9,7 +12,7 @@ import java.util.Arrays;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author zhanghang
@@ -20,7 +23,7 @@ public class JobPo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value="id",type= IdType.AUTO)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     @TableField("taskid")
@@ -185,13 +188,13 @@ public class JobPo implements Serializable {
                 '}';
     }
 
-    public Job toJob(){
-        try{
+    public Job toJob() {
+        try {
             return new Job(id, null,
                     Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new),
                     types, keywords, page, size, JobStatus.getJobStatus(status), requestActualTimes,
-                    requestExceptedTimes,poiActualSum,poiExceptedSum,null);
-        }catch (Exception e){
+                    requestExceptedTimes, poiActualSum, poiExceptedSum, null);
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;

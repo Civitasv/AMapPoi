@@ -36,7 +36,7 @@ public class MessageUtil {
         alert.showAndWait();
     }
 
-    public static boolean alertConfirmationDialog(String title, String header, String content, String fooText, String barText){
+    public static boolean alertConfirmationDialog(String title, String header, String content, String fooText, String barText) {
         ButtonType foo = new ButtonType(fooText, ButtonBar.ButtonData.OK_DONE);
         ButtonType bar = new ButtonType(barText, ButtonBar.ButtonData.CANCEL_CLOSE);
 

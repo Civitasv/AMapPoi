@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author zhanghang
@@ -41,7 +41,7 @@ public class PoiServiceImpl implements PoiService {
     @Override
     public boolean saveBatch(List<PoiPo> poiPos) {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
-        try (SqlSession session = defaultMyBatis.openSession(ExecutorType.BATCH,false)) {
+        try (SqlSession session = defaultMyBatis.openSession(ExecutorType.BATCH, false)) {
             PoiMapper poiMapper = session.getMapper(PoiMapper.class);
             for (int i = 0; i < poiPos.size(); i++) {
                 PoiPo poiPo = poiPos.get(i);

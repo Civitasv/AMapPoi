@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author zhanghang
@@ -15,7 +15,10 @@ import java.util.List;
  */
 public interface PoiCategoryService extends IService<PoiCategory> {
     List<String> getPoiCategory1();
+
     List<String> getPoiCategory2(String cate1);
-    List<String> getPoiCategory3(String cate1,String cate2);
-    String getPoiCategoryId(String cate1,String cate2,String cate3);
+
+    List<String> getPoiCategory3(String cate1, String cate2);
+
+    String getPoiCategoryId(String cate1, String cate2, String cate3);
 }

@@ -1,11 +1,11 @@
 package com.civitasv.spider.mapper;
 
-import com.civitasv.spider.model.po.TaskPo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.civitasv.spider.model.po.TaskPo;
 
 /**
  * <p>
- *  Mapper 接口
+ * Mapper 接口
  * </p>
  *
  * @author zhanghang

@@ -1,9 +1,9 @@
 package com.civitasv.spider.webdao.impl;
 
 import com.civitasv.spider.api.RetrofitAMapClient;
-import com.civitasv.spider.webdao.AMapDao;
 import com.civitasv.spider.model.Geocodes;
 import com.civitasv.spider.model.bo.POI;
+import com.civitasv.spider.webdao.AMapDao;
 import retrofit2.Call;
 
 import java.io.IOException;

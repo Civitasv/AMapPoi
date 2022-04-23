@@ -50,7 +50,7 @@ public class FileUtil {
         throw new FileExistsException("文件不存在：" + path);
     }
 
-    public static boolean pathExist(String path){
+    public static boolean pathExist(String path) {
         File file = new File(path);
         return file.exists();
     }

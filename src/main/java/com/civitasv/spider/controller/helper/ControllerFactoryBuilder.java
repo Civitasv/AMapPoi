@@ -8,12 +8,12 @@ public class ControllerFactoryBuilder {
 
     private final Map<Class<? extends AbstractController>, URL> controllerClassFxmlMap = new HashMap<>();
 
-    public ControllerFactoryBuilder addController(Class<? extends AbstractController> clazz, URL fxmlPath){
+    public ControllerFactoryBuilder addController(Class<? extends AbstractController> clazz, URL fxmlPath) {
         controllerClassFxmlMap.put(clazz, fxmlPath);
         return this;
     }
 
-    public ControllerFactory build(){
+    public ControllerFactory build() {
         return new ControllerFactory(controllerClassFxmlMap);
     }
 }

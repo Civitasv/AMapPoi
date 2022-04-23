@@ -32,9 +32,7 @@ public class GitHubUtils {
                 String versionFilePath = MainApplication.isDEV
                         ? Objects.requireNonNull(MainApplication.class.getResource("version")).toURI().getPath()
                         : "app/assets/version";
-                System.out.println(versionFilePath);
                 versionFilePath = new File(versionFilePath).getPath();
-                System.out.println(versionFilePath);
                 String currentVersion = FileUtil.readFile(versionFilePath);
                 if (currentVersion.equals(gitHubReleaseLatest.getTag_name())) {
                     if (showWhenNoNewVersion) {

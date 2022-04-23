@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author zhanghang
@@ -15,14 +15,20 @@ import java.util.List;
  */
 public interface JobService {
     void clearTable();
+
     List<JobPo> list();
+
     List<JobPo> listUnFinished();
+
     boolean saveBatch(List<JobPo> jobPos);
 
     boolean updateBatch(List<JobPo> jobPos);
 
     int updateById(JobPo jobPo);
+
     int count();
+
     int count(JobStatus taskStatus);
+
     int countUnFinished();
 }

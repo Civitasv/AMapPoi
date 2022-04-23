@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author zhanghang
@@ -27,7 +27,7 @@ public class PoiCategoryServiceImpl extends ServiceImpl<PoiCategoryMapper, PoiCa
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
-            QueryWrapper<PoiCategory>  wrapper = new QueryWrapper<>();
+            QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
             wrapper.select("DISTINCT CATE1");
             return poiCategoryMapper.selectList(wrapper).stream().map(PoiCategory::getCate1).collect(Collectors.toList());
         }
@@ -38,9 +38,9 @@ public class PoiCategoryServiceImpl extends ServiceImpl<PoiCategoryMapper, PoiCa
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
-            QueryWrapper<PoiCategory>  wrapper = new QueryWrapper<>();
+            QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
             wrapper.select("DISTINCT CATE2")
-                    .eq("CATE1",cate1);
+                    .eq("CATE1", cate1);
             return poiCategoryMapper.selectList(wrapper).stream().map(PoiCategory::getCate2).collect(Collectors.toList());
         }
     }
@@ -50,10 +50,10 @@ public class PoiCategoryServiceImpl extends ServiceImpl<PoiCategoryMapper, PoiCa
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
-            QueryWrapper<PoiCategory>  wrapper = new QueryWrapper<>();
+            QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
             wrapper.select("DISTINCT CATE3")
-                    .eq("CATE1",cate1)
-                    .eq("CATE2",cate2);
+                    .eq("CATE1", cate1)
+                    .eq("CATE2", cate2);
             return poiCategoryMapper.selectList(wrapper).stream().map(PoiCategory::getCate3).collect(Collectors.toList());
         }
     }
@@ -63,11 +63,11 @@ public class PoiCategoryServiceImpl extends ServiceImpl<PoiCategoryMapper, PoiCa
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
-            QueryWrapper<PoiCategory>  wrapper = new QueryWrapper<>();
+            QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
             wrapper.select("CATE_ID")
-                    .eq("CATE1",cate1)
-                    .eq("CATE2",cate2)
-                    .eq("CATE3",cate3);
+                    .eq("CATE1", cate1)
+                    .eq("CATE2", cate2)
+                    .eq("CATE3", cate3);
             return poiCategoryMapper.selectOne(wrapper).getCateId();
         }
     }

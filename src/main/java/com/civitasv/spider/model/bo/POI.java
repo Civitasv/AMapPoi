@@ -10,7 +10,7 @@ import java.util.Objects;
 public class POI {
     private final Integer status;
     private String info;
-    private String infocode;
+    private Integer infocode;
     private Integer count;
     private List<Info> pois;
 
@@ -57,12 +57,12 @@ public class POI {
                     '}';
         }
 
-        public PoiPo toPoiPo(Long jobid){
-            try{
+        public PoiPo toPoiPo(Long jobid) {
+            try {
                 return new PoiPo(oid, id, jobid, name, type, typecode, BeanUtils.obj2String(address),
                         BeanUtils.obj2String(location), BeanUtils.obj2String(tel), BeanUtils.obj2String(pname),
                         BeanUtils.obj2String(cityname), BeanUtils.obj2String(adname));
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return null;
@@ -77,7 +77,7 @@ public class POI {
         return info;
     }
 
-    public String getInfocode() {
+    public Integer getInfocode() {
         return infocode;
     }
 
@@ -93,7 +93,7 @@ public class POI {
         this.status = status;
     }
 
-    public POI(Integer status, String info, String infocode, Integer count, List<Info> pois) {
+    public POI(Integer status, String info, Integer infocode, Integer count, List<Info> pois) {
         this.status = status;
         this.info = info;
         this.infocode = infocode;

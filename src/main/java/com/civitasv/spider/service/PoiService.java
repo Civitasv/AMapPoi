@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author zhanghang
@@ -14,7 +14,9 @@ import java.util.List;
  */
 public interface PoiService {
     void clearTable();
+
     List<PoiPo> list();
+
     boolean saveBatch(List<PoiPo> poiPos);
 
     int updateById(PoiPo poiPo);

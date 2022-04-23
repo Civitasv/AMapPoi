@@ -1,13 +1,16 @@
 package com.civitasv.spider.model.po;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.civitasv.spider.model.bo.POI;
 
 import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author zhanghang
@@ -18,7 +21,7 @@ public class PoiPo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value="id",type= IdType.AUTO)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     @TableField("jobid")
@@ -160,24 +163,24 @@ public class PoiPo implements Serializable {
     @Override
     public String toString() {
         return "Poi{" +
-        "id=" + id +
-        ", jobid=" + jobid +
-        ", name=" + name +
-        ", type=" + type +
-        ", typecode=" + typecode +
-        ", address=" + address +
-        ", location=" + location +
-        ", tel=" + tel +
-        ", pname=" + pname +
-        ", cityname=" + cityname +
-        ", adname=" + adname +
-        "}";
+                "id=" + id +
+                ", jobid=" + jobid +
+                ", name=" + name +
+                ", type=" + type +
+                ", typecode=" + typecode +
+                ", address=" + address +
+                ", location=" + location +
+                ", tel=" + tel +
+                ", pname=" + pname +
+                ", cityname=" + cityname +
+                ", adname=" + adname +
+                "}";
     }
 
-    public POI.Info toPoi(){
-        try{
+    public POI.Info toPoi() {
+        try {
             return new POI.Info(id, pid, name, type, typecode, address, location, tel, pname, cityname, adname);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;

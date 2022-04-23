@@ -25,18 +25,18 @@ public enum TaskStatus {
         return code;
     }
 
-    public static TaskStatus getBoundryType(String description){
+    public static TaskStatus getBoundryType(String description) {
         for (TaskStatus value : TaskStatus.values()) {
-            if(value.description.equals(description)){
+            if (value.description.equals(description)) {
                 return value;
             }
         }
         throw new IllegalArgumentException("没有符合该描述的枚举值");
     }
 
-    public static TaskStatus getBoundryType(Integer code){
+    public static TaskStatus getBoundryType(Integer code) {
         for (TaskStatus value : TaskStatus.values()) {
-            if(value.code.equals(code)){
+            if (value.code.equals(code)) {
                 return value;
             }
         }

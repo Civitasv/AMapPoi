@@ -1,7 +1,7 @@
 package com.civitasv.spider.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.civitasv.spider.model.po.PoiCategory;
+import com.civitasv.spider.model.po.City;
 
 /**
  * <p>
@@ -9,8 +9,8 @@ import com.civitasv.spider.model.po.PoiCategory;
  * </p>
  *
  * @author zhanghang
- * @since 2022-04-20 05:56:08
+ * @since 2022-04-22 09:03:30
  */
-public interface PoiCategoryMapper extends BaseMapper<PoiCategory> {
+public interface CityCodeMapper extends BaseMapper<City> {
 
 }

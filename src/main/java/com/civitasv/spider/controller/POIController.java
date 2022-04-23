@@ -3,11 +3,11 @@ package com.civitasv.spider.controller;
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.controller.helper.AbstractController;
 import com.civitasv.spider.controller.helper.ControllerFactory;
-import com.civitasv.spider.db.Database;
 import com.civitasv.spider.helper.Enum.CoordinateType;
-import com.civitasv.spider.helper.Enum.CustomErrorCodeEnum;
+import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
 import com.civitasv.spider.helper.Enum.TaskStatus;
-import com.civitasv.spider.helper.exception.CustomException;
+import com.civitasv.spider.helper.exception.NoTryAgainException;
+import com.civitasv.spider.helper.exception.TryAgainException;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiCategoryService;
@@ -78,12 +78,7 @@ public class POIController extends AbstractController {
     public Button poiAdd; // poi添加
 
     // 数据库操作对象
-    private Database database;
     private ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
-
-    public Database getDatabase() {
-        return database;
-    }
 
     // 大中小类
     private String cate1, cate2, cate3;
@@ -95,7 +90,7 @@ public class POIController extends AbstractController {
     private final TaskService taskService = new TaskServiceImpl();
     private final JobService jobService = new JobServiceImpl();
     private final PoiService poiService = new PoiServiceImpl();
-    private final PoiCategoryService poiCategoryService =  new PoiCategoryServiceImpl();
+    private final PoiCategoryService poiCategoryService = new PoiCategoryServiceImpl();
 
     public Stage getMainStage() {
         return mainStage;
@@ -119,15 +114,15 @@ public class POIController extends AbstractController {
         stage.show();
     }
 
-    private void initStageHandler(){
+    private void initStageHandler() {
         mainStage.setOnShown(event -> {
             try {
-                if(handleLastTask(false) != null){
+                if (handleLastTask(false) != null) {
                     skipHint = true;
                     execute();
                     skipHint = false;
                 }
-            } catch (CustomException e) {
+            } catch (TryAgainException | NoTryAgainException e) {
                 e.printStackTrace();
             }
         });
@@ -135,7 +130,7 @@ public class POIController extends AbstractController {
 
     private void init() {
         this.poiViewModel = new POIViewModel(threadNum, keywords, keys, types, adCode,
-                rectangle, threshold, format, outputDirectory, messageDetail, userFile,failJobsFile, tabs, directoryBtn,
+                rectangle, threshold, format, outputDirectory, messageDetail, userFile, failJobsFile, tabs, directoryBtn,
                 execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ,
                 poiCate1, poiCate2, poiCate3, poiAdd);
         this.threadNum.setTextFormatter(getFormatterOnlyNumber());
@@ -168,7 +163,6 @@ public class POIController extends AbstractController {
          * 改为从数据库选择POI类型
          * added by leon
          */
-        this.database = new Database();
 
         // 设置key
         this.keys.setText("");
@@ -186,7 +180,7 @@ public class POIController extends AbstractController {
         messageDetail.setEditable(false);
     }
 
-    private boolean continueLastTaskByAlert(Task task, int allJobSize, int unFinishJobSize){
+    private boolean continueLastTaskByAlert(Task task, int allJobSize, int unFinishJobSize) {
         return MessageUtil.alertConfirmationDialog("未完成任务提示", "上一次任务未完成",
                 "您有未完成的任务，请确认是否继续爬取\n" +
                         "任务状态：" + task.taskStatus.getDescription() + "\n" +
@@ -196,28 +190,28 @@ public class POIController extends AbstractController {
                 "是", "否");
     }
 
-    private boolean startNewTaskByAlert(){
+    private boolean startNewTaskByAlert() {
         return MessageUtil.alertConfirmationDialog("开启新任务", null,
                 "是否使用当前参数开启新任务？",
                 "是", "否");
     }
 
-    public Task handleLastTask(boolean skipAlert) throws CustomException {
+    public Task handleLastTask(boolean skipAlert) throws TryAgainException, NoTryAgainException {
         // 判断是否有未完成的task
-        Task task  = taskService.getUnFinishedTask();
-        if(task == null) {
+        Task task = taskService.getUnFinishedTask();
+        if (task == null) {
             jobService.clearTable();
             poiService.clearTable();
             return null;
         }
 
-        if(!skipAlert && !continueLastTaskByAlert(task, jobService.count(), jobService.countUnFinished())){
+        if (!skipAlert && !continueLastTaskByAlert(task, jobService.count(), jobService.countUnFinished())) {
             jobService.clearTable();
             poiService.clearTable();
             task.taskStatus = TaskStatus.Give_Up;
             taskService.updateById(task.toTaskPo());
-            if(!StringUtils.isEmpty(outputDirectory.getText()) && !startNewTaskByAlert()){
-                throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
+            if (!StringUtils.isEmpty(outputDirectory.getText()) && !startNewTaskByAlert()) {
+                throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
             }
             return null;
         }
@@ -225,7 +219,7 @@ public class POIController extends AbstractController {
         // 初始化界面
         keywords.setText(task.keywords);
         types.setText(task.types);
-        keys.setText(String.join(",",task.aMapKeys));
+        keys.setText(String.join(",", task.aMapKeys));
         outputDirectory.setText(task.outputDirectory);
         threshold.setText(task.threshold.toString());
         threadNum.setText(task.threadNum.toString());
@@ -233,7 +227,7 @@ public class POIController extends AbstractController {
         userType.getSelectionModel().select(task.userType.getCode());
         format.getSelectionModel().select(task.outputType.getCode());
         String configContent = task.boundryConfig.split(":")[1];
-        switch (task.boundryType){
+        switch (task.boundryType) {
             case ADCODE:
                 adCode.setText(configContent.split(",")[0]);
                 break;
@@ -276,7 +270,7 @@ public class POIController extends AbstractController {
     }
 
     private void getPoiCategory(String cate3) {
-        if(StringUtils.isEmpty(cate3)){
+        if (StringUtils.isEmpty(cate3)) {
             return;
         }
         this.cate3 = cate3;
@@ -291,10 +285,10 @@ public class POIController extends AbstractController {
         String text = this.types.getText();
         text = text.replace(" ", "");
         Set<String> types = Arrays.stream(text.split(",")).collect(Collectors.toSet());
-        if(!types.contains(curCategoryId)){
-            if(!StringUtils.isEmpty(text)) {
+        if (!types.contains(curCategoryId)) {
+            if (!StringUtils.isEmpty(text)) {
                 this.types.setText(text + "," + curCategoryId);
-            }else{
+            } else {
                 this.types.setText(curCategoryId);
             }
         }
@@ -305,7 +299,7 @@ public class POIController extends AbstractController {
     }
 
     private TextFormatter<Integer> getFormatter_NumberPlusComma() {
-        return getFormatter("[\\d\\,]*","\\s");
+        return getFormatter("[\\d\\,]*", "\\s");
     }
 
     private TextFormatter<Integer> getFormatter_NumberPlusCommaPlusEnglish() {
@@ -325,7 +319,7 @@ public class POIController extends AbstractController {
     public void execute() {
         try {
             poiViewModel.execute(handleLastTask(skipHint));
-        } catch (CustomException e) {
+        } catch (TryAgainException | NoTryAgainException e) {
             e.printStackTrace();
         }
     }
@@ -416,7 +410,7 @@ public class POIController extends AbstractController {
         Desktop.getDesktop().browse(new URI("https://github.com/Civitasv/AMapPoi"));
     }
 
-    public void updateVersion(){
+    public void updateVersion() {
         GitHubUtils.tryGetLatestRelease(true);
     }
 }

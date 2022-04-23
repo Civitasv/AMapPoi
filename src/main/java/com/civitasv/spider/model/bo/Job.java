@@ -1,7 +1,8 @@
 package com.civitasv.spider.model.bo;
 
-import com.civitasv.spider.helper.Enum.CustomErrorCodeEnum;
 import com.civitasv.spider.helper.Enum.JobStatus;
+import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
+import com.civitasv.spider.helper.Enum.TryAgainErrorCode;
 import com.civitasv.spider.model.po.JobPo;
 
 import java.util.Arrays;
@@ -21,7 +22,8 @@ public class Job {
     public Integer poiActualSum = 0;
     public Integer poiExceptedSum = 0;
     public POI poi;
-    public CustomErrorCodeEnum errorCodeEnum;
+    public TryAgainErrorCode tryAgainErrorCode;
+    public NoTryAgainErrorCode noTryAgainErrorCode;
 
     public Job(Long id, Long taskid, Double[] bounds, String types, String keywords, Integer page, Integer size) {
         this.id = id;
@@ -49,22 +51,22 @@ public class Job {
         this.poi = poi;
     }
 
-    public JobPo toJobPo(){
-        try{
+    public JobPo toJobPo() {
+        try {
             return new JobPo(id, taskid, types,
-                    keywords,page, size, jobStatus.getCode(),requestActualTimes, requestExceptedTimes, poiActualSum, poiExceptedSum
+                    keywords, page, size, jobStatus.getCode(), requestActualTimes, requestExceptedTimes, poiActualSum, poiExceptedSum
                     , Arrays.stream(bounds).map(Object::toString).collect(Collectors.joining(",")));
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public int plusRequestActualTimes(){
+    public int plusRequestActualTimes() {
         return ++requestActualTimes;
     }
 
-    public int plusPoiActualSum(int plusPoiNum){
+    public int plusPoiActualSum(int plusPoiNum) {
         return poiActualSum += plusPoiNum;
     }
 }
