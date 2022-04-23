@@ -10,7 +10,7 @@ import java.util.Objects;
 public class POI {
     private final Integer status;
     private String info;
-    private String infocode;
+    private Integer infocode;
     private Integer count;
     private List<Info> pois;
 
@@ -77,7 +77,7 @@ public class POI {
         return info;
     }
 
-    public String getInfocode() {
+    public Integer getInfocode() {
         return infocode;
     }
 
@@ -93,7 +93,7 @@ public class POI {
         this.status = status;
     }
 
-    public POI(Integer status, String info, String infocode, Integer count, List<Info> pois) {
+    public POI(Integer status, String info, Integer infocode, Integer count, List<Info> pois) {
         this.status = status;
         this.info = info;
         this.infocode = infocode;

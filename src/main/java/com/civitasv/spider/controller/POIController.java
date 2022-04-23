@@ -5,9 +5,10 @@ import com.civitasv.spider.controller.helper.AbstractController;
 import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.db.Database;
 import com.civitasv.spider.helper.Enum.CoordinateType;
-import com.civitasv.spider.helper.Enum.CustomErrorCodeEnum;
+import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
 import com.civitasv.spider.helper.Enum.TaskStatus;
-import com.civitasv.spider.helper.exception.CustomException;
+import com.civitasv.spider.helper.exception.NoTryAgainException;
+import com.civitasv.spider.helper.exception.TryAgainException;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiCategoryService;
@@ -127,7 +128,7 @@ public class POIController extends AbstractController {
                     execute();
                     skipHint = false;
                 }
-            } catch (CustomException e) {
+            } catch (TryAgainException | NoTryAgainException e) {
                 e.printStackTrace();
             }
         });
@@ -202,7 +203,7 @@ public class POIController extends AbstractController {
                 "是", "否");
     }
 
-    public Task handleLastTask(boolean skipAlert) throws CustomException {
+    public Task handleLastTask(boolean skipAlert) throws TryAgainException, NoTryAgainException {
         // 判断是否有未完成的task
         Task task  = taskService.getUnFinishedTask();
         if(task == null) {
@@ -217,7 +218,7 @@ public class POIController extends AbstractController {
             task.taskStatus = TaskStatus.Give_Up;
             taskService.updateById(task.toTaskPo());
             if(!StringUtils.isEmpty(outputDirectory.getText()) && !startNewTaskByAlert()){
-                throw new CustomException(CustomErrorCodeEnum.STOP_TASK);
+                throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
             }
             return null;
         }
@@ -325,7 +326,7 @@ public class POIController extends AbstractController {
     public void execute() {
         try {
             poiViewModel.execute(handleLastTask(skipHint));
-        } catch (CustomException e) {
+        } catch (TryAgainException | NoTryAgainException e) {
             e.printStackTrace();
         }
     }
