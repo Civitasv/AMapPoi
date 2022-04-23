@@ -770,7 +770,7 @@ public class POIViewModel {
             if (i != 1) {
                 appendMessage("正在重试：第" + i + "次");
             }
-            getPoiOfJobs(jobs, task, jobCount);
+            spiderPoiOfJobs(jobs, task, jobCount);
             if (!hasStart) {
                 return BeanUtils.poipo2Poi(poiService.list());
             }
@@ -798,9 +798,8 @@ public class POIViewModel {
      *
      * @param unFinishedJobs 待爬取的job
      * @param task           task对象
-     * @return 爬取到的poi数据
      */
-    private List<POI.Info> getPoiOfJobs(List<Job> unFinishedJobs, Task task, int allJobsCount) {
+    private void spiderPoiOfJobs(List<Job> unFinishedJobs, Task task, int allJobsCount) {
         int finishedJobsCount = allJobsCount - unFinishedJobs.size();
         // 缓存机制
         int saveThreshold = 50;
@@ -877,7 +876,6 @@ public class POIViewModel {
 //            e.printStackTrace();
             saveUnFinishedJob(task, cached, unFinishedJob);
         }
-        return BeanUtils.poipo2Poi(poiService.list());
     }
 
     /**
@@ -913,17 +911,14 @@ public class POIViewModel {
      * 执行一个Job
      *
      * @param job 等待执行的job
-     * @return 是否执行成功
      * @throws TryAgainException 如果爬取失败，抛出该异常
      */
-    private boolean executeJob(Job job) throws NoTryAgainException, TryAgainException {
+    private void executeJob(Job job) throws NoTryAgainException, TryAgainException {
         double left = job.bounds[0], bottom = job.bounds[1], right = job.bounds[2], top = job.bounds[3];
         String polygon = left + "," + top + "|" + right + "," + bottom;
         String key = getAMapKey(aMapKeys);
-        POI poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
-        job.poi = poi;
+        job.poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
         job.jobStatus = JobStatus.SUCCESS; // 设置执行状态为Success
-        return true;
     }
 
     /**
@@ -931,7 +926,7 @@ public class POIViewModel {
      *
      * @param keys 候选key值容器
      * @return 选定的key值
-     * @throws TryAgainException 如果未获取到key（例如没有可选key），抛出该异常
+     * @throws NoTryAgainException 如果未获取到key（例如没有可选key），抛出该异常
      */
     private synchronized String getAMapKey(Queue<String> keys) throws NoTryAgainException {
         if (keys.isEmpty()) {
