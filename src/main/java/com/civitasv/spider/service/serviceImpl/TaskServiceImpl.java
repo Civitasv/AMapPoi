@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author zhanghang
@@ -36,9 +36,9 @@ public class TaskServiceImpl implements TaskService {
             QueryWrapper<TaskPo> queryWrapper = new QueryWrapper<>();
             queryWrapper.orderByDesc("id").last("limit 1");
             TaskPo taskPo = taskMapper.selectOne(queryWrapper);
-            if(taskPo == null
+            if (taskPo == null
                     || TaskStatus.Give_Up.getCode().equals(taskPo.getStatus())
-                    || TaskStatus.Success.getCode().equals(taskPo.getStatus())){
+                    || TaskStatus.Success.getCode().equals(taskPo.getStatus())) {
                 return null;
             }
 

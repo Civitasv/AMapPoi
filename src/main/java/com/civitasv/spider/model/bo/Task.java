@@ -62,7 +62,7 @@ public class Task {
         // 生成filter
         final GeometryFactory geometryFactory = new GeometryFactory();
         String configContent = boundryConfig.split(":")[1];
-        switch (boundryType){
+        switch (boundryType) {
             case ADCODE:
                 String adCode = configContent.split(",")[0];
                 String adName = configContent.split(",")[1];
@@ -140,32 +140,35 @@ public class Task {
         throw new RuntimeException("代码不应到达此处");
     }
 
-    public TaskPo toTaskPo(){
-        try{
+    public TaskPo toTaskPo() {
+        try {
             return new TaskPo(id, String.join(",", aMapKeys), types, keywords, threadNum, threshold, userType.getCode(),
-                    outputDirectory,outputType.getCode(), requestActualTimes,requestExceptedTimes, poiActualSum, poiExecutedSum,
+                    outputDirectory, outputType.getCode(), requestActualTimes, requestExceptedTimes, poiActualSum, poiExecutedSum,
                     totalExecutedTime, taskStatus.getCode(), boundryConfig,
                     Arrays.stream(boundary).map(Object::toString).collect(Collectors.joining(",")));
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
-    public int plusRequestExceptedTimes(int plusRequestNum){
+
+    public int plusRequestExceptedTimes(int plusRequestNum) {
         return requestExceptedTimes += plusRequestNum;
     }
 
-    public int plusRequestActualTimes(){
+    public int plusRequestActualTimes() {
         return ++requestActualTimes;
     }
 
-    public int plusPoiExceptedSum(int plusPoiNum){return poiExecutedSum += plusPoiNum;}
+    public int plusPoiExceptedSum(int plusPoiNum) {
+        return poiExecutedSum += plusPoiNum;
+    }
 
-    public int plusPoiActualSum(int plusPoiNum){
+    public int plusPoiActualSum(int plusPoiNum) {
         return poiActualSum += plusPoiNum;
     }
 
-    public int plusTotalExecutedTime(int plusExecutedTime){
+    public int plusTotalExecutedTime(int plusExecutedTime) {
         return totalExecutedTime += plusExecutedTime;
     }
 }

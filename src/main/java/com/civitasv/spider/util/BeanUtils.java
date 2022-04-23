@@ -53,25 +53,25 @@ public class BeanUtils {
                 .collect(toList());
     }
 
-    public static List<JobPo> jobs2JobPos(List<Job> jobs){
+    public static List<JobPo> jobs2JobPos(List<Job> jobs) {
         return jobs.stream()
                 .map(Job::toJobPo)
                 .collect(toList());
     }
 
-    public static List<Job> jobpos2Jobs(List<JobPo> jobPos){
+    public static List<Job> jobpos2Jobs(List<JobPo> jobPos) {
         return jobPos.stream()
                 .map(JobPo::toJob)
                 .collect(toList());
     }
 
-    public static List<POI.Info> poipo2Poi(List<PoiPo> poiPos){
+    public static List<POI.Info> poipo2Poi(List<PoiPo> poiPos) {
         return poiPos.stream()
                 .map(PoiPo::toPoi)
                 .collect(toList());
     }
 
-    public static String obj2String(Object obj){
-        return Objects.toString(obj,"");
+    public static String obj2String(Object obj) {
+        return Objects.toString(obj, "");
     }
 }

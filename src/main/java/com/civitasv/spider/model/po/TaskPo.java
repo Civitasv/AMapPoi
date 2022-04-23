@@ -1,6 +1,9 @@
 package com.civitasv.spider.model.po;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.civitasv.spider.helper.Enum.OutputType;
 import com.civitasv.spider.helper.Enum.TaskStatus;
 import com.civitasv.spider.helper.Enum.UserType;
@@ -14,7 +17,7 @@ import java.util.stream.Collectors;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author zhanghang
@@ -25,7 +28,7 @@ public class TaskPo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value="id",type= IdType.AUTO)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     @TableField("keys")
@@ -254,14 +257,14 @@ public class TaskPo implements Serializable {
                 "}";
     }
 
-    public Task toTask(){
+    public Task toTask() {
         Queue<String> queue = Arrays.stream(keys.split(",")).collect(Collectors.toCollection(LinkedList::new));
         try {
-           return new Task(id, queue, types, keywords, threadnum, threshold,outputDirectory,
-                   OutputType.getOutputType(outputType), UserType.getUserType(userType), requestActualTimes,
+            return new Task(id, queue, types, keywords, threadnum, threshold, outputDirectory,
+                    OutputType.getOutputType(outputType), UserType.getUserType(userType), requestActualTimes,
                     requestExceptedTimes, poiActualSum, poiExceptedSum, totalExecutedTime, boundConfig,
-                   TaskStatus.getBoundryType(status),
-                   Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new));
+                    TaskStatus.getBoundryType(status),
+                    Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new));
         } catch (Exception e) {
             e.printStackTrace();
         }

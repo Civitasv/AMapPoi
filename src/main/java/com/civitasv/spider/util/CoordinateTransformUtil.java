@@ -30,7 +30,7 @@ public class CoordinateTransformUtil {
 
     public static Coordinate transformBD09ToGCJ02(Coordinate coordinate) {
         double[] doubles = transformBD09ToGCJ02(coordinate.x, coordinate.y);
-        return new Coordinate(doubles[0],doubles[1]);
+        return new Coordinate(doubles[0], doubles[1]);
     }
 
     /**
@@ -50,7 +50,7 @@ public class CoordinateTransformUtil {
 
     public static Coordinate transformGCJ02ToBD09(Coordinate coordinate) {
         double[] doubles = transformGCJ02ToBD09(coordinate.x, coordinate.y);
-        return new Coordinate(doubles[0],doubles[1]);
+        return new Coordinate(doubles[0], doubles[1]);
     }
 
     /**
@@ -80,7 +80,7 @@ public class CoordinateTransformUtil {
 
     public static Coordinate transformGCJ02ToWGS84(Coordinate coordinate) {
         double[] doubles = transformGCJ02ToWGS84(coordinate.x, coordinate.y);
-        return new Coordinate(doubles[0],doubles[1]);
+        return new Coordinate(doubles[0], doubles[1]);
     }
 
     /**
@@ -110,7 +110,7 @@ public class CoordinateTransformUtil {
 
     public static Coordinate transformWGS84ToGCJ02(Coordinate coordinate) {
         double[] doubles = transformWGS84ToGCJ02(coordinate.x, coordinate.y);
-        return new Coordinate(doubles[0],doubles[1]);
+        return new Coordinate(doubles[0], doubles[1]);
     }
 
     /**
@@ -127,7 +127,7 @@ public class CoordinateTransformUtil {
 
     public static Coordinate transformBD09ToWGS84(Coordinate coordinate) {
         double[] doubles = transformBD09ToWGS84(coordinate.x, coordinate.y);
-        return new Coordinate(doubles[0],doubles[1]);
+        return new Coordinate(doubles[0], doubles[1]);
     }
 
     /**
@@ -144,7 +144,7 @@ public class CoordinateTransformUtil {
 
     public static Coordinate transformWGS84ToBD09(Coordinate coordinate) {
         double[] doubles = transformWGS84ToBD09(coordinate.x, coordinate.y);
-        return new Coordinate(doubles[0],doubles[1]);
+        return new Coordinate(doubles[0], doubles[1]);
     }
 
     private static double transformLat(double lng, double lat) {

@@ -11,12 +11,12 @@ import java.util.List;
 public class RetrofitTest {
 
     @Test
-    public void testMybatis(){
+    public void testMybatis() {
         MyBatisUtils.getDefaultMybatisPlus();
     }
 
     @Test
-    public void testService(){
+    public void testService() {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             TaskMapper taskMapper = session.getMapper(TaskMapper.class);
@@ -26,7 +26,7 @@ public class RetrofitTest {
     }
 
     @Test
-    public void testInteger(){
+    public void testInteger() {
         System.out.println(new Integer(0) == 0);
     }
 }

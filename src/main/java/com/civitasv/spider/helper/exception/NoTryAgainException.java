@@ -4,13 +4,13 @@ import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
 
 public class NoTryAgainException extends Exception {
 
-//    默认的错误信息
+    //    默认的错误信息
     private NoTryAgainErrorCode noTryAgainError;
 
-//    携带的额外信息
+    //    携带的额外信息
     private String extraMessage = null;
 
-    public NoTryAgainException(NoTryAgainErrorCode noTryAgainErrorCode){
+    public NoTryAgainException(NoTryAgainErrorCode noTryAgainErrorCode) {
 //        将getMessage()方法的返回值与自定义异常信息同步
         super("errorCode: " + noTryAgainErrorCode.getCode() + "\n" +
                 "errorMessage: " + noTryAgainErrorCode.getDescription() + "\n" +
@@ -18,7 +18,7 @@ public class NoTryAgainException extends Exception {
         noTryAgainError = noTryAgainErrorCode;
     }
 
-    public NoTryAgainException(NoTryAgainErrorCode noTryAgainErrorCode, String extraMessage){
+    public NoTryAgainException(NoTryAgainErrorCode noTryAgainErrorCode, String extraMessage) {
 //        将getMessage()方法的返回值与自定义异常信息同步
         super("errorCode : " + noTryAgainErrorCode.getCode() + ";\n" +
                 "errorMessage" + " : " + noTryAgainErrorCode.getDescription() + " --- " + extraMessage + "\n" +
@@ -27,12 +27,12 @@ public class NoTryAgainException extends Exception {
         this.extraMessage = extraMessage;
     }
 
-    public NoTryAgainException(NoTryAgainErrorCode noTryAgainErrorCode, Exception deException){
+    public NoTryAgainException(NoTryAgainErrorCode noTryAgainErrorCode, Exception deException) {
         this(noTryAgainErrorCode);
         addSuppressed(deException);
     }
 
-    public NoTryAgainException(NoTryAgainErrorCode noTryErrorCode, String extraMessage, Exception deException){
+    public NoTryAgainException(NoTryAgainErrorCode noTryErrorCode, String extraMessage, Exception deException) {
         this(noTryErrorCode, extraMessage);
         addSuppressed(deException);
     }
@@ -41,11 +41,11 @@ public class NoTryAgainException extends Exception {
         return noTryAgainError;
     }
 
-    public int getExceptionCode(){
+    public int getExceptionCode() {
         return noTryAgainError.getCode();
     }
 
-    public String getExceptionMessage(){
+    public String getExceptionMessage() {
         return noTryAgainError.getDescription();
     }
 

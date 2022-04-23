@@ -27,10 +27,10 @@ public class CityChooseController extends AbstractController {
     // 该页面依赖于 POI 查询页面存在
     private POIController parent;
     public TreeView<City> cityTree;
-    public Button btnConfirm,btnCancel;
+    public Button btnConfirm, btnCancel;
     private String selectCityCode;
 
-    public void show(POIController parent) throws IOException{
+    public void show(POIController parent) throws IOException {
         this.parent = parent;
         initTreeView();
 
@@ -50,32 +50,32 @@ public class CityChooseController extends AbstractController {
 
     private void initTreeView() {
         // 根节点
-        City rootCity = new City("100000","中国");
-        TreeItem<City> rootItem = new TreeItem<> (rootCity);
+        City rootCity = new City("100000", "中国");
+        TreeItem<City> rootItem = new TreeItem<>(rootCity);
         rootItem.setExpanded(true);
 
         try {
             // 省节点
             List<City> provinces = parent.getDatabase().getCitesBelong("100000");
             for (City province : provinces) {
-                TreeItem<City> provinceItem = new TreeItem<> (province);
+                TreeItem<City> provinceItem = new TreeItem<>(province);
                 rootItem.getChildren().add(provinceItem);
                 String provinceId = province.getCityId();
                 // 市节点
                 List<City> cities = parent.getDatabase().getCitesBelong(provinceId);
                 for (City city : cities) {
-                    TreeItem<City> cityItem = new TreeItem<> (city);
+                    TreeItem<City> cityItem = new TreeItem<>(city);
                     provinceItem.getChildren().add(cityItem);
                     String cityId = city.getCityId();
                     // 区县节点
                     List<City> districts = parent.getDatabase().getCitesBelong(cityId);
-                    for(City district : districts) {
+                    for (City district : districts) {
                         TreeItem<City> districtItem = new TreeItem<>(district);
                         cityItem.getChildren().add(districtItem);
                     }
                 }
             }
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -89,11 +89,11 @@ public class CityChooseController extends AbstractController {
     }
 
     public void confirm() {
-        if(StringUtils.isEmpty(selectCityCode)){
+        if (StringUtils.isEmpty(selectCityCode)) {
             MessageUtil.alert(Alert.AlertType.ERROR, "未选择", null, "请先选择行政区划！");
             return;
         }
-        if(selectCityCode.equals("100000")){
+        if (selectCityCode.equals("100000")) {
             MessageUtil.alert(Alert.AlertType.ERROR, "范围过大", null, "选择的查询范围过大！");
             return;
         }

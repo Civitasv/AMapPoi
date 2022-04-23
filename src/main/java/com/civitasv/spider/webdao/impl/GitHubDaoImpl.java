@@ -10,7 +10,7 @@ import java.io.IOException;
 public class GitHubDaoImpl implements GitHubDao {
     @Override
     public GitHubRelease getReleaseInfo(String username, String repoName) {
-        Call<GitHubRelease> call = RetrofitGitHubClient.getInstance().getGitHubService().getReleaseInfo(username,repoName);
+        Call<GitHubRelease> call = RetrofitGitHubClient.getInstance().getGitHubService().getReleaseInfo(username, repoName);
         try {
             return call.execute().body();
         } catch (IOException e) {

@@ -11,8 +11,8 @@ public class ControllerUtils {
 
     private static ControllerFactory controllerFactory;
 
-    public static ControllerFactory getControllerFactory(){
-        if(controllerFactory != null){
+    public static ControllerFactory getControllerFactory() {
+        if (controllerFactory != null) {
             return controllerFactory;
         }
         ControllerFactoryBuilder builder = new ControllerFactoryBuilder();

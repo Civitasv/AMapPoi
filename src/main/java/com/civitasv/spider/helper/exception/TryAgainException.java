@@ -4,13 +4,13 @@ import com.civitasv.spider.helper.Enum.TryAgainErrorCode;
 
 public class TryAgainException extends Exception {
 
-//    默认的错误信息
+    //    默认的错误信息
     private TryAgainErrorCode tryAgainError;
 
-//    携带的额外信息
+    //    携带的额外信息
     private String extraMessage = null;
 
-    public TryAgainException(TryAgainErrorCode tryAgainErrorCode){
+    public TryAgainException(TryAgainErrorCode tryAgainErrorCode) {
 //        将getMessage()方法的返回值与自定义异常信息同步
         super("errorCode: " + tryAgainErrorCode.getCode() + "\n" +
                 "errorMessage: " + tryAgainErrorCode.getDescription() + "\n" +
@@ -18,7 +18,7 @@ public class TryAgainException extends Exception {
         tryAgainError = tryAgainErrorCode;
     }
 
-    public TryAgainException(TryAgainErrorCode tryAgainErrorCode, String extraMessage){
+    public TryAgainException(TryAgainErrorCode tryAgainErrorCode, String extraMessage) {
 //        将getMessage()方法的返回值与自定义异常信息同步
         super("errorCode : " + tryAgainErrorCode.getCode() + ";\n" +
                 "errorMessage" + " : " + tryAgainErrorCode.getDescription() + " --- " + extraMessage + "\n" +
@@ -27,12 +27,12 @@ public class TryAgainException extends Exception {
         this.extraMessage = extraMessage;
     }
 
-    public TryAgainException(TryAgainErrorCode iCostomErrorCodeEnum, Exception deException){
+    public TryAgainException(TryAgainErrorCode iCostomErrorCodeEnum, Exception deException) {
         this(iCostomErrorCodeEnum);
         addSuppressed(deException);
     }
 
-    public TryAgainException(TryAgainErrorCode iCostomErrorCodeEnum, String extraMessage, Exception deException){
+    public TryAgainException(TryAgainErrorCode iCostomErrorCodeEnum, String extraMessage, Exception deException) {
         this(iCostomErrorCodeEnum, extraMessage);
         addSuppressed(deException);
     }
@@ -41,11 +41,11 @@ public class TryAgainException extends Exception {
         return tryAgainError;
     }
 
-    public int getExceptionCode(){
+    public int getExceptionCode() {
         return tryAgainError.getCode();
     }
 
-    public String getExceptionMessage(){
+    public String getExceptionMessage() {
         return tryAgainError.getDescription();
     }
 

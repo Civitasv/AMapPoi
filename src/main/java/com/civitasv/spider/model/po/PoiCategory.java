@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author zhanghang
@@ -67,10 +67,10 @@ public class PoiCategory implements Serializable {
     @Override
     public String toString() {
         return "PoiCategory{" +
-        "cateId=" + cateId +
-        ", cate1=" + cate1 +
-        ", cate2=" + cate2 +
-        ", cate3=" + cate3 +
-        "}";
+                "cateId=" + cateId +
+                ", cate1=" + cate1 +
+                ", cate2=" + cate2 +
+                ", cate3=" + cate3 +
+                "}";
     }
 }

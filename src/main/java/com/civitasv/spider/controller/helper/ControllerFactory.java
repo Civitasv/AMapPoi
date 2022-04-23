@@ -16,9 +16,9 @@ public class ControllerFactory {
         this.controllerClassFxmlMap = new HashMap<>(controllerClassFxmlMap);
     }
 
-    public <T extends AbstractController> T createController(Class<T> clazz){
+    public <T extends AbstractController> T createController(Class<T> clazz) {
         try {
-            if(!controllerClassFxmlMap.containsKey(clazz)){
+            if (!controllerClassFxmlMap.containsKey(clazz)) {
                 throw new IllegalArgumentException(clazz.toString() + "尚未注册");
             }
             FXMLLoader fxmlLoader = new FXMLLoader(controllerClassFxmlMap.get(clazz));

@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
 <?import javafx.collections.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-
+<?import java.lang.*?>
 <VBox fx:id="main" alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"
       minWidth="-Infinity" styleClass="main" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.civitasv.spider.controller.POIController">
@@ -25,7 +24,7 @@
     </MenuBar>
     <ScrollPane styleClass="main">
         <VBox styleClass="main">
-            <Label text="高德key（不同key之间以英文逗号分割）：" />
+            <Label text="高德key（不同key之间以英文逗号分割）："/>
             <TextArea fx:id="keys" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="500.0"
                       promptText="可以同时使用多个key，示例：175b18***~***55b943,99c4db***~***f4c993,..."/>
             <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="345.0">
@@ -45,7 +44,7 @@
             </HBox>
             <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="540.0">
                 <padding>
-                    <Insets bottom="10.0" top="5.0" />
+                    <Insets bottom="10.0" top="5.0"/>
                 </padding>
                 <Label prefHeight="18.0" prefWidth="100.0" text="POI类型："/>
                 <ChoiceBox fx:id="poiCate1" prefWidth="130.0" value="">

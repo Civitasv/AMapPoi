@@ -767,7 +767,7 @@ public class POIViewModel {
         int jobCount = jobService.count();
         int i = 1;
         while (hasStart) {
-            if(i != 1){
+            if (i != 1) {
                 appendMessage("正在重试：第" + i + "次");
             }
             getPoiOfJobs(jobs, task, jobCount);

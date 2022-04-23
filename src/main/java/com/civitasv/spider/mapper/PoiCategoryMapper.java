@@ -5,7 +5,7 @@ import com.civitasv.spider.model.po.PoiCategory;
 
 /**
  * <p>
- *  Mapper 接口
+ * Mapper 接口
  * </p>
  *
  * @author zhanghang

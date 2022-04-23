@@ -1,8 +1,8 @@
 package com.civitasv.spider.util;
 
+import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.webdao.DataVDao;
 import com.civitasv.spider.webdao.impl.DataVDaoImpl;
-import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.google.gson.JsonObject;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;

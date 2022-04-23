@@ -1,6 +1,5 @@
 package com.civitasv.spider.api;
 
-import com.civitasv.spider.api.service.AMapService;
 import com.civitasv.spider.api.service.DataVService;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;

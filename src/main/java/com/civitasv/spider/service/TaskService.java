@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author zhanghang
@@ -15,7 +15,10 @@ import java.util.List;
  */
 public interface TaskService {
     Task getUnFinishedTask();
+
     List<TaskPo> list();
+
     int save(TaskPo taskPo);
+
     int updateById(TaskPo taskPo);
 }
