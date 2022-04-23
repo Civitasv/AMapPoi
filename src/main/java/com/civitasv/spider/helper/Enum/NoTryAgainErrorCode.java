@@ -21,8 +21,6 @@ public enum NoTryAgainErrorCode {
     NOT_SUPPORT_HTTPS(10011, "服务不支持https请求", "服务不支持https请求，如果需要申请支持，请提交工单联系我们"),
     INSUFFICIENT_PRIVILEGES(10012, "权限不足，服务请求被拒绝", "由于不具备请求该服务的权限，所以服务被拒绝。"),
     USER_KEY_RECYCLED(10013, "Key被删除", "开发者删除了key，key被删除后无法正常使用"),
-    QPS_HAS_EXCEEDED_THE_LIMIT(10014, "云图服务QPS超限", "QPS超出限制，超出部分的请求被拒绝。限流阈值内的请求依旧会正常返回"),
-    GATEWAY_TIMEOUT(10015, "受单机QPS限流限制", "受单机QPS限流限制时出现该问题，建议降低请求的QPS或在控制台提工单联系我们"),
     SERVER_IS_BUSY(10016, "服务器负载过高", "服务器负载过高，请稍后再试"),
     RESOURCE_UNAVAILABLE(10017, "所请求的资源不可用", "所请求的资源不可用"),
     INVALID_REQUEST(10026, "账号处于被封禁状态", "由于违规行为账号被封禁不可用，如有异议请登录控制台提交工单进行申诉"),

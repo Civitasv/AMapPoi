@@ -6,6 +6,7 @@ import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
 import com.civitasv.spider.helper.Enum.TaskStatus;
+import com.civitasv.spider.helper.Enum.UserType;
 import com.civitasv.spider.helper.exception.NoTryAgainException;
 import com.civitasv.spider.helper.exception.TryAgainException;
 import com.civitasv.spider.model.bo.Task;
@@ -137,6 +138,7 @@ public class POIController extends AbstractController {
         this.types.setTextFormatter(getFormatter_NumberPlusComma());
         this.keys.setTextFormatter(getFormatter_NumberPlusCommaPlusEnglish());
 
+        this.userType.getSelectionModel().select(-1);
         List<CoordinateType> list = Arrays.asList(CoordinateType.WGS84, CoordinateType.BD09, CoordinateType.GCJ02);
         this.rectangleCoordinateType.setItems(new ObservableListWrapper<>(list));
         this.userFileCoordinateType.setItems(new ObservableListWrapper<>(list));
@@ -182,7 +184,7 @@ public class POIController extends AbstractController {
         return MessageUtil.alertConfirmationDialog("未完成任务提示", "上一次任务未完成",
                 "您有未完成的任务，请确认是否继续爬取\n" +
                         "任务状态：" + task.taskStatus.getDescription() + "\n" +
-                        "完成度：" + (TaskStatus.Pause.equals(task.taskStatus) ?
+                        "完成度：" + (TaskStatus.Pause.equals(task.taskStatus) || (TaskStatus.Some_Failed.equals(task.taskStatus))?
                         (allJobSize - unFinishJobSize) + "/" + allJobSize : "任务正在预处理...") + " \n" +
                         "点击是则继续爬取上一个任务，否则放弃任务",
                 "是", "否");
@@ -218,9 +220,7 @@ public class POIController extends AbstractController {
         // 如果还未填入key，则直接使用上次执行任务时的key，如果已经填入key，则将新的key也加入到keys中。
         if (!keys.getText().equals(String.join(",", task.aMapKeys))) {
             if (!StringUtils.isEmpty(keys.getText())) {
-                Set<String> keySet = new LinkedHashSet<>(task.aMapKeys);
-                keySet.addAll(Arrays.stream(keys.getText().split(",")).collect(Collectors.toList()));
-                task.aMapKeys = new ArrayDeque<>(keySet);
+                task.aMapKeys = Arrays.stream(keys.getText().split(",")).collect(Collectors.toCollection(ArrayDeque::new));
             }
             keys.setText(String.join(",", task.aMapKeys));
         }
@@ -235,8 +235,14 @@ public class POIController extends AbstractController {
             }
             threadNum.setText(task.threadNum.toString());
         }
+        int selectedIndex = userType.getSelectionModel().getSelectedIndex();
+        if(!task.userType.getCode().equals(selectedIndex)){
+            if(selectedIndex != -1) {
+                task.userType = UserType.getUserType(selectedIndex);
+            }
+            userType.getSelectionModel().select(task.userType.getCode());
+        }
         tabs.getSelectionModel().select(task.boundryType.getCode());
-        userType.getSelectionModel().select(task.userType.getCode());
         format.getSelectionModel().select(task.outputType.getCode());
         String configContent = task.boundryConfig.split(":")[1];
         switch (task.boundryType) {

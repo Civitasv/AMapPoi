@@ -31,7 +31,7 @@
                 <padding>
                     <Insets bottom="10.0" top="10.0"/>
                 </padding>
-                <Label prefHeight="18.0" prefWidth="100.0" text="开发者类型："/>
+                <Label prefHeight="18.0" prefWidth="100.0" text="用户类型："/>
                 <ChoiceBox fx:id="userType" prefWidth="150.0" value="个人开发者">
                     <items>
                         <FXCollections fx:factory="observableArrayList">

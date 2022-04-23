@@ -57,6 +57,9 @@ public class POIViewModel {
 
     private boolean haveSavedUnfinishedJobs = false;
     private boolean hasStart;
+    int waitFactorForQps = 0;
+
+    private Set<TryAgainErrorCode> errorCodeHashSet = new HashSet<>();
 
     public POIViewModel(TextField threadNum, TextField keywords, TextArea keys, TextField types,
                         TextField adCode, TextField rectangle, TextField threshold, ChoiceBox<String> format,
@@ -72,6 +75,9 @@ public class POIViewModel {
         this.dataHolder = new DataHolder();
         this.mapDao = new AMapDaoImpl();
         this.hasStart = false;
+
+        Integer[] qpsErrorCode = {10019, 10020, 10021, 10022, 10014, 10015};
+        errorCodeHashSet = Arrays.stream(qpsErrorCode).map(TryAgainErrorCode::getError).collect(Collectors.toSet());
     }
 
     public static class ViewHolder {
@@ -169,6 +175,14 @@ public class POIViewModel {
         if (viewHolder.outputDirectory.getText().isEmpty()) {
             // 输出文件夹为空
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "输出文件夹", null, "输出文件夹不能为空！"));
+            return false;
+        }
+        return true;
+    }
+
+    private boolean userType() {
+        if(viewHolder.userType.getSelectionModel().getSelectedIndex() == -1){
+            Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "用户类型", null, "请选择用户类型！"));
             return false;
         }
         return true;
@@ -302,11 +316,15 @@ public class POIViewModel {
 
     private void alterThreadNum() {
         if (dataHolder.threadNum > dataHolder.qps * dataHolder.aMapKeys.size()) {
-            int val = dataHolder.qps * dataHolder.aMapKeys.size();
-            appendMessage(viewHolder.userType.getValue() + "线程数不能超过" + val);
-            dataHolder.threadNum = val;
-            appendMessage("设置线程数目为" + val);
+            int maxThreadNum = getMaxThreadNum(dataHolder.qps, dataHolder.aMapKeys.size());
+            appendMessage(viewHolder.userType.getValue() + "线程数不能超过" + maxThreadNum);
+            dataHolder.threadNum = maxThreadNum;
+            appendMessage("设置线程数目为" + maxThreadNum);
         }
+    }
+
+    public int getMaxThreadNum(int qps, int keyNum) {
+        return qps * keyNum;
     }
 
     /**
@@ -319,11 +337,11 @@ public class POIViewModel {
      */
     private void perExecuteTime() {
         int threadNum = dataHolder.threadNum, qps = dataHolder.qps, keysNum = dataHolder.aMapKeys.size();
-        dataHolder.perExecuteTime = getPerExecuteTime(keysNum, threadNum, qps);
+        dataHolder.perExecuteTime = getPerExecuteTime(keysNum, threadNum, qps, 1);
     }
 
-    private int getPerExecuteTime(int keysNum, int threadNum, int qps) {
-        return (int) (1000 * (threadNum * 1.0 / (qps * keysNum)));
+    private int getPerExecuteTime(int keysNum, int threadNum, int qps, double waitFactor) {
+        return (int) ((1000 * (threadNum * 1.0 / (qps * keysNum))) * waitFactor);
     }
 
     public static Double[] getBoundaryFromGeometry(Geometry geometry) {
@@ -339,6 +357,7 @@ public class POIViewModel {
         worker = Executors.newSingleThreadExecutor();
         clearMessage();
         if (!check()) return;
+        if (!userType()) return;
         if (!aMapKeys()) return;
         if (!threadNum()) return;
         if (!threshold()) return;
@@ -545,6 +564,7 @@ public class POIViewModel {
      * @param task task对象
      */
     private void executeTask(Task task) {
+        waitFactorForQps = 0;
         if (TaskStatus.UnStarted.equals(task.taskStatus) | TaskStatus.Preprocessing.equals(task.taskStatus)) {
             // 清空数据表
             jobService.clearTable();
@@ -558,7 +578,7 @@ public class POIViewModel {
             try {
                 firstPageJobs = getAnalysisGrids(task.boundary, task);
             } catch (TryAgainException | NoTryAgainException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
                 if (hasStart) appendMessage(e.getMessage());
                 return;
             }
@@ -722,7 +742,8 @@ public class POIViewModel {
                     } catch (TimeoutException e) {
 //                        e.printStackTrace();
                         throw new TryAgainException(TryAgainErrorCode.TIME_OUT, e);
-                    } catch (InterruptedException | ExecutionException e){
+                    } catch (InterruptedException | ExecutionException e) {
+//                        e.printStackTrace();
                         throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK, e);
                     }
                 }
@@ -783,9 +804,9 @@ public class POIViewModel {
     private List<POI.Info> getPoiOfJobsWithReTry(Task task, int retryTimes) {
         List<Job> jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs((jobService.listUnFinished())));
         int jobCount = jobService.count();
-        int i = 1;
+        int i = 0;
         while (hasStart) {
-            if (i != 1) {
+            if (i != 0) {
                 appendMessage("正在重试：第" + i + "次");
             }
             spiderPoiOfJobs(jobs, task, jobCount);
@@ -797,7 +818,7 @@ public class POIViewModel {
                 task.taskStatus = TaskStatus.Success;
                 break;
             }
-            appendMessage("第" + i + "次重试结果：总计" + jobCount + "个任务，其中已完成" + (jobCount - newJobs.size()) + "个，失败任务" + newJobs.size() + "个");
+            appendMessage((i == 0 ? "初次爬取结果": "第" + i + "次重试结果") + "：总计" + jobCount + "个任务，其中已完成" + (jobCount - newJobs.size()) + "个，失败任务" + newJobs.size() + "个");
             if (i == retryTimes) {
                 List<JobPo> unFinishedJobs = jobService.listUnFinished();
                 appendMessage("已重试三次" + "重试失败，还有" + unFinishedJobs.size() + "个Job未爬取");
@@ -869,7 +890,7 @@ public class POIViewModel {
                             }
                         } else {
                             statistics(job, task);
-                            appendMessage("已完成任务：" + (finishedJobsCount + i + 1) + "/" + allJobsCount);
+                            appendMessage("已执行任务：" + (finishedJobsCount + i + 1) + "/" + allJobsCount);
                         }
                         cached.add(job);
                         unFinishedJob.remove(job);
@@ -957,7 +978,7 @@ public class POIViewModel {
         return key;
     }
 
-    private synchronized boolean removeKey(String key){
+    private synchronized boolean removeKey(String key) {
         return aMapKeys.remove(key);
     }
 
@@ -1000,10 +1021,12 @@ public class POIViewModel {
         LocalDateTime startTime = LocalDateTime.now();//获取开始时间
         POI poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
         LocalDateTime endTime = LocalDateTime.now(); //获取结束时间
-        int perExecuteTime = getPerExecuteTime(aMapKeys.size(), dataHolder.threadNum, dataHolder.qps);
+        int maxThreadNum = getMaxThreadNum(dataHolder.qps, aMapKeys.size());
+        int threadNum = Math.min(maxThreadNum, dataHolder.threadNum);
+        int perExecuteTime = getPerExecuteTime(aMapKeys.size(), threadNum, dataHolder.qps, dataHolder.threadNum * 1.0 / threadNum);
         if (Duration.between(startTime, endTime).toMillis() < perExecuteTime) { // 严格控制每次执行perExecuteTime
             try {
-                TimeUnit.MILLISECONDS.sleep(perExecuteTime - Duration.between(startTime, endTime).toMillis());
+                TimeUnit.MILLISECONDS.sleep(perExecuteTime - Duration.between(startTime, endTime).toMillis() + (long) (Math.log(waitFactorForQps) * 50L));
             } catch (InterruptedException e) {
 //                e.printStackTrace();
             }
@@ -1017,15 +1040,15 @@ public class POIViewModel {
                 NoTryAgainErrorCode noTryAgainErrorCode = NoTryAgainErrorCode.getError(poi.getInfocode());
                 if (noTryAgainErrorCode != null) {
                     synchronized (this) {
-                        if(noTryAgainErrorCode.equals(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT)){
+                        if (noTryAgainErrorCode.equals(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT)) {
                             NoTryAgainException noTryAgainException = new NoTryAgainException(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT);
-                            if(aMapKeys.contains(key)) {
+                            if (aMapKeys.contains(key)) {
                                 // 输出底层错误信息
                                 appendMessage(noTryAgainException.getMessage());
                                 removeKey(key);
                             }
-                            if(aMapKeys.size() != 0){
-                                throw new TryAgainException(TryAgainErrorCode.TRY_OTHER_KEY, "无效key：" + key,noTryAgainException);
+                            if (aMapKeys.size() != 0) {
+                                throw new TryAgainException(TryAgainErrorCode.TRY_OTHER_KEY, "无效key：" + key, noTryAgainException);
                             }
                         }
                     }
@@ -1033,6 +1056,9 @@ public class POIViewModel {
                 }
                 TryAgainErrorCode tryAgainErrorCode = TryAgainErrorCode.getError(poi.getInfocode());
                 if (tryAgainErrorCode != null) {
+                    if(errorCodeHashSet.contains(tryAgainErrorCode)){
+                        waitFactorForQps++;
+                    }
                     throw new TryAgainException(tryAgainErrorCode);
                 }
                 throw new NoTryAgainException(NoTryAgainErrorCode.UNKNOWN_WEB_ERROR);
