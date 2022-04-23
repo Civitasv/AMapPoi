@@ -39,10 +39,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -184,7 +182,7 @@ public class POIController extends AbstractController {
         return MessageUtil.alertConfirmationDialog("未完成任务提示", "上一次任务未完成",
                 "您有未完成的任务，请确认是否继续爬取\n" +
                         "任务状态：" + task.taskStatus.getDescription() + "\n" +
-                        "完成度：" + (TaskStatus.Processing.equals(task.taskStatus) ?
+                        "完成度：" + (TaskStatus.Pause.equals(task.taskStatus) ?
                         (allJobSize - unFinishJobSize) + "/" + allJobSize : "任务正在预处理...") + " \n" +
                         "点击是则继续爬取上一个任务，否则放弃任务",
                 "是", "否");
@@ -217,12 +215,26 @@ public class POIController extends AbstractController {
         }
 
         // 初始化界面
+        // 如果还未填入key，则直接使用上次执行任务时的key，如果已经填入key，则将新的key也加入到keys中。
+        if (!keys.getText().equals(String.join(",", task.aMapKeys))) {
+            if (!StringUtils.isEmpty(keys.getText())) {
+                Set<String> keySet = new LinkedHashSet<>(task.aMapKeys);
+                keySet.addAll(Arrays.stream(keys.getText().split(",")).collect(Collectors.toList()));
+                task.aMapKeys = new ArrayDeque<>(keySet);
+            }
+            keys.setText(String.join(",", task.aMapKeys));
+        }
+
         keywords.setText(task.keywords);
         types.setText(task.types);
-        keys.setText(String.join(",", task.aMapKeys));
         outputDirectory.setText(task.outputDirectory);
         threshold.setText(task.threshold.toString());
-        threadNum.setText(task.threadNum.toString());
+        if (!threadNum.getText().equals(task.threadNum.toString())) {
+            if (!StringUtils.isEmpty(threadNum.getText())) {
+                task.threadNum = Integer.parseInt(threadNum.getText());
+            }
+            threadNum.setText(task.threadNum.toString());
+        }
         tabs.getSelectionModel().select(task.boundryType.getCode());
         userType.getSelectionModel().select(task.userType.getCode());
         format.getSelectionModel().select(task.outputType.getCode());
@@ -242,6 +254,7 @@ public class POIController extends AbstractController {
                         .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
                 break;
         }
+        taskService.updateById(task.toTaskPo());
         return task;
     }
 

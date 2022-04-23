@@ -319,7 +319,11 @@ public class POIViewModel {
      */
     private void perExecuteTime() {
         int threadNum = dataHolder.threadNum, qps = dataHolder.qps, keysNum = dataHolder.aMapKeys.size();
-        dataHolder.perExecuteTime = (int) (1000 * (threadNum * 1.0 / (qps * keysNum)));
+        dataHolder.perExecuteTime = getPerExecuteTime(keysNum, threadNum, qps);
+    }
+
+    private int getPerExecuteTime(int keysNum, int threadNum, int qps) {
+        return (int) (1000 * (threadNum * 1.0 / (qps * keysNum)));
     }
 
     public static Double[] getBoundaryFromGeometry(Geometry geometry) {
@@ -571,7 +575,6 @@ public class POIViewModel {
                 analysis(false);
                 return;
             }
-
             // 保存Task
             task.taskStatus = TaskStatus.Processing;
             taskService.updateById(task.toTaskPo());
@@ -662,6 +665,19 @@ public class POIViewModel {
                             res.put("rect", rect);
                             return res;
                         }
+                    } catch (NoTryAgainException e) {
+                        // 执行完job对爬取结果的处理
+                        // 如果主动停止，则不输出
+                        synchronized (this) {
+                            appendMessage(e.getMessage());
+                            // 暂定本次爬取
+                            analysis(false);
+                            job.jobStatus = JobStatus.Failed;
+                            job.noTryAgainErrorCode = e.getNoTryAgainError();
+                            res.put("job", job);
+                            res.put("rect", rect);
+                            return res;
+                        }
                     }
                 });
             }
@@ -703,9 +719,11 @@ public class POIViewModel {
                         if ((j + 1) == tryTimes) {
                             throw new TimeoutException();
                         }
-                    } catch (TimeoutException | InterruptedException | ExecutionException e) {
-                        e.printStackTrace();
+                    } catch (TimeoutException e) {
+//                        e.printStackTrace();
                         throw new TryAgainException(TryAgainErrorCode.TIME_OUT, e);
+                    } catch (InterruptedException | ExecutionException e){
+                        throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK, e);
                     }
                 }
             }
@@ -779,7 +797,7 @@ public class POIViewModel {
                 task.taskStatus = TaskStatus.Success;
                 break;
             }
-            appendMessage("第一次重试结果：总计" + jobCount + "个任务，其中已完成" + (jobCount - newJobs.size()) + "个，失败任务" + newJobs.size() + "个");
+            appendMessage("第" + i + "次重试结果：总计" + jobCount + "个任务，其中已完成" + (jobCount - newJobs.size()) + "个，失败任务" + newJobs.size() + "个");
             if (i == retryTimes) {
                 List<JobPo> unFinishedJobs = jobService.listUnFinished();
                 appendMessage("已重试三次" + "重试失败，还有" + unFinishedJobs.size() + "个Job未爬取");
@@ -916,7 +934,7 @@ public class POIViewModel {
     private void executeJob(Job job) throws NoTryAgainException, TryAgainException {
         double left = job.bounds[0], bottom = job.bounds[1], right = job.bounds[2], top = job.bounds[3];
         String polygon = left + "," + top + "|" + right + "," + bottom;
-        String key = getAMapKey(aMapKeys);
+        String key = getAMapKey();
         job.poi = getPoi(key, polygon, job.keywords, job.types, job.page, job.size);
         job.jobStatus = JobStatus.SUCCESS; // 设置执行状态为Success
     }
@@ -924,20 +942,23 @@ public class POIViewModel {
     /**
      * 获取单个Key，每个key的均匀使用
      *
-     * @param keys 候选key值容器
      * @return 选定的key值
      * @throws NoTryAgainException 如果未获取到key（例如没有可选key），抛出该异常
      */
-    private synchronized String getAMapKey(Queue<String> keys) throws NoTryAgainException {
-        if (keys.isEmpty()) {
+    private synchronized String getAMapKey() throws NoTryAgainException {
+        if (aMapKeys.isEmpty()) {
             return null;
         }
-        String key = keys.poll();
+        String key = aMapKeys.poll();
         if (key == null) {
             throw new NoTryAgainException(NoTryAgainErrorCode.KEY_POOL_RUN_OUT_OF);
         }
-        keys.offer(key);
+        aMapKeys.offer(key);
         return key;
+    }
+
+    private synchronized boolean removeKey(String key){
+        return aMapKeys.remove(key);
     }
 
     /**
@@ -979,9 +1000,10 @@ public class POIViewModel {
         LocalDateTime startTime = LocalDateTime.now();//获取开始时间
         POI poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
         LocalDateTime endTime = LocalDateTime.now(); //获取结束时间
-        if (Duration.between(startTime, endTime).toMillis() < dataHolder.perExecuteTime) { // 严格控制每次执行perExecuteTime
+        int perExecuteTime = getPerExecuteTime(aMapKeys.size(), dataHolder.threadNum, dataHolder.qps);
+        if (Duration.between(startTime, endTime).toMillis() < perExecuteTime) { // 严格控制每次执行perExecuteTime
             try {
-                TimeUnit.MILLISECONDS.sleep(dataHolder.perExecuteTime - Duration.between(startTime, endTime).toMillis());
+                TimeUnit.MILLISECONDS.sleep(perExecuteTime - Duration.between(startTime, endTime).toMillis());
             } catch (InterruptedException e) {
 //                e.printStackTrace();
             }
@@ -994,6 +1016,19 @@ public class POIViewModel {
             } else {
                 NoTryAgainErrorCode noTryAgainErrorCode = NoTryAgainErrorCode.getError(poi.getInfocode());
                 if (noTryAgainErrorCode != null) {
+                    synchronized (this) {
+                        if(noTryAgainErrorCode.equals(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT)){
+                            NoTryAgainException noTryAgainException = new NoTryAgainException(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT);
+                            if(aMapKeys.contains(key)) {
+                                // 输出底层错误信息
+                                appendMessage(noTryAgainException.getMessage());
+                                removeKey(key);
+                            }
+                            if(aMapKeys.size() != 0){
+                                throw new TryAgainException(TryAgainErrorCode.TRY_OTHER_KEY, "无效key：" + key,noTryAgainException);
+                            }
+                        }
+                    }
                     throw new NoTryAgainException(noTryAgainErrorCode);
                 }
                 TryAgainErrorCode tryAgainErrorCode = TryAgainErrorCode.getError(poi.getInfocode());

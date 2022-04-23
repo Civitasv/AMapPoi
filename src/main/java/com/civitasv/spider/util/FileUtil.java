@@ -77,7 +77,7 @@ public class FileUtil {
             while (true) {
                 String tempPath = file.getPath();
                 int index = tempPath.lastIndexOf('.');
-                String name = tempPath.substring(0,index);
+                String name = tempPath.substring(0, index);
                 String suffix = tempPath.substring(index + 1);
                 String nameFilePath = name + "(" + i + ")" + "." + suffix;
                 File newFile = new File(nameFilePath);
@@ -104,7 +104,7 @@ public class FileUtil {
             }
             String tempPath = file.getPath();
             int index = tempPath.lastIndexOf('.');
-            String name = tempPath.substring(0,index);
+            String name = tempPath.substring(0, index);
             String cpgFilePath = name + ".cpg";
             File cpgFile = new File(cpgFilePath);
             if (cpgFile.exists()) {
