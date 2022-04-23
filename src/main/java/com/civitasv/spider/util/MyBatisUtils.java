@@ -2,12 +2,14 @@ package com.civitasv.spider.util;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
+import com.civitasv.spider.db.Database;
 import com.civitasv.spider.mapper.JobMapper;
 import com.civitasv.spider.mapper.PoiCategoryMapper;
 import com.civitasv.spider.mapper.PoiMapper;
 import com.civitasv.spider.mapper.TaskMapper;
 import org.apache.ibatis.datasource.pooled.PooledDataSource;
 import org.apache.ibatis.io.Resources;
+import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
@@ -22,7 +24,7 @@ public class MyBatisUtils {
 
     private static SqlSessionFactory mybatisPlusSqlSessionFactory;
 
-    public static SqlSessionFactory getDefaultMyBatis(){
+    public static SqlSessionFactory getDefaultMyBatis() {
         String resource = "com/civitasv/spider/mybatis-config.xml";
         InputStream inputStream = null;
         try {
@@ -34,7 +36,7 @@ public class MyBatisUtils {
     }
 
     public static SqlSessionFactory getDefaultMybatisPlus() {
-        if(mybatisPlusSqlSessionFactory != null){
+        if (mybatisPlusSqlSessionFactory != null) {
             return mybatisPlusSqlSessionFactory;
         }
         DataSource dataSource = dataSource();
@@ -45,7 +47,7 @@ public class MyBatisUtils {
         configuration.addMapper(TaskMapper.class);
         configuration.addMapper(PoiMapper.class);
         configuration.addMapper(PoiCategoryMapper.class);
-//        configuration.setLogImpl(StdOutImpl.class);
+        configuration.setLogImpl(StdOutImpl.class);
         mybatisPlusSqlSessionFactory = new MybatisSqlSessionFactoryBuilder().build(configuration);
         return mybatisPlusSqlSessionFactory;
     }
@@ -53,7 +55,7 @@ public class MyBatisUtils {
     public static DataSource dataSource() {
         PooledDataSource dataSource = new PooledDataSource();
         dataSource.setDriver("org.sqlite.JDBC");
-        dataSource.setUrl("jdbc:sqlite:target/classes/com/civitasv/spider/db/poi.db");
+        dataSource.setUrl(Database.url);
         dataSource.setUsername("");
         dataSource.setPassword("");
         return dataSource;
