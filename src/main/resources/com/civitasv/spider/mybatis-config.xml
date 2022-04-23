@@ -19,5 +19,6 @@
         <mapper class="com.civitasv.spider.mapper.PoiMapper"/>
         <mapper class="com.civitasv.spider.mapper.TaskMapper"/>
         <mapper class="com.civitasv.spider.mapper.PoiCategoryMapper"/>
+        <mapper class="com.civitasv.spider.mapper.CityCodeMapper"/>
     </mappers>
 </configuration>

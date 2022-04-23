@@ -2,14 +2,10 @@ package com.civitasv.spider.util;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
-import com.civitasv.spider.db.Database;
-import com.civitasv.spider.mapper.JobMapper;
-import com.civitasv.spider.mapper.PoiCategoryMapper;
-import com.civitasv.spider.mapper.PoiMapper;
-import com.civitasv.spider.mapper.TaskMapper;
+import com.civitasv.spider.MainApplication;
+import com.civitasv.spider.mapper.*;
 import org.apache.ibatis.datasource.pooled.PooledDataSource;
 import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
@@ -20,7 +16,12 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static com.civitasv.spider.MainApplication.isDEV;
+
 public class MyBatisUtils {
+
+    // database URL
+    public static String url = isDEV ? "jdbc:sqlite:" + MainApplication.class.getResource("db/poi.db") : "jdbc:sqlite:app/assets/poi.db";
 
     private static SqlSessionFactory mybatisPlusSqlSessionFactory;
 
@@ -47,7 +48,8 @@ public class MyBatisUtils {
         configuration.addMapper(TaskMapper.class);
         configuration.addMapper(PoiMapper.class);
         configuration.addMapper(PoiCategoryMapper.class);
-        configuration.setLogImpl(StdOutImpl.class);
+        configuration.addMapper(CityCodeMapper.class);
+//        configuration.setLogImpl(StdOutImpl.class);
         mybatisPlusSqlSessionFactory = new MybatisSqlSessionFactoryBuilder().build(configuration);
         return mybatisPlusSqlSessionFactory;
     }
@@ -55,7 +57,7 @@ public class MyBatisUtils {
     public static DataSource dataSource() {
         PooledDataSource dataSource = new PooledDataSource();
         dataSource.setDriver("org.sqlite.JDBC");
-        dataSource.setUrl(Database.url);
+        dataSource.setUrl(url);
         dataSource.setUsername("");
         dataSource.setPassword("");
         return dataSource;

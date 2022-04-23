@@ -1,7 +1,14 @@
-package com.civitasv.spider.model;
+package com.civitasv.spider.model.po;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
+@TableName("city_code")
 public class City {
+    @TableId("CITY_ID")
     private final String cityId;
+    @TableField("NAME")
     private final String cityName;
 
     public City(String cityId, String cityName) {

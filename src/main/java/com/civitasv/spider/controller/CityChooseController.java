@@ -2,7 +2,9 @@ package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.controller.helper.AbstractController;
-import com.civitasv.spider.model.City;
+import com.civitasv.spider.model.po.City;
+import com.civitasv.spider.service.CityCodeService;
+import com.civitasv.spider.service.serviceImpl.CityCodeServiceImpl;
 import com.civitasv.spider.util.MessageUtil;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -15,7 +17,6 @@ import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,6 +30,7 @@ public class CityChooseController extends AbstractController {
     public TreeView<City> cityTree;
     public Button btnConfirm, btnCancel;
     private String selectCityCode;
+    private final CityCodeService cityCodeService = new CityCodeServiceImpl();
 
     public void show(POIController parent) throws IOException {
         this.parent = parent;
@@ -42,7 +44,7 @@ public class CityChooseController extends AbstractController {
         stage.setResizable(false);
         stage.setTitle("中国行政区划");
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toString());
+        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
         stage.setScene(scene);
         stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
@@ -54,29 +56,25 @@ public class CityChooseController extends AbstractController {
         TreeItem<City> rootItem = new TreeItem<>(rootCity);
         rootItem.setExpanded(true);
 
-        try {
-            // 省节点
-            List<City> provinces = parent.getDatabase().getCitesBelong("100000");
-            for (City province : provinces) {
-                TreeItem<City> provinceItem = new TreeItem<>(province);
-                rootItem.getChildren().add(provinceItem);
-                String provinceId = province.getCityId();
-                // 市节点
-                List<City> cities = parent.getDatabase().getCitesBelong(provinceId);
-                for (City city : cities) {
-                    TreeItem<City> cityItem = new TreeItem<>(city);
-                    provinceItem.getChildren().add(cityItem);
-                    String cityId = city.getCityId();
-                    // 区县节点
-                    List<City> districts = parent.getDatabase().getCitesBelong(cityId);
-                    for (City district : districts) {
-                        TreeItem<City> districtItem = new TreeItem<>(district);
-                        cityItem.getChildren().add(districtItem);
-                    }
+        // 省节点
+        List<City> provinces = cityCodeService.listByCityId("100000");
+        for (City province : provinces) {
+            TreeItem<City> provinceItem = new TreeItem<>(province);
+            rootItem.getChildren().add(provinceItem);
+            String provinceId = province.getCityId();
+            // 市节点
+            List<City> cities = cityCodeService.listByCityId(provinceId);
+            for (City city : cities) {
+                TreeItem<City> cityItem = new TreeItem<>(city);
+                provinceItem.getChildren().add(cityItem);
+                String cityId = city.getCityId();
+                // 区县节点
+                List<City> districts = cityCodeService.listByCityId(cityId);
+                for (City district : districts) {
+                    TreeItem<City> districtItem = new TreeItem<>(district);
+                    cityItem.getChildren().add(districtItem);
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         // 设置

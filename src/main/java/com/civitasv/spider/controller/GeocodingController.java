@@ -318,7 +318,6 @@ public class GeocodingController extends AbstractController {
                 }
                 for (int j = 0; j < futures.size(); j++) {
                     Future<Geocodes.Response> future = futures.get(j);
-                    System.out.println(future.get());
                     Geocodes.Response response = future.get();
                     if (response == null) {
                         break job;

@@ -3,7 +3,6 @@ package com.civitasv.spider.controller;
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.controller.helper.AbstractController;
 import com.civitasv.spider.controller.helper.ControllerFactory;
-import com.civitasv.spider.db.Database;
 import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
 import com.civitasv.spider.helper.Enum.TaskStatus;
@@ -79,12 +78,7 @@ public class POIController extends AbstractController {
     public Button poiAdd; // poi添加
 
     // 数据库操作对象
-    private Database database;
     private ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
-
-    public Database getDatabase() {
-        return database;
-    }
 
     // 大中小类
     private String cate1, cate2, cate3;
@@ -169,7 +163,6 @@ public class POIController extends AbstractController {
          * 改为从数据库选择POI类型
          * added by leon
          */
-        this.database = new Database();
 
         // 设置key
         this.keys.setText("");
