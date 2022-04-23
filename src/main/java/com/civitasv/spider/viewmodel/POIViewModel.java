@@ -874,7 +874,7 @@ public class POIViewModel {
                 }
             }
         } catch (TimeoutException | InterruptedException | ExecutionException | NoTryAgainException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             saveUnFinishedJob(task, cached, unFinishedJob);
         }
         return BeanUtils.poipo2Poi(poiService.list());
@@ -988,7 +988,7 @@ public class POIViewModel {
             try {
                 TimeUnit.MILLISECONDS.sleep(dataHolder.perExecuteTime - Duration.between(startTime, endTime).toMillis());
             } catch (InterruptedException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
             }
         }
 
