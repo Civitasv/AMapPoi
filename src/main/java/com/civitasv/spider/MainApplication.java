@@ -7,7 +7,10 @@ import com.civitasv.spider.util.GitHubUtils;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 
 public class MainApplication extends Application {
     public static boolean isDEV = true;
@@ -31,6 +34,15 @@ public class MainApplication extends Application {
     }
 
     public static void main(String[] args) {
-        launch();
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(isDEV?"./.lock":"app/assets/.lock", "rw");
+            FileChannel channel = randomAccessFile.getChannel();
+            if (channel.tryLock() == null)
+                System.out.println("只能同时运行一个窗口");
+            else
+                launch();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
