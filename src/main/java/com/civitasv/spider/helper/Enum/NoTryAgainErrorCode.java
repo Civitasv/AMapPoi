@@ -5,6 +5,7 @@ public enum NoTryAgainErrorCode {
     // 自定义Error
     KEY_POOL_RUN_OUT_OF(90001, "key池已耗尽，无法继续获取POI...","请更换新的key，或暂停任务，第二天再尝试爬取poi"),
     STOP_TASK(90003,"任务终止","请重启任务"),
+    UNKNOWN_WEB_ERROR(90003,"超出预设的异常，处理方式不明确，终止爬取","请加入用户群交流"),
 
     // 高德Error
     INVALID_USER_KEY(10001,"key不正确或过期", "开发者发起请求时，传入的key不正确或者过期 "),
