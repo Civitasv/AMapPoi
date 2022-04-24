@@ -59,6 +59,8 @@ public class POIViewModel {
     private boolean hasStart;
     int waitFactorForQps = 0;
 
+    private int size = 20;
+
     private Set<TryAgainErrorCode> errorCodeHashSet = new HashSet<>();
 
     public POIViewModel(TextField threadNum, TextField keywords, TextArea keys, TextField types,
@@ -576,8 +578,8 @@ public class POIViewModel {
             appendMessage("划分所有任务网格中");
             List<Job> firstPageJobs;
             try {
-                firstPageJobs = getAnalysisGrids(task.boundary, task);
-            } catch (TryAgainException | NoTryAgainException e) {
+                firstPageJobs = getAnalysisGridsReTry(task.boundary, task, 3);
+            } catch (NoTryAgainException e) {
 //                e.printStackTrace();
                 if (hasStart) appendMessage(e.getMessage());
                 return;
@@ -604,7 +606,14 @@ public class POIViewModel {
         if (!hasStart) return;
         appendMessage("开始POI爬取，" + (!task.keywords.isEmpty() ? "POI关键字：" + task.keywords : "") + (!task.types.isEmpty() ? (" POI类型：" + task.types) : ""));
 
-        List<POI.Info> pois = getPoiOfJobsWithReTry(task, 3);
+        List<POI.Info> pois;
+        try {
+            pois = getPoiOfJobsWithReTry(task, 3);
+        } catch (NoTryAgainException e) {
+//                e.printStackTrace();
+            if (hasStart) appendMessage(e.getMessage());
+            return;
+        }
 
         appendMessage("该区域边界共含POI：" + pois.size() + "条");
         appendMessage("执行过滤算法中");
@@ -639,51 +648,61 @@ public class POIViewModel {
         ));
     }
 
+    private List<Job> getAnalysisGridsReTry(Double[] beginRect, Task task, int tryTimes) throws NoTryAgainException {
+        Job beginJob = new Job(null, task.id, beginRect, task.types, task.keywords, 1, size);
+        ArrayList<Job> falseJobs = new ArrayList<>();
+        List<Job> analysisGrids = getAnalysisGrids(Collections.singletonList(beginJob), task, 0, falseJobs);
+        int i = 1;
+        while (falseJobs.size() != 0){
+            appendMessage("正在重试：第" + i + "次");
+            ArrayList<Job> newTryJobs = new ArrayList<>(falseJobs);
+            falseJobs.clear();
+            analysisGrids.addAll(getAnalysisGrids(newTryJobs, task, analysisGrids.size(), falseJobs));
+            if(i == tryTimes){
+                appendMessage("已重试三次" + "重试失败，还有" + falseJobs.size() + "个Job未切分");
+                appendMessage("请重新点击执行，尝试爬取，或放弃尝试");
+                throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
+            }
+            i++;
+        }
+        int requestTimesForPreProcessing = task.requestActualTimes - analysisGrids.size();
+        appendMessage("用于额外探测的请求有 " + requestTimesForPreProcessing + " 次");
+        task.plusRequestExceptedTimes(requestTimesForPreProcessing);
+        return analysisGrids;
+    }
+
     /**
      * 爬取第一页生成poi爬取格网，每个格网的数据量小于阈值。
      *
-     * @param beginRect 初始矩形范围
+     * @param tryJobs 初始尝试的Job
      * @param task      task对象
      * @return 划分格网的第一页Job
      */
-    private List<Job> getAnalysisGrids(Double[] beginRect, Task task) throws TryAgainException, NoTryAgainException {
-        List<Job> analysisGrid = new ArrayList<>();
-
-        List<Double[]> rects = new ArrayList<>();
-        rects.add(beginRect);
-
-        List<Double[]> nextRects = new ArrayList<>();
-
+    private List<Job> getAnalysisGrids(List<Job> tryJobs, Task task, int baseJobCount, ArrayList<Job> falseJobs) throws NoTryAgainException {
         ExecutorService executorService = Executors.newFixedThreadPool(task.threadNum);
-        CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(executorService);
+        List<Job> analysisGrid = new ArrayList<>();
+        CompletionService<Job> completionService = new ExecutorCompletionService<>(executorService);
 
-        int page = 1, size = 20; // 页码、每页个数
+        List<Job> nextTryJobs = new ArrayList<>();
 
-        while (rects.size() != 0) {
-            for (Double[] rect : rects) {
+        while (tryJobs.size() != 0) {
+            List<Job> unTriedJobs = new ArrayList<>(tryJobs);
+            for (Job job : tryJobs) {
                 if (!hasStart) {
                     throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
                 }
                 completionService.submit(() -> {
-                    HashMap<String, Object> res = new HashMap<>();
-                    Job job = new Job(null, task.id, rect, task.types, task.keywords, page, size);
                     try {
                         executeJob(job);
-                        res.put("job", job);
-                        res.put("rect", rect);
-                        return res;
+                        return job;
                     } catch (TryAgainException e) {
                         // 执行完job对爬取结果的处理
                         // 如果主动停止，则不输出
                         synchronized (this) {
                             appendMessage(e.getMessage());
-                            // 暂定本次爬取
-                            analysis(false);
                             job.jobStatus = JobStatus.Failed;
                             job.tryAgainErrorCode = e.getError();
-                            res.put("job", job);
-                            res.put("rect", rect);
-                            return res;
+                            return job;
                         }
                     } catch (NoTryAgainException e) {
                         // 执行完job对爬取结果的处理
@@ -694,45 +713,46 @@ public class POIViewModel {
                             analysis(false);
                             job.jobStatus = JobStatus.Failed;
                             job.noTryAgainErrorCode = e.getNoTryAgainError();
-                            res.put("job", job);
-                            res.put("rect", rect);
-                            return res;
+                            return job;
                         }
                     }
                 });
             }
 
             int tryTimes = (int) (20 / 0.5);
-            for (int i = 0; i < rects.size(); i++) {
+            for (int i = 0; i < tryJobs.size(); i++) {
                 for (int j = 0; j < tryTimes; j++) {
-                    Future<Map<String, Object>> future;
+                    Future<Job> future;
                     try {
                         future = completionService.poll(500, TimeUnit.MILLISECONDS);
                         if (future != null) {
                             task.plusRequestActualTimes(); //增加请求次数
-                            Map<String, Object> res = future.get();
-                            Job job = (Job) res.get("job");
-                            Double[] rect = (Double[]) res.get("rect");
-                            if (job.jobStatus == JobStatus.Failed) {
-                                throw new TryAgainException(job.tryAgainErrorCode);
+                            Job job = future.get();
+                            unTriedJobs.remove(job);
+                            if (job.jobStatus != JobStatus.SUCCESS) {
+                                if(job.noTryAgainErrorCode != null){
+                                    throw new NoTryAgainException(job.noTryAgainErrorCode);
+                                }
+                                falseJobs.add(job);
+                                break;
                             }
                             if (job.poi.getCount() > task.threshold) {
-                                appendMessage("超出阈值，继续四分，已包含" + analysisGrid.size() + "个任务");
+                                appendMessage("超出阈值，继续四分，已包含" + (analysisGrid.size() + baseJobCount) + "个任务");
                                 // 继续四分
-                                Double left = rect[0], bottom = rect[1], right = rect[2], top = rect[3];
+                                Double left = job.bounds[0], bottom = job.bounds[1], right = job.bounds[2], top = job.bounds[3];
                                 double itemWidth = (right - left) / 2;
                                 double itemHeight = (top - bottom) / 2;
                                 for (int m = 0; m < 2; m++) {
                                     for (int n = 0; n < 2; n++) {
                                         Double[] bounds = {left + m * itemWidth, bottom + n * itemHeight,
                                                 left + (m + 1) * itemWidth, bottom + (n + 1) * itemHeight};
-                                        nextRects.add(bounds);
+                                        nextTryJobs.add(new Job(null, task.id, bounds, task.types, task.keywords, 1, size));
                                     }
                                 }
                             } else {
                                 analysisGrid.add(job);  // new double[]{left, bottom, right, top});
                                 statistics(job, task);
-                                appendMessage("已包含" + analysisGrid.size() + "个任务");
+                                appendMessage("已包含" + (analysisGrid.size() + baseJobCount) + "个任务");
                             }
                             break;
                         }
@@ -741,15 +761,15 @@ public class POIViewModel {
                         }
                     } catch (TimeoutException e) {
 //                        e.printStackTrace();
-                        throw new TryAgainException(TryAgainErrorCode.TIME_OUT, e);
+                        falseJobs.addAll(unTriedJobs);
                     } catch (InterruptedException | ExecutionException e) {
 //                        e.printStackTrace();
                         throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK, e);
                     }
                 }
             }
-            rects = nextRects;
-            nextRects = new ArrayList<>();
+            tryJobs = nextTryJobs;
+            nextTryJobs = new ArrayList<>();
         }
 
         // 统计请求相关参数
@@ -759,10 +779,6 @@ public class POIViewModel {
             task.plusRequestExceptedTimes((int) Math.ceil(poi.getCount() * 1.0 / job.size));
             job.poiExceptedSum = Math.min(poi.getCount(), job.size);
         }
-
-        int requestTimesForPreProcessing = task.requestActualTimes - analysisGrid.size();
-        appendMessage("用于额外探测的请求有 " + requestTimesForPreProcessing + " 次");
-        task.plusRequestExceptedTimes(requestTimesForPreProcessing);
 
         // 保存第一页的数据
         taskService.updateById(task.toTaskPo());
@@ -801,7 +817,7 @@ public class POIViewModel {
      * @param retryTimes 重试次数
      * @return 爬到的poi数据
      */
-    private List<POI.Info> getPoiOfJobsWithReTry(Task task, int retryTimes) {
+    private List<POI.Info> getPoiOfJobsWithReTry(Task task, int retryTimes) throws NoTryAgainException {
         List<Job> jobs = Collections.unmodifiableList(BeanUtils.jobpos2Jobs((jobService.listUnFinished())));
         int jobCount = jobService.count();
         int i = 0;
@@ -809,6 +825,7 @@ public class POIViewModel {
             if (i != 0) {
                 appendMessage("正在重试：第" + i + "次");
             }
+            haveSavedUnfinishedJobs = false;
             spiderPoiOfJobs(jobs, task, jobCount);
             if (!hasStart) {
                 return BeanUtils.poipo2Poi(poiService.list());
@@ -838,7 +855,7 @@ public class POIViewModel {
      * @param unFinishedJobs 待爬取的job
      * @param task           task对象
      */
-    private void spiderPoiOfJobs(List<Job> unFinishedJobs, Task task, int allJobsCount) {
+    private void spiderPoiOfJobs(List<Job> unFinishedJobs, Task task, int allJobsCount) throws NoTryAgainException {
         int finishedJobsCount = allJobsCount - unFinishedJobs.size();
         // 缓存机制
         int saveThreshold = 50;
@@ -911,9 +928,14 @@ public class POIViewModel {
                     cached.clear();
                 }
             }
-        } catch (TimeoutException | InterruptedException | ExecutionException | NoTryAgainException e) {
+        } catch (TimeoutException e) {
 //            e.printStackTrace();
             saveUnFinishedJob(task, cached, unFinishedJob);
+        } catch (NoTryAgainException | InterruptedException | ExecutionException e){
+//            e.printStackTrace();
+            saveUnFinishedJob(task, cached, unFinishedJob);
+            throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK, e.getMessage());
+
         }
     }
 
