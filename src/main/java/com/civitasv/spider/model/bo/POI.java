@@ -44,13 +44,14 @@ public class POI {
         @Override
         public String toString() {
             return "Info{" +
-                    "id='" + id + '\'' +
+                    "oid=" + oid +
+                    ", id='" + id + '\'' +
                     ", name='" + name + '\'' +
                     ", type='" + type + '\'' +
                     ", typecode='" + typecode + '\'' +
                     ", address=" + address +
                     ", location=" + location +
-                    ", tel='" + tel + '\'' +
+                    ", tel=" + tel +
                     ", pname=" + pname +
                     ", cityname=" + cityname +
                     ", adname=" + adname +

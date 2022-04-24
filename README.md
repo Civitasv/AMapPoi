@@ -65,29 +65,55 @@ POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与�
 
 #### 4.1. 小批量数据
 
-类型：餐饮服务；行政区：371723；阈值：850；线程数目：20；输出格式：csv。
+类型：050000；行政区：371723；阈值：850；线程数目：20；输出格式：geojson。
+
+![First Example](image/first.gif)
 
 #### 4.2. 大批量数据
 
 类型：010000；行政区：110000；阈值：850；线程数目：20；输出格式：csv。
 
+![Second Example](image/second.gif)
+
 #### 4.3. 断点续爬
 
 类型：010000；行政区：110000；阈值：850；线程数目：20；输出格式：csv。
 
+![Third Example](image/third.gif)
+
+软件重启之后，会弹出弹窗提示是否继续执行上次任务。
+
+**继续爬取之前，用户可以更改高德key，用户类型以及线程数目**。
+
+![retry](image/retry.png)
+
 ### 5. 地理编码
+
+允许 CSV 或 TXT 格式文件，必须至少指定 address 值。
+
+![geocoding](image/geocoding.gif)
 
 ### 6. 格式转换
 
+![transform_1](image/pattern_transform_1.gif)
+
 ### 7. 坐标转换
+
+![transform_2](image/coordinate_transform.gif)
 
 ### 8. 版本更新
 
-## 功能说明
+当无版本更新时：
 
-### POI 搜索功能
+![update](image/autoupdate.gif)
 
-![POI搜索](image/poi.png)
+当有版本更新时：
+
+![update2](image/autoupdate2.gif)
+
+## 详细说明
+
+### POI 搜索
 
 **功能配置参数如下表：**
 
@@ -121,9 +147,7 @@ POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与�
 | wgs84_lon |    wgs84 经度    |
 | wgs84_lat |    wgs84 纬度    |
 
-### 地理编码功能
-
-![地理编码](image/geocoding.png)
+### 地理编码
 
 **功能配置参数如下表所示：**
 
@@ -161,8 +185,6 @@ POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与�
 
 ### 格式转换
 
-![地理编码](image/spatial_data_transform.png)
-
 **功能配置参数如下表所示：**
 
 |   参数   |                                 说明                                  |
@@ -172,8 +194,6 @@ POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与�
 | 输出目录 |                             结果输出路径                              |
 
 ### 坐标转换
-
-![坐标转换](image/coordinate_transform.png)
 
 **功能配置参数如下表所示：**
 
@@ -205,7 +225,7 @@ POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与�
 
 若遇到任何问题，你可以通过以下方式联系我们：
 
-1. 邮箱：sen.hu@whu.edu.cn，我们会定时查看邮箱，但不保证实时性；
+1. 邮箱：hscivitasv@gmail.com，我们会定时查看邮箱，但不保证实时性；
 2. 用户 QQ 群：1097532420
 3. 提 [issue](https://github.com/Civitasv/AMapPoi/issues)：这是我们推荐的方式，有问题时，也应该首先查看 issue 列表是否已有该问题的解答；
 
