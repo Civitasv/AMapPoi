@@ -260,7 +260,7 @@ public class POIController extends BaseController {
         this.cate1 = cate1;
         List<String> arrCate2;
 
-        arrCate2 = poiCategoryService.getPoiCategory2(this.cate1);
+        arrCate2 = poiCategoryService.getPoiCategory2(this.cate1.substring(0, this.cate1.indexOf("(")));
         this.poiCate2.setItems(new ObservableListWrapper<>(arrCate2));
         this.poiCate2.setValue("");
     }
@@ -268,7 +268,10 @@ public class POIController extends BaseController {
     private void refreshChoiceBoxCate3(String cate2) {
         this.cate2 = cate2;
         List<String> arrCate3;
-        arrCate3 = poiCategoryService.getPoiCategory3(this.cate1, this.cate2);
+        arrCate3 = poiCategoryService.getPoiCategory3(
+                this.cate1.substring(0, this.cate1.indexOf("(")),
+                this.cate2.substring(0, this.cate2.indexOf("("))
+        );
         this.poiCate3.setItems(new ObservableListWrapper<>(arrCate3));
         this.poiCate3.setValue("");
     }
@@ -278,7 +281,11 @@ public class POIController extends BaseController {
             return;
         }
         this.cate3 = cate3;
-        this.curCategoryId = poiCategoryService.getPoiCategoryId(this.cate1, this.cate2, this.cate3);
+        this.curCategoryId = poiCategoryService.getPoiCategoryId(
+                this.cate1.substring(0, this.cate1.indexOf("(")),
+                this.cate2.substring(0, this.cate2.indexOf("(")),
+                this.cate3.substring(0, this.cate3.indexOf("("))
+        );
     }
 
     public void addPoiCategory() {

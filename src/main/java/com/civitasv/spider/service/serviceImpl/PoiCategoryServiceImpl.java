@@ -28,8 +28,8 @@ public class PoiCategoryServiceImpl extends ServiceImpl<PoiCategoryMapper, PoiCa
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
             QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
-            wrapper.select("DISTINCT CATE1");
-            return poiCategoryMapper.selectList(wrapper).stream().map(PoiCategory::getCate1).collect(Collectors.toList());
+            wrapper.select(" DISTINCT substr(CATE_ID, 1,2) as CATE_ID, CATE1 ");
+            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.getCate1() + "(" + poiCategory.getCateId() + ")").collect(Collectors.toList());
         }
     }
 
@@ -39,9 +39,9 @@ public class PoiCategoryServiceImpl extends ServiceImpl<PoiCategoryMapper, PoiCa
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
             QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
-            wrapper.select("DISTINCT CATE2")
+            wrapper.select("DISTINCT substr(CATE_ID, 1,4) as CATE_ID, CATE2")
                     .eq("CATE1", cate1);
-            return poiCategoryMapper.selectList(wrapper).stream().map(PoiCategory::getCate2).collect(Collectors.toList());
+            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.getCate2() + "(" + poiCategory.getCateId() + ")").collect(Collectors.toList());
         }
     }
 
@@ -51,10 +51,10 @@ public class PoiCategoryServiceImpl extends ServiceImpl<PoiCategoryMapper, PoiCa
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
             QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
-            wrapper.select("DISTINCT CATE3")
+            wrapper.select("DISTINCT CATE3, CATE_ID")
                     .eq("CATE1", cate1)
                     .eq("CATE2", cate2);
-            return poiCategoryMapper.selectList(wrapper).stream().map(PoiCategory::getCate3).collect(Collectors.toList());
+            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.getCate3() + "(" + poiCategory.getCateId() + ")").collect(Collectors.toList());
         }
     }
 
