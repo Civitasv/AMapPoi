@@ -26,7 +26,6 @@ import java.util.concurrent.Executors;
  * csv shp geojson 互相转换
  */
 public class SpatialDataTransformController extends BaseController {
-    private static Scene scene;
     public TextField inputFile;
     public ChoiceBox<String> format;
     public TextField outputDirectory;

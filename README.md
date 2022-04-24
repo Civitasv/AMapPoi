@@ -4,22 +4,28 @@
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Civitasv/AMapPoi/graphs/commit-activity)
 [![version](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=version&query=tag_name&url=https%3A%2F%2Fapi.github.com%2Frepos%2FCivitasv%2FAMapPoi%2Freleases%2Flatest)](https://github.com/Civitasv/AMapPoi/releases/latest)
 
-POIKit提供一套**简单**、**易用**、**稳定**的 POI 获取与处理工具套件，方便相关从业者。
+POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与处理工具套件，方便相关从业者。
 
 功能：
-- POI搜索(支持多线程并发)
-- 地理编码
-- 格式转换（目前可转换geojson -> shp 、shp -> geojson/csv）
-- 坐标转换（支持wgs84/gcj02/bd09）
+
+- POI搜索 (支持多线程并发)
+- 地理编码 (支持多线程并发)
+- 格式转换 (目前可转换geojson -> shp 、shp -> geojson/csv)
+- 坐标转换 (支持wgs84/gcj02/bd09)
 
 目前软件处于**2.0版本**，在1.0版本的基础上，增加了**断点续爬**功能，大幅优化了POI数据的获取速度。
 
 希望各位多多尝试，多多提问题（The More Questions，The Better）。
 
-若帮助到了您，点击[Github Star](https://github.com/Civitasv/AMapPoi)就是对我们最大的肯定。
+若帮助到了您，点击 [Github Star](https://github.com/Civitasv/AMapPoi) 就是对我们最大的肯定。
 
 ## 2.0版本：支持POI断点续爬
+
 相较于1.0版本，2.0版本支持继续完成未执行完的任务，防止因为key的配额耗尽导致程序中断。
+
+1. 支持切换 key，继续上一未完成任务
+2. 若无 key 可切换，支持第二天 key 重置后，继续上一未完成任务
+3. 切分阶段支持多线程 :smile:
 
 ## 目录
 
@@ -37,7 +43,7 @@ POIKit提供一套**简单**、**易用**、**稳定**的 POI 获取与处理工
 
 ## 快速开始
 
-### 1.配置环境（windows）
+### 1. 配置环境
 
 软件基于 Java 环境运行，需要首先安装 jre/jdk（1.8 版本），安装步骤如下：
 
@@ -45,37 +51,37 @@ POIKit提供一套**简单**、**易用**、**稳定**的 POI 获取与处理工
 - 配置环境变量`JAVA_HOME`为安装目录，然后在`Path`中添加`%JAVA_HOME%\bin`；
 - 打开终端，输入`java -version`，若出现 Java 版本号为1.8，则配置成功。
 
-### 2.启动POIKit
+### 2. 启动POIKit
 
-[下载](https://github.com/Civitasv/AMapPoi/releases)最新发布的软件压缩包，以`POIKit.zip`为例，解压缩后，双击`start.bat`即可运行。linux和mac用户可以使用start.sh启动。
+[下载](https://github.com/Civitasv/AMapPoi/releases)最新发布的软件压缩包，以`POIKit.zip`为例，解压缩后，双击`start.bat`即可运行。linux 和 mac 用户可以使用 start.sh 启动。
 
-### 3.申请Key
+### 3. 申请Key
 
 目前只支持高德key，请前往[高德控制台](https://console.amap.com/dev/index)获申请**Web服务**类型的key。
 
-### 4.POI 搜索功能
+### 4. POI 搜索功能
 
 以行政区为例，POI 搜索功能如下所示：
 
-#### 4.1.小批量数据
+#### 4.1. 小批量数据
 
 类型：餐饮服务；行政区：371723；阈值：850；线程数目：20；输出格式：csv。
 
-#### 4.2.大批量数据
+#### 4.2. 大批量数据
 
 类型：010000；行政区：110000；阈值：850；线程数目：20；输出格式：csv。
 
-#### 4.3.断点续爬
+#### 4.3. 断点续爬
 
 类型：010000；行政区：110000；阈值：850；线程数目：20；输出格式：csv。
 
-### 5.地理编码
+### 5. 地理编码
 
-### 6.格式转换
+### 6. 格式转换
 
-### 7.坐标转换
+### 7. 坐标转换
 
-### 8.版本更新
+### 8. 版本更新
 
 ## 功能说明
 
@@ -97,7 +103,7 @@ POIKit提供一套**简单**、**易用**、**稳定**的 POI 获取与处理工
 | 初始网格数 | 初始网格剖分数目                                             | 一般情况按默认值为 4 即可                                    |
 | 阈值       | 当该网格 POI 数量超出阈值，会对网格进一步四分                | 一般情况下按 850 即可                                        |
 | 线程数目   | 线程数量一般不大于 QPS * keys_num。对于单个key，个人开发者最多设为 20，个人认证开发者最多设为 50。如果爬取过程中发生QPS超限错误，建议降低线程数。 | QPS 可以在[流量限制说明](https://lbs.amap.com/api/webservice/guide/tools/flowlevel)查看 |
-| 输出格式   | 目前支持 geojson、shp、csv、txt                              | 结果包含 gcj02 和 wgs84 两种坐标，若输出格式为 geojson 或 shp，使用 wgs84 坐标 |
+| 输出格式   | 目前支持 geojson、shp、csv、txt                              | 结果包含 gcj02 和 wgs84 两种坐标，若输出格式为 geojson 或 shp，默认使用 wgs84 坐标 |
 
 **输出参数说明：**
 
@@ -179,6 +185,7 @@ POIKit提供一套**简单**、**易用**、**稳定**的 POI 获取与处理工
 | 输入坐标格式 | 即输出文件的坐标格式，wgs84/gcj02/bd09 |
 
 ## 技术选型
+
 目前软件采用 MVC 软件架构模式，技术选型如下：
 
 - GUI：[JavaFX 8](https://openjfx.io/)；
@@ -189,10 +196,13 @@ POIKit提供一套**简单**、**易用**、**稳定**的 POI 获取与处理工
 - 数据库：[Sqlite](https://www.sqlite.org/index.html)
 
 ## 维护人员
+
 [@Civitasv](https://github.com/Civitasv)
 
 [@SkyTreeDelivery](https://github.com/SkyTreeDelivery)
+
 ## 支持该项目
+
 若遇到任何问题，你可以通过以下方式联系我们：
 
 1. 邮箱：sen.hu@whu.edu.cn，我们会定时查看邮箱，但不保证实时性；
@@ -202,6 +212,7 @@ POIKit提供一套**简单**、**易用**、**稳定**的 POI 获取与处理工
 若帮助到了您，[Github Star](https://github.com/Civitasv/AMapPoi) 是对我们最大的肯定。
 
 ## 开发路线
+
 - **v2.0.0** 2022-04-23
   - **【重要更新】poi爬取支持断点续爬，key的配额耗尽后，可以隔天继续任务，或替换其他key**
   - **【重要更新】poi爬取的全过程支持多线程执行，大幅度优化爬取速度**
