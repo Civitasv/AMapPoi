@@ -33,8 +33,7 @@ public class MainApplication extends Application {
     }
 
     public static void main(String[] args) {
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(isDEV?"./.lock":"app/assets/.lock", "rw");
+        try(RandomAccessFile randomAccessFile = new RandomAccessFile(isDEV?"./.lock":"app/assets/.lock", "rw")) {
             FileChannel channel = randomAccessFile.getChannel();
             if (channel.tryLock() == null)
                 System.out.println("只能同时运行一个实例");
