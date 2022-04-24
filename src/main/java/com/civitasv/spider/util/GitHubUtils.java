@@ -49,7 +49,7 @@ public class GitHubUtils {
                                 "POIKit已发布新版本，版本相关信息如下：\n" +
                                         "版本号：" + gitHubReleaseLatest.getTag_name() + "\n" +
                                         "标题：" + gitHubReleaseLatest.getName() + "\n" +
-                                        "描述：\n" + gitHubReleaseLatest.getBody() + "\n",
+                                        "描述：\n" + gitHubReleaseLatest.getBody().replace("*","").replace("=","") + "\n",
                                 "前往下载新版本",
                                 "关闭"));
                 Platform.runLater(query);
