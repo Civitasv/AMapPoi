@@ -1034,12 +1034,15 @@ public class POIViewModel {
 
         // 异常情况处理
         if (poi == null || poi.getInfocode() != 10000) {
-            if (poi == null || poi.getInfocode() == null || poi.getStatus() == null) {
+            if (poi == null || poi.getInfocode() == null || poi.getStatus() == null || poi.getInfo() == null) {
+                // 如果必要字段为空
                 throw new TryAgainException(TryAgainErrorCode.RETURN_NULL_DATA);
             } else {
+                // 不可重试异常
                 NoTryAgainErrorCode noTryAgainErrorCode = NoTryAgainErrorCode.getError(poi.getInfocode());
                 if (noTryAgainErrorCode != null) {
                     synchronized (this) {
+                        // key额度用完，移除该key
                         if (noTryAgainErrorCode.equals(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT)) {
                             NoTryAgainException noTryAgainException = new NoTryAgainException(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT);
                             if (aMapKeys.contains(key)) {
@@ -1047,6 +1050,7 @@ public class POIViewModel {
                                 appendMessage(noTryAgainException.getMessage());
                                 removeKey(key);
                             }
+                            // 如果还有可用key，则继续尝试，否则抛出不可重试异常
                             if (aMapKeys.size() != 0) {
                                 throw new TryAgainException(TryAgainErrorCode.TRY_OTHER_KEY, "无效key：" + key, noTryAgainException);
                             }
@@ -1054,6 +1058,7 @@ public class POIViewModel {
                     }
                     throw new NoTryAgainException(noTryAgainErrorCode);
                 }
+                // 可重试异常
                 TryAgainErrorCode tryAgainErrorCode = TryAgainErrorCode.getError(poi.getInfocode());
                 if (tryAgainErrorCode != null) {
                     if(errorCodeHashSet.contains(tryAgainErrorCode)){
