@@ -1,7 +1,7 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.model.po.City;
 import com.civitasv.spider.service.CityCodeService;
 import com.civitasv.spider.service.serviceImpl.CityCodeServiceImpl;
@@ -24,29 +24,19 @@ import java.util.Objects;
  * Created by leon
  * 2022-03-19
  */
-public class CityChooseController extends AbstractController {
+public class CityChooseController extends BaseController {
     // 该页面依赖于 POI 查询页面存在
-    private POIController parent;
     public TreeView<City> cityTree;
     public Button btnConfirm, btnCancel;
+    private POIController parent;
     private String selectCityCode;
     private final CityCodeService cityCodeService = new CityCodeServiceImpl();
 
     public void show(POIController parent) throws IOException {
         this.parent = parent;
         initTreeView();
-
-        Stage stage = new Stage();
-        // 设为模态
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initOwner(parent.getMainStage());
-
-        stage.setResizable(false);
-        stage.setTitle("中国行政区划");
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 

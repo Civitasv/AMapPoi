@@ -1,7 +1,7 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
@@ -45,9 +45,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class POIController extends AbstractController {
-    private static Scene scene;
-
+public class POIController extends BaseController {
     public TextField threadNum; // 线程数目
     public TextField keywords; // 关键字
     public TextArea keys; // 高德 API Key
@@ -77,14 +75,11 @@ public class POIController extends AbstractController {
     public Button poiAdd; // poi添加
 
     // 数据库操作对象
-    private ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
+    private final ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
 
     // 大中小类
     private String cate1, cate2, cate3;
     private String curCategoryId;
-
-    // 主界面
-    private Stage mainStage;
 
     private final TaskService taskService = new TaskServiceImpl();
     private final JobService jobService = new JobServiceImpl();
@@ -92,7 +87,7 @@ public class POIController extends AbstractController {
     private final PoiCategoryService poiCategoryService = new PoiCategoryServiceImpl();
 
     public Stage getMainStage() {
-        return mainStage;
+        return stage;
     }
 
     private POIViewModel poiViewModel;
@@ -101,20 +96,12 @@ public class POIController extends AbstractController {
 
     public void show() throws IOException {
         init();
-        Stage stage = new Stage();
-        stage.setResizable(false);
-        stage.setTitle("POIKit");
-        scene = new Scene(root);
-        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
-        this.mainStage = stage;
         initStageHandler();
         stage.show();
     }
 
     private void initStageHandler() {
-        mainStage.setOnShown(event -> {
+        stage.setOnShown(event -> {
             try {
                 if (handleLastTask(false) != null) {
                     skipHint = true;

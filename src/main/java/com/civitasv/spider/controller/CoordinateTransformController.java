@@ -1,17 +1,13 @@
 package com.civitasv.spider.controller;
 
-import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.util.CoordinateTransformUtil;
 import com.civitasv.spider.util.FileUtil;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.util.SpatialDataTransformUtil;
 import javafx.application.Platform;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.locationtech.jts.geom.*;
@@ -25,13 +21,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class CoordinateTransformController extends AboutController {
-    private static Scene scene;
-
     public TextField inputFile;
     public TextField outputDirectory;
     public ChoiceBox<String> inputCoordinateType;
@@ -41,13 +34,6 @@ public class CoordinateTransformController extends AboutController {
     private ExecutorService worker;
 
     public void show() throws IOException {
-        Stage stage = new Stage();
-        stage.setResizable(false);
-        stage.setTitle("坐标转换");
-        scene = new Scene(root);
-        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 

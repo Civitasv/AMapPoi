@@ -8,6 +8,7 @@ import javafx.scene.control.DialogPane;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -29,10 +30,10 @@ public class MessageUtil {
         alert.setContentText(content);
         DialogPane dialogPane = alert.getDialogPane();
         dialogPane.getStylesheets().add(
-                MainApplication.class.getResource("myDialogs.css").toExternalForm());
+                Objects.requireNonNull(MainApplication.class.getResource("myDialogs.css")).toExternalForm());
         dialogPane.getStyleClass().add("myDialog");
         Stage stage = (Stage) dialogPane.getScene().getWindow();
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         alert.showAndWait();
     }
 
@@ -45,10 +46,10 @@ public class MessageUtil {
         alert.setHeaderText(header);
         DialogPane dialogPane = alert.getDialogPane();
         dialogPane.getStylesheets().add(
-                MainApplication.class.getResource("myDialogs.css").toExternalForm());
+                Objects.requireNonNull(MainApplication.class.getResource("myDialogs.css")).toExternalForm());
         dialogPane.getStyleClass().add("myDialog");
         Stage stage = (Stage) dialogPane.getScene().getWindow();
-        stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("icon/icon.png")));
+        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         Optional<ButtonType> result = alert.showAndWait();
         return result.isPresent() && foo.equals(result.get());
     }
