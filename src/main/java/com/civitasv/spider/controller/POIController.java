@@ -75,7 +75,7 @@ public class POIController extends BaseController {
     public Button poiAdd; // poi添加
 
     // 数据库操作对象
-    private ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
+    private final ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
 
     // 大中小类
     private String cate1, cate2, cate3;

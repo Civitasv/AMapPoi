@@ -1,6 +1,5 @@
 package com.civitasv.spider.controller;
 
-import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.model.Geocodes;
 import com.civitasv.spider.util.*;
@@ -9,13 +8,10 @@ import com.civitasv.spider.webdao.impl.AMapDaoImpl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +25,6 @@ import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
 public class GeocodingController extends BaseController {
-    private static Scene scene;
     // 输入文件
     public TextField inputFile;
     // 输出文件夹
@@ -119,11 +114,6 @@ public class GeocodingController extends BaseController {
             // 解析输入文件
             appendMessage("解析输入文件中");
             List<Map<String, String>> parseRes = ParseUtil.parseTxtOrCsv(inputFile.getText());
-            if (parseRes == null) {
-                appendMessage("输入文件解析失败，请检查文件");
-                analysis(false);
-                return;
-            }
             appendMessage("输入文件解析成功");
             // 解析地址
             if (parseRes.size() > 0) {

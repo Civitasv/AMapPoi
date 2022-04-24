@@ -3,7 +3,6 @@ package com.civitasv.spider.controller.helper;
 import com.civitasv.spider.MainApplication;
 import javafx.scene.image.Image;
 
-import java.io.InputStream;
 import java.net.URL;
 import java.util.Objects;
 

@@ -26,9 +26,9 @@ import java.util.Objects;
  */
 public class CityChooseController extends BaseController {
     // 该页面依赖于 POI 查询页面存在
-    private POIController parent;
     public TreeView<City> cityTree;
     public Button btnConfirm, btnCancel;
+    private POIController parent;
     private String selectCityCode;
     private final CityCodeService cityCodeService = new CityCodeServiceImpl();
 

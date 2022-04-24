@@ -2,11 +2,8 @@ package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.controller.helper.BaseController;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.util.Objects;
