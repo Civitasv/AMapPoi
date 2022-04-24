@@ -181,7 +181,7 @@ public class POIViewModel {
     }
 
     private boolean userType() {
-        if(viewHolder.userType.getSelectionModel().getSelectedIndex() == -1){
+        if (viewHolder.userType.getSelectionModel().getSelectedIndex() == -1) {
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "用户类型", null, "请选择用户类型！"));
             return false;
         }
@@ -818,7 +818,7 @@ public class POIViewModel {
                 task.taskStatus = TaskStatus.Success;
                 break;
             }
-            appendMessage((i == 0 ? "初次爬取结果": "第" + i + "次重试结果") + "：总计" + jobCount + "个任务，其中已完成" + (jobCount - newJobs.size()) + "个，失败任务" + newJobs.size() + "个");
+            appendMessage((i == 0 ? "初次爬取结果" : "第" + i + "次重试结果") + "：总计" + jobCount + "个任务，其中已完成" + (jobCount - newJobs.size()) + "个，失败任务" + newJobs.size() + "个");
             if (i == retryTimes) {
                 List<JobPo> unFinishedJobs = jobService.listUnFinished();
                 appendMessage("已重试三次" + "重试失败，还有" + unFinishedJobs.size() + "个Job未爬取");
@@ -1061,7 +1061,7 @@ public class POIViewModel {
                 // 可重试异常
                 TryAgainErrorCode tryAgainErrorCode = TryAgainErrorCode.getError(poi.getInfocode());
                 if (tryAgainErrorCode != null) {
-                    if(errorCodeHashSet.contains(tryAgainErrorCode)){
+                    if (errorCodeHashSet.contains(tryAgainErrorCode)) {
                         waitFactorForQps++;
                     }
                     throw new TryAgainException(tryAgainErrorCode);
@@ -1103,12 +1103,12 @@ public class POIViewModel {
             appendMessage("正在写入数据，请等待");
             if (format.equals("csv"))
                 writer.write('\ufeff');
-            writer.write("name,type,typecode,address,tel,pname,cityname,adname,gcj02_lon,gcj02_lat,wgs84_lon,wgs84_lat\r\n");
+            writer.write("id,name,type,typecode,address,tel,pname,cityname,adname,gcj02_lon,gcj02_lat,wgs84_lon,wgs84_lat\r\n");
             for (POI.Info info : res) {
                 String[] lonlat = info.location.toString().split(",");
                 if (lonlat.length == 2) {
                     double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
-                    writer.write("\"" + info.name + "\"," + "\"" + info.type + "\"," + "\"" + info.typecode + "\"," + "\"" + info.address + "\"," + "\"" + info.tel + "\"," + "\"" + info.pname + "\"," + "\"" + info.cityname + "\"," + "\"" + info.adname + "\"," + "\"" + lonlat[0] + "\"," + "\"" + lonlat[1] + "\"," + "\"" + wgs84[0] + "\"," + "\"" + wgs84[1] + "\"\r\n");
+                    writer.write("\"" + info.id + "\"," + "\"" + info.name + "\"," + "\"" + info.type + "\"," + "\"" + info.typecode + "\"," + "\"" + info.address + "\"," + "\"" + info.tel + "\"," + "\"" + info.pname + "\"," + "\"" + info.cityname + "\"," + "\"" + info.adname + "\"," + "\"" + lonlat[0] + "\"," + "\"" + lonlat[1] + "\"," + "\"" + wgs84[0] + "\"," + "\"" + wgs84[1] + "\"\r\n");
                 }
             }
             appendMessage("写入成功，结果存储于" + csvFile.getAbsolutePath());
@@ -1148,7 +1148,7 @@ public class POIViewModel {
             final SimpleFeatureType type =
                     DataUtilities.createType(
                             "Location",
-                            "the_geom:Point:srid=4326,name:String,type:String,typecode:String,address:String,tel:String,pname:String,cityname:String,adname:String,gcj02_lon:String,gcj02_lat:String,wgs84_lon:String,wgs84_lat:String"
+                            "the_geom:Point:srid=4326,id:String,name:String,type:String,typecode:String,address:String,tel:String,pname:String,cityname:String,adname:String,gcj02_lon:String,gcj02_lat:String,wgs84_lon:String,wgs84_lat:String"
                     );
             List<SimpleFeature> features = new ArrayList<>();
             GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
@@ -1159,6 +1159,7 @@ public class POIViewModel {
                     double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
                     Point point = geometryFactory.createPoint(new Coordinate(wgs84[0], wgs84[1]));
                     featureBuilder.add(point);
+                    featureBuilder.add(info.id);
                     featureBuilder.add(info.name);
                     featureBuilder.add(info.type);
                     featureBuilder.add(info.typecode);
@@ -1204,6 +1205,7 @@ public class POIViewModel {
                 coordinates.add(wgs84[1]);
                 geometry.add("coordinates", coordinates);
                 Feature feature = new Feature(geometry.toString());
+                feature.addProperty("id", info.id);
                 feature.addProperty("name", info.name);
                 feature.addProperty("type", info.type);
                 feature.addProperty("typecode", info.typecode);
