@@ -1,7 +1,7 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
@@ -45,7 +45,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class POIController extends AbstractController {
+public class POIController extends BaseController {
     private static Scene scene;
 
     public TextField threadNum; // 线程数目

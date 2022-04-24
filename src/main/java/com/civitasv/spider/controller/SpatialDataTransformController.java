@@ -1,7 +1,7 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.util.FileUtil;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.util.SpatialDataTransformUtil;
@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
  * <p>
  * csv shp geojson 互相转换
  */
-public class SpatialDataTransformController extends AbstractController {
+public class SpatialDataTransformController extends BaseController {
     private static Scene scene;
     public TextField inputFile;
     public ChoiceBox<String> format;

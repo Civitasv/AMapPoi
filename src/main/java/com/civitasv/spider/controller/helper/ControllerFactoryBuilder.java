@@ -6,10 +6,10 @@ import java.util.Map;
 
 public class ControllerFactoryBuilder {
 
-    private final Map<Class<? extends AbstractController>, URL> controllerClassFxmlMap = new HashMap<>();
+    private final Map<Class<? extends BaseController>, ControllerAttr> controllerClassFxmlMap = new HashMap<>();
 
-    public ControllerFactoryBuilder addController(Class<? extends AbstractController> clazz, URL fxmlPath) {
-        controllerClassFxmlMap.put(clazz, fxmlPath);
+    public ControllerFactoryBuilder addController(Class<? extends BaseController> clazz, ControllerAttr controllerAttr) {
+        controllerClassFxmlMap.put(clazz, controllerAttr);
         return this;
     }
 

@@ -1,7 +1,7 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.model.Geocodes;
 import com.civitasv.spider.util.*;
 import com.civitasv.spider.webdao.AMapDao;
@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
-public class GeocodingController extends AbstractController {
+public class GeocodingController extends BaseController {
     private static Scene scene;
     // 输入文件
     public TextField inputFile;

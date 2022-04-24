@@ -1,7 +1,7 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.BaseController;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -10,7 +10,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.util.Objects;
 
-public class DonateController extends AbstractController {
+public class DonateController extends BaseController {
     public ImageView about;
 
     private String imagePath;

@@ -1,7 +1,7 @@
 package com.civitasv.spider.controller;
 
 import com.civitasv.spider.MainApplication;
-import com.civitasv.spider.controller.helper.AbstractController;
+import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.model.po.City;
 import com.civitasv.spider.service.CityCodeService;
 import com.civitasv.spider.service.serviceImpl.CityCodeServiceImpl;
@@ -24,7 +24,7 @@ import java.util.Objects;
  * Created by leon
  * 2022-03-19
  */
-public class CityChooseController extends AbstractController {
+public class CityChooseController extends BaseController {
     // 该页面依赖于 POI 查询页面存在
     private POIController parent;
     public TreeView<City> cityTree;
