@@ -615,11 +615,11 @@ public class POIViewModel {
             return;
         }
 
-        appendMessage("该区域边界共含POI：" + pois.size() + "条");
-        appendMessage("执行过滤算法中");
+//        appendMessage("执行过滤算法中");
 
         pois = pois.stream().filter(task.filter).collect(Collectors.toList());
-        appendMessage("过滤成功，共获得POI：" + pois.size() + "条");
+//        appendMessage("过滤成功，共获得POI：" + pois.size() + "条");
+        appendMessage("该区域边界共含POI：" + pois.size() + "条");
 
         // 导出res
         switch (viewHolder.format.getValue()) {
