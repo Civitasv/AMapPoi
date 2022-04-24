@@ -37,7 +37,7 @@ public class MainApplication extends Application {
             RandomAccessFile randomAccessFile = new RandomAccessFile(isDEV?"./.lock":"app/assets/.lock", "rw");
             FileChannel channel = randomAccessFile.getChannel();
             if (channel.tryLock() == null)
-                System.out.println("只能同时运行一个窗口");
+                System.out.println("只能同时运行一个实例");
             else
                 launch();
         } catch (IOException e) {
