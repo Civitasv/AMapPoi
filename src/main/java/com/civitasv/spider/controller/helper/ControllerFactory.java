@@ -1,45 +1,45 @@
 package com.civitasv.spider.controller.helper;
 
-import com.civitasv.spider.MainApplication;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class ControllerFactory {
 
-    private final Map<Class<? extends BaseController>, ControllerAttr> controllerClassFxmlMap;
+    private final Map<Class<? extends BaseController>, ControllerAttr> controllerClassAttrsMap;
 
-    public ControllerFactory(Map<Class<? extends BaseController>, ControllerAttr> controllerClassFxmlMap) {
-        this.controllerClassFxmlMap = new HashMap<>(controllerClassFxmlMap);
+    public ControllerFactory(Map<Class<? extends BaseController>, ControllerAttr> controllerClassAttrsMap) {
+        this.controllerClassAttrsMap= new HashMap<>(controllerClassAttrsMap);
     }
 
-    public <T extends BaseController> T createController(Class<T> clazz, String title) {
+    public <T extends BaseController> T createController(Class<T> clazz) {
         try {
-            if (!controllerClassFxmlMap.containsKey(clazz)) {
+            if (!controllerClassAttrsMap.containsKey(clazz)) {
                 throw new IllegalArgumentException(clazz.toString() + "尚未注册");
             }
-            FXMLLoader fxmlLoader = new FXMLLoader(controllerClassFxmlMap.get(clazz));
+            ControllerAttr attrs = controllerClassAttrsMap.get(clazz);
+            FXMLLoader fxmlLoader = new FXMLLoader(attrs.fxmlURL);
             Parent root = fxmlLoader.load();
             T controller = fxmlLoader.getController();
             Stage stage = new Stage();
             stage.setResizable(false);
-            stage.setTitle(title);
+            stage.setTitle(attrs.title);
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
+            scene.getStylesheets().add(attrs.stylesURL.toString());
             stage.setScene(scene);
-            stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
-
-            new BaseController.Builder().root(root).scene()
-            controller.setRoot(root);
+            stage.getIcons().add(attrs.icon);
+            controller.root = root;
+            controller.stage = stage;
+            controller.scene = scene;
+            controller.attrs = attrs;
             return controller;
+
         } catch (IOException e) {
             e.printStackTrace();
         }

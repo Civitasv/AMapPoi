@@ -1,6 +1,5 @@
 package com.civitasv.spider.controller.helper;
 
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 

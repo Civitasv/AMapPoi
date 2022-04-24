@@ -7,7 +7,6 @@ import com.civitasv.spider.util.GitHubUtils;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;

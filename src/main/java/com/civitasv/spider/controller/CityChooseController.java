@@ -35,18 +35,8 @@ public class CityChooseController extends BaseController {
     public void show(POIController parent) throws IOException {
         this.parent = parent;
         initTreeView();
-
-        Stage stage = new Stage();
-        // 设为模态
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initOwner(parent.getMainStage());
-
-        stage.setResizable(false);
-        stage.setTitle("中国行政区划");
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 

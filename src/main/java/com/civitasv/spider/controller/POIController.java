@@ -46,8 +46,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class POIController extends BaseController {
-    private static Scene scene;
-
     public TextField threadNum; // 线程数目
     public TextField keywords; // 关键字
     public TextArea keys; // 高德 API Key
@@ -83,16 +81,13 @@ public class POIController extends BaseController {
     private String cate1, cate2, cate3;
     private String curCategoryId;
 
-    // 主界面
-    private Stage mainStage;
-
     private final TaskService taskService = new TaskServiceImpl();
     private final JobService jobService = new JobServiceImpl();
     private final PoiService poiService = new PoiServiceImpl();
     private final PoiCategoryService poiCategoryService = new PoiCategoryServiceImpl();
 
     public Stage getMainStage() {
-        return mainStage;
+        return stage;
     }
 
     private POIViewModel poiViewModel;
@@ -101,20 +96,12 @@ public class POIController extends BaseController {
 
     public void show() throws IOException {
         init();
-        Stage stage = new Stage();
-        stage.setResizable(false);
-        stage.setTitle("POIKit");
-        scene = new Scene(root);
-        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
-        this.mainStage = stage;
         initStageHandler();
         stage.show();
     }
 
     private void initStageHandler() {
-        mainStage.setOnShown(event -> {
+        stage.setOnShown(event -> {
             try {
                 if (handleLastTask(false) != null) {
                     skipHint = true;

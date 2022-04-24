@@ -57,13 +57,6 @@ public class GeocodingController extends BaseController {
 
     public void show() throws IOException {
         init();
-        Stage stage = new Stage();
-        stage.setResizable(false);
-        stage.setTitle("地理编码");
-        scene = new Scene(root);
-        scene.getStylesheets().add(Objects.requireNonNull(MainApplication.class.getResource("styles.css")).toString());
-        stage.setScene(scene);
-        stage.getIcons().add(new Image(Objects.requireNonNull(MainApplication.class.getResourceAsStream("icon/icon.png"))));
         stage.show();
     }
 
