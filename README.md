@@ -51,6 +51,14 @@ POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与�
 - 配置环境变量`JAVA_HOME`为安装目录，然后在`Path`中添加`%JAVA_HOME%\bin`；
 - 打开终端，输入`java -version`，若出现 Java 版本号为1.8，则配置成功。
 
+安装教程：[【晓时代】windows 安装 Java8 及环境变量配置](https://www.jianshu.com/p/1d834fcf5c44)
+
+常见错误：
+
+java版本错误：高版本不会自带javafx库，**版本必须是java1.8**。
+
+![First Example](image/error1.jpg)
+
 ### 2. 启动POIKit
 
 [下载](https://github.com/Civitasv/AMapPoi/releases)最新发布的软件压缩包，以`POIKit.zip`为例，解压缩后，双击`start.bat`即可运行。linux 和 mac 用户可以使用 start.sh 启动。
