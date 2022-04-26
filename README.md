@@ -171,7 +171,7 @@ POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与�
 | formatted_address |  结构化地址信息  |
 |      country      |       国家       |
 |     province      | 地址所在的省份名 |
-|       city        | 地址所在的省份名 |
+|       city        | 地址所在的城市名 |
 |     citycode      |     城市编码     |
 |     district      |   地址所在的区   |
 |      adcode       |     区域编码     |
