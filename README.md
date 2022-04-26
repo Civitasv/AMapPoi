@@ -51,7 +51,7 @@ POIKit 用于提供一套**简单**、**易用**、**稳定**的 POI 获取与�
 - 配置环境变量`JAVA_HOME`为安装目录，然后在`Path`中添加`%JAVA_HOME%\bin`；
 - 打开终端，输入`java -version`，若出现 Java 版本号为1.8，则配置成功。
 
-软件启动不了，99%是Java版本错误（必须使用java1.8）或环境变量未正确设置的问题。
+**软件启动不了，99%是Java版本错误（必须使用java1.8）或环境变量未正确设置的问题。**
 
 安装教程：[【晓时代】windows 安装 Java8 及环境变量配置](https://www.jianshu.com/p/1d834fcf5c44)
 
