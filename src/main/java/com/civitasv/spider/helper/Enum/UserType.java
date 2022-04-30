@@ -1,25 +1,21 @@
 package com.civitasv.spider.helper.Enum;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.Accessors;
+
+@Getter
+@ToString
+@Accessors(fluent = true)
+@RequiredArgsConstructor
 public enum UserType {
     IndividualDevelopers(0, "个人开发者"),
     IndividualCertifiedDeveloper(1, "个人认证开发者"),
     EnterpriseDeveloper(2, "企业开发者");
 
-    private final String description;
     private final Integer code;
-
-    UserType(Integer code, String description) {
-        this.description = description;
-        this.code = code;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Integer getCode() {
-        return code;
-    }
+    private final String description;
 
     public static UserType getUserType(String description) {
         for (UserType value : UserType.values()) {

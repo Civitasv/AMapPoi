@@ -7,5 +7,7 @@ import retrofit2.http.Path;
 
 public interface GitHubService {
     @GET("repos/{username}/{repoName}/releases/latest")
-    Call<GitHubRelease> getReleaseInfo(@Path("username") String username, @Path("repoName") String repoName);
+    Call<GitHubRelease>
+    getReleaseInfo(@Path("username") String username,
+                   @Path("repoName") String repoName);
 }

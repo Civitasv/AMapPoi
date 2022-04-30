@@ -17,7 +17,7 @@ public class RetrofitDataVClient {
 
     public static synchronized RetrofitDataVClient getInstance() {
         if (instance == null)
-            return new RetrofitDataVClient();
+            instance = new RetrofitDataVClient();
         return instance;
     }
 

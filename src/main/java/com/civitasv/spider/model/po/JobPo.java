@@ -6,197 +6,121 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.civitasv.spider.helper.Enum.JobStatus;
 import com.civitasv.spider.model.bo.Job;
+import lombok.*;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * <p>
- *
+ * 读取数据库表 Job 信息，主要用于构造 {@link Job}
  * </p>
  *
  * @author zhanghang
+ * @see Job
  * @since 2022-04-06 09:08:52
  */
+@Getter
+@Setter
+@ToString
+@Accessors(fluent = true)
+@RequiredArgsConstructor
 @TableName("job")
 public class JobPo implements Serializable {
-
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
+    /**
+     * 唯一 ID，自增主键
+     */
+    @TableId(value = "ID", type = IdType.AUTO)
+    private final Long jobId;
 
-    @TableField("taskid")
-    private Long taskid;
+    /**
+     * 对应 Task ID
+     */
+    @TableField("TASK_ID")
+    private final Long taskId;
 
-    @TableField("types")
-    private String types;
+    /**
+     * POI 类型
+     */
+    @TableField("TYPES")
+    private final String types;
 
-    @TableField("keywords")
-    private String keywords;
+    /**
+     * POI 关键字
+     */
+    @TableField("KEYWORDS")
+    private final String keywords;
 
-    @TableField("page")
-    private Integer page;
+    @TableField("PAGE")
+    private final Integer page;
 
-    @TableField("size")
-    private Integer size;
+    @TableField("SIZE")
+    private final Integer size;
 
-    @TableField("status")
-    private Integer status;
+    /**
+     * @see JobStatus
+     */
+    @TableField("STATUS")
+    private final Integer status;
 
-    @TableField("request_actual_times")
-    private Integer requestActualTimes;
+    /**
+     * Job 实际请求次数
+     */
+    @TableField("REQUEST_ACTUAL_TIMES")
+    private final Integer requestActualTimes;
 
-    @TableField("request_excepted_times")
-    private Integer requestExceptedTimes;
+    /**
+     * Job 期望请求次数
+     * <p>
+     * 1 normally
+     */
+    @TableField("REQUEST_EXPECTED_TIMES")
+    private final Integer requestExpectedTimes;
 
-    @TableField("poi_actual_sum")
-    private Integer poiActualSum;
+    /**
+     * POI 爬取时，该 Job 实际获得的数量
+     */
+    @TableField("POU_ACTUAL_COUNT")
+    private final Integer poiActualCount;
 
-    @TableField("poi_excepted_sum")
-    private Integer poiExceptedSum;
+    /**
+     * 该 Job 期望获得的数量
+     * <p>
+     * 用于检查是否与 {@link #poiActualCount} 匹配
+     * <p>
+     * Debug Use
+     */
+    @TableField("POI_EXPECTED_COUNT")
+    private final Integer poiExpectedCount;
 
-    @TableField("bounds")
-    private String bounds;
-
-    public JobPo(Long id, Long taskid, String types, String keywords, Integer page, Integer size, Integer status, Integer requestActualTimes, Integer requestExceptedTimes, Integer poiActualSum, Integer poiExceptedSum, String bounds) {
-        this.id = id;
-        this.taskid = taskid;
-        this.types = types;
-        this.keywords = keywords;
-        this.page = page;
-        this.size = size;
-        this.status = status;
-        this.requestActualTimes = requestActualTimes;
-        this.requestExceptedTimes = requestExceptedTimes;
-        this.poiActualSum = poiActualSum;
-        this.poiExceptedSum = poiExceptedSum;
-        this.bounds = bounds;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getTaskid() {
-        return taskid;
-    }
-
-    public void setTaskid(Long taskid) {
-        this.taskid = taskid;
-    }
-
-    public String getTypes() {
-        return types;
-    }
-
-    public void setTypes(String types) {
-        this.types = types;
-    }
-
-    public String getKeywords() {
-        return keywords;
-    }
-
-    public void setKeywords(String keywords) {
-        this.keywords = keywords;
-    }
-
-    public Integer getPage() {
-        return page;
-    }
-
-    public void setPage(Integer page) {
-        this.page = page;
-    }
-
-    public Integer getSize() {
-        return size;
-    }
-
-    public void setSize(Integer size) {
-        this.size = size;
-    }
-
-    public Integer getStatus() {
-        return status;
-    }
-
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
-
-    public Integer getRequestActualTimes() {
-        return requestActualTimes;
-    }
-
-    public void setRequestActualTimes(Integer requestActualTimes) {
-        this.requestActualTimes = requestActualTimes;
-    }
-
-    public Integer getRequestExceptedTimes() {
-        return requestExceptedTimes;
-    }
-
-    public void setRequestExceptedTimes(Integer requestExceptedTimes) {
-        this.requestExceptedTimes = requestExceptedTimes;
-    }
-
-    public Integer getPoiActualSum() {
-        return poiActualSum;
-    }
-
-    public void setPoiActualSum(Integer poiActualSum) {
-        this.poiActualSum = poiActualSum;
-    }
-
-    public Integer getPoiExceptedSum() {
-        return poiExceptedSum;
-    }
-
-    public void setPoiExceptedSum(Integer poiExceptedSum) {
-        this.poiExceptedSum = poiExceptedSum;
-    }
-
-    public String getBounds() {
-        return bounds;
-    }
-
-    public void setBounds(String bounds) {
-        this.bounds = bounds;
-    }
-
-    @Override
-    public String toString() {
-        return "JobPo{" +
-                "id=" + id +
-                ", taskid=" + taskid +
-                ", types='" + types + '\'' +
-                ", keywords='" + keywords + '\'' +
-                ", page=" + page +
-                ", size=" + size +
-                ", status=" + status +
-                ", requestActualTimes=" + requestActualTimes +
-                ", requestExceptedTimes=" + requestExceptedTimes +
-                ", poiActualSum=" + poiActualSum +
-                ", poiExceptedSum=" + poiExceptedSum +
-                ", bounds='" + bounds + '\'' +
-                '}';
-    }
+    /**
+     * 左上（经纬度），右下（经纬度）
+     * <p>
+     * 例如：110.360476,31.383448,116.65032,36.365931
+     */
+    @TableField("BOUNDARY")
+    private final String boundary;
 
     public Job toJob() {
-        try {
-            return new Job(id, null,
-                    Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new),
-                    types, keywords, page, size, JobStatus.getJobStatus(status), requestActualTimes,
-                    requestExceptedTimes, poiActualSum, poiExceptedSum, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        Double[] bounds = Arrays.stream(boundary.split(","))
+                .map(Double::valueOf)
+                .toArray(Double[]::new);
+        return new Job(
+                jobId,
+                null,
+                bounds,
+                types,
+                keywords,
+                page,
+                size)
+                .jobStatus(JobStatus.getJobStatus(status))
+                .requestActualTimes(requestActualTimes)
+                .requestExpectedTimes(requestExpectedTimes)
+                .poiActualCount(poiActualCount)
+                .poiExpectedCount(poiExpectedCount)
+                .poi(null);
     }
 }

@@ -1,6 +1,5 @@
 package com.civitasv.spider.controller;
 
-import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.helper.Enum.CoordinateType;
@@ -66,17 +65,16 @@ public class POIController extends BaseController {
     public MenuItem wechat; // 微信
     public MenuItem joinQQ; // QQ群
 
-    // added by leon
-    public ChoiceBox<String> poiCate1; // POI大类
-    public ChoiceBox<String> poiCate2; // POI中类
-    public ChoiceBox<String> poiCate3; // POI小类
-    public Button poiAdd; // poi添加
+    public ChoiceBox<String> poiCateBig; // POI大类
+    public ChoiceBox<String> poiCateMid; // POI中类
+    public ChoiceBox<String> poiCateSub; // POI小类
+    public Button poiCateAddBtn; // poi添加
 
     // 数据库操作对象
     private final ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
 
     // 大中小类
-    private String cate1, cate2, cate3;
+    private String cateBigText, cateMidText, cateSubText;
     private String curCategoryId;
 
     private final TaskService taskService = new TaskServiceImpl();
@@ -106,29 +104,31 @@ public class POIController extends BaseController {
                     execute();
                     skipHint = false;
                 }
-            } catch (TryAgainException | NoTryAgainException e) {
+            } catch (TryAgainException | NoTryAgainException | IOException e) {
                 e.printStackTrace();
             }
         });
     }
 
     private void init() {
-        this.poiViewModel = new POIViewModel(threadNum, keywords, keys, types, adCode,
-                rectangle, threshold, format, outputDirectory, messageDetail, userFile, failJobsFile, tabs, directoryBtn,
-                execute, poiType, userType, rectangleCoordinateType, userFileCoordinateType, wechat, joinQQ,
-                poiCate1, poiCate2, poiCate3, poiAdd);
+        this.poiViewModel = new POIViewModel(this);
+        // 设置允许输入的格式
         this.threadNum.setTextFormatter(getFormatterOnlyNumber());
         this.threshold.setTextFormatter(getFormatterOnlyNumber());
         this.adCode.setTextFormatter(getFormatterOnlyNumber());
-        this.types.setTextFormatter(getFormatter_NumberPlusComma());
-        this.keys.setTextFormatter(getFormatter_NumberPlusCommaPlusEnglish());
+        this.types.setTextFormatter(getFormatterNumberPlusComma());
+        this.keys.setTextFormatter(getFormatterNumberPlusCommaPlusEnglish());
 
+        // 默认不选择用户类型
         this.userType.getSelectionModel().select(-1);
+
+        // 设置坐标类型
         List<CoordinateType> list = Arrays.asList(CoordinateType.WGS84, CoordinateType.BD09, CoordinateType.GCJ02);
         this.rectangleCoordinateType.setItems(new ObservableListWrapper<>(list));
         this.userFileCoordinateType.setItems(new ObservableListWrapper<>(list));
         this.rectangleCoordinateType.getSelectionModel().selectFirst();
         this.userFileCoordinateType.getSelectionModel().selectFirst();
+
         wechat.setOnAction(event -> {
             try {
                 openAbout(false);
@@ -144,44 +144,47 @@ public class POIController extends BaseController {
             }
         });
 
-        /*
-         * 改为从数据库选择POI类型
-         * added by leon
-         */
-
         // 设置key
         this.keys.setText("");
 
         // 设置cate1下拉
-        refreshChoiceBoxCate1();
+        refreshChoiceBoxCateBig();
 
-        this.poiCate1.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCate2(newValue));
+        this.poiCateBig.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCateMid(newValue));
 
-        this.poiCate2.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCate3(newValue));
+        this.poiCateMid.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCateSub(newValue));
 
-        this.poiCate3.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> getPoiCategory(newValue));
+        this.poiCateSub.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> getPoiCategory(newValue));
 
         // messageDetail 设置为不可编辑
         messageDetail.setEditable(false);
     }
 
     private boolean continueLastTaskByAlert(Task task, int allJobSize, int unFinishJobSize) {
-        return MessageUtil.alertConfirmationDialog("未完成任务提示", "上一次任务未完成",
+        return MessageUtil.alertConfirmationDialog(
+                "未完成任务提示",
+                "上一次任务未完成",
                 "您有未完成的任务，请确认是否继续爬取\n" +
-                        "任务状态：" + task.taskStatus.getDescription() + "\n" +
-                        "完成度：" + (TaskStatus.Pause.equals(task.taskStatus) || (TaskStatus.Some_Failed.equals(task.taskStatus))?
-                        (allJobSize - unFinishJobSize) + "/" + allJobSize : "任务正在预处理...") + " \n" +
-                        "点击是则继续爬取上一个任务，否则放弃任务",
-                "是", "否");
+                        "任务状态：" + task.taskStatus().description() + "\n" +
+                        "完成度：" +
+                        (TaskStatus.Pause.equals(task.taskStatus()) || TaskStatus.Some_Failed.equals(task.taskStatus())
+                                ? (allJobSize - unFinishJobSize) + "/" + allJobSize
+                                : "任务正在预处理...")
+                        + " \n" + "点击是则继续爬取上一个任务，否则放弃任务",
+                "是",
+                "否");
     }
 
     private boolean startNewTaskByAlert() {
-        return MessageUtil.alertConfirmationDialog("开启新任务", null,
+        return MessageUtil.alertConfirmationDialog(
+                "开启新任务",
+                null,
                 "是否使用当前参数开启新任务？",
-                "是", "否");
+                "是",
+                "否");
     }
 
-    public Task handleLastTask(boolean skipAlert) throws TryAgainException, NoTryAgainException {
+    public Task handleLastTask(boolean skipAlert) throws TryAgainException, NoTryAgainException, IOException {
         // 判断是否有未完成的task
         Task task = taskService.getUnFinishedTask();
         if (task == null) {
@@ -193,7 +196,7 @@ public class POIController extends BaseController {
         if (!skipAlert && !continueLastTaskByAlert(task, jobService.count(), jobService.countUnFinished())) {
             jobService.clearTable();
             poiService.clearTable();
-            task.taskStatus = TaskStatus.Give_Up;
+            task.taskStatus(TaskStatus.Give_Up);
             taskService.updateById(task.toTaskPo());
             if (!StringUtils.isEmpty(outputDirectory.getText()) && !startNewTaskByAlert()) {
                 throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
@@ -203,93 +206,88 @@ public class POIController extends BaseController {
 
         // 初始化界面
         // 如果还未填入key，则直接使用上次执行任务时的key，如果已经填入key，则将新的key也加入到keys中。
-        if (!keys.getText().equals(String.join(",", task.aMapKeys))) {
+        if (!keys.getText().equals(String.join(",", task.aMapKeys()))) {
             if (!StringUtils.isEmpty(keys.getText())) {
-                task.aMapKeys = Arrays.stream(keys.getText().split(",")).collect(Collectors.toCollection(ArrayDeque::new));
+                task.aMapKeys(Arrays.stream(keys.getText().split(",")).collect(Collectors.toCollection(ArrayDeque::new)));
             }
-            keys.setText(String.join(",", task.aMapKeys));
+            keys.setText(String.join(",", task.aMapKeys()));
         }
 
-        keywords.setText(task.keywords);
-        types.setText(task.types);
-        outputDirectory.setText(task.outputDirectory);
-        threshold.setText(task.threshold.toString());
-        if (!threadNum.getText().equals(task.threadNum.toString())) {
+        keywords.setText(task.keywords());
+        types.setText(task.types());
+        outputDirectory.setText(task.outputDirectory());
+        threshold.setText(task.threshold().toString());
+        if (!threadNum.getText().equals(task.threadNum().toString())) {
             if (!StringUtils.isEmpty(threadNum.getText())) {
-                task.threadNum = Integer.parseInt(threadNum.getText());
+                task.threadNum(Integer.parseInt(threadNum.getText()));
             }
-            threadNum.setText(task.threadNum.toString());
+            threadNum.setText(task.threadNum().toString());
         }
         int selectedIndex = userType.getSelectionModel().getSelectedIndex();
-        if(!task.userType.getCode().equals(selectedIndex)){
-            if(selectedIndex != -1) {
-                task.userType = UserType.getUserType(selectedIndex);
+        if (!task.userType().code().equals(selectedIndex)) {
+            if (selectedIndex != -1) {
+                task.userType(UserType.getUserType(selectedIndex));
             }
-            userType.getSelectionModel().select(task.userType.getCode());
+            userType.getSelectionModel().select(task.userType().code());
         }
-        tabs.getSelectionModel().select(task.boundryType.getCode());
-        format.getSelectionModel().select(task.outputType.getCode());
-        String configContent = task.boundryConfig.split(":")[1];
-        switch (task.boundryType) {
+        tabs.getSelectionModel().select(task.boundaryType().code());
+        format.getSelectionModel().select(task.outputType().code());
+        String configContent = task.boundaryConfig().split(":")[1];
+        switch (task.boundaryType()) {
             case ADCODE:
                 adCode.setText(configContent.split(",")[0]);
                 break;
             case RECTANGLE:
                 rectangle.setText(configContent.split(",")[0]);
                 rectangleCoordinateType.getSelectionModel()
-                        .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
+                        .select(CoordinateType.getCoordinateType(configContent.split(",")[1]));
                 break;
             case CUSTOM:
                 userFile.setText(configContent.split(",")[0]);
                 userFileCoordinateType.getSelectionModel()
-                        .select(CoordinateType.getBoundryType(configContent.split(",")[1]));
+                        .select(CoordinateType.getCoordinateType(configContent.split(",")[1]));
                 break;
         }
         taskService.updateById(task.toTaskPo());
         return task;
     }
 
-    private void refreshChoiceBoxCate1() {
-        List<String> arrCate1;
-        // 获取POI大类
-        arrCate1 = poiCategoryService.getPoiCategory1();
-        this.poiCate1.setItems(new ObservableListWrapper<>(arrCate1));
+    private void refreshChoiceBoxCateBig() {
+        List<String> cateBig = poiCategoryService.getPoiCategoryBig();
+        this.poiCateBig.setItems(new ObservableListWrapper<>(cateBig));
     }
 
-    private void refreshChoiceBoxCate2(String cate1) {
-        this.cate1 = cate1;
-        List<String> arrCate2;
-
-        arrCate2 = poiCategoryService.getPoiCategory2(this.cate1.substring(0, this.cate1.indexOf("(")));
-        this.poiCate2.setItems(new ObservableListWrapper<>(arrCate2));
-        this.poiCate2.setValue("");
+    private void refreshChoiceBoxCateMid(String big) {
+        this.cateBigText = big;
+        List<String> cateMid = poiCategoryService.getPoiCategoryMid(this.cateBigText.substring(0, this.cateBigText.indexOf("(")));
+        this.poiCateMid.setItems(new ObservableListWrapper<>(cateMid));
+        this.poiCateMid.setValue("");
     }
 
-    private void refreshChoiceBoxCate3(String cate2) {
-        this.cate2 = cate2;
-        List<String> arrCate3;
-        arrCate3 = poiCategoryService.getPoiCategory3(
-                this.cate1.substring(0, this.cate1.indexOf("(")),
-                this.cate2.substring(0, this.cate2.indexOf("("))
+    private void refreshChoiceBoxCateSub(String mid) {
+        this.cateMidText = mid;
+        List<String> cateSub = poiCategoryService.getPoiCategorySub(
+                this.cateBigText.substring(0, this.cateBigText.indexOf("(")),
+                this.cateMidText.substring(0, this.cateMidText.indexOf("("))
         );
-        this.poiCate3.setItems(new ObservableListWrapper<>(arrCate3));
-        this.poiCate3.setValue("");
+        this.poiCateSub.setItems(new ObservableListWrapper<>(cateSub));
+        this.poiCateSub.setValue("");
     }
 
-    private void getPoiCategory(String cate3) {
-        if (StringUtils.isEmpty(cate3)) {
+    private void getPoiCategory(String sub) {
+        if (StringUtils.isEmpty(sub)) {
             return;
         }
-        this.cate3 = cate3;
+        this.cateSubText = sub;
         this.curCategoryId = poiCategoryService.getPoiCategoryId(
-                this.cate1.substring(0, this.cate1.indexOf("(")),
-                this.cate2.substring(0, this.cate2.indexOf("(")),
-                this.cate3.substring(0, this.cate3.indexOf("("))
+                this.cateBigText.substring(0, this.cateBigText.indexOf("(")),
+                this.cateMidText.substring(0, this.cateMidText.indexOf("(")),
+                this.cateSubText.substring(0, this.cateSubText.indexOf("("))
         );
     }
 
     public void addPoiCategory() {
-        if ((this.poiCate1.getValue().equals("")) || (this.poiCate2.getValue().equals("")) || (this.poiCate3.getValue().equals(""))) {
+        if ((this.poiCateBig.getValue().equals("")) || (this.poiCateMid.getValue().equals("")) || (this.poiCateSub.getValue().equals(""))) {
             MessageUtil.alert(Alert.AlertType.ERROR, "类型错误", null, "请完整选择POI类型！");
             return;
         }
@@ -309,12 +307,12 @@ public class POIController extends BaseController {
         return getFormatter("\\d*", "\\s");
     }
 
-    private TextFormatter<Integer> getFormatter_NumberPlusComma() {
-        return getFormatter("[\\d\\,]*", "\\s");
+    private TextFormatter<Integer> getFormatterNumberPlusComma() {
+        return getFormatter("[0-9,]*", "\\s");
     }
 
-    private TextFormatter<Integer> getFormatter_NumberPlusCommaPlusEnglish() {
-        return getFormatter("[\\d\\,a-zA-Z]*", "\\s");
+    private TextFormatter<Integer> getFormatterNumberPlusCommaPlusEnglish() {
+        return getFormatter("[0-9,a-zA-Z]*", "\\s");
     }
 
     private TextFormatter<Integer> getFormatter(String passRegex) {
@@ -330,7 +328,7 @@ public class POIController extends BaseController {
     public void execute() {
         try {
             poiViewModel.execute(handleLastTask(skipHint));
-        } catch (TryAgainException | NoTryAgainException e) {
+        } catch (TryAgainException | NoTryAgainException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -359,27 +357,12 @@ public class POIController extends BaseController {
             userFile.setText(file.getAbsolutePath());
     }
 
-    public void chooseFailJobsFile() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("选择输入文件");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("csv", "*.csv")
-        );
-        File file = fileChooser.showOpenDialog(scene.getWindow());
-        if (file != null)
-            failJobsFile.setText(file.getAbsolutePath());
-    }
-
     public void chooseDirectory() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("选择输出文件夹");
         File file = directoryChooser.showDialog(scene.getWindow());
         if (file != null)
             outputDirectory.setText(file.getAbsolutePath());
-    }
-
-    public void openDir() throws URISyntaxException, IOException {
-        Desktop.getDesktop().browse(new URI("file:/" + outputDirectory.getText()));
     }
 
     public void openQPSPage() throws URISyntaxException, IOException {

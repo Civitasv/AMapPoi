@@ -81,7 +81,7 @@ public class GeocodingController extends BaseController {
             appendMessage("高德key读取成功");
 
             appendMessage("读取线程数目中");
-            Integer threadNum = ParseUtil.tryParse(this.threadNum.getText());
+            Integer threadNum = ParseUtil.parseStr2Int(this.threadNum.getText());
             if (threadNum == null) {
                 appendMessage("解析线程数目失败，请检查！");
                 analysis(false);

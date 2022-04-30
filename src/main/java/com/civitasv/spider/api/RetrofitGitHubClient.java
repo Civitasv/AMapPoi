@@ -14,7 +14,7 @@ public class RetrofitGitHubClient {
 
     public static synchronized RetrofitGitHubClient getInstance() {
         if (instance == null)
-            return new RetrofitGitHubClient();
+            instance = new RetrofitGitHubClient();
         return instance;
     }
 

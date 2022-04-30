@@ -19,7 +19,6 @@ import java.util.List;
  * @since 2022-04-22 09:03:30
  */
 public class CityCodeServiceImpl implements CityCodeService {
-
     @Override
     public List<City> listByCityId(String cityId) {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();

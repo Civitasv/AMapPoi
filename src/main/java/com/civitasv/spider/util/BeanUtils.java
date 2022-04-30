@@ -10,8 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import static java.util.stream.Collectors.toList;
+import java.util.stream.Collectors;
 
 public class BeanUtils {
     /**
@@ -46,29 +45,29 @@ public class BeanUtils {
     }
 
     public static List<PoiPo> jobs2Poipos(List<Job> jobs) {
-        return jobs.stream().filter(job -> job.poi != null)
-                .flatMap(job -> job.poi.getPois()
+        return jobs.stream().filter(job -> job.poi() != null)
+                .flatMap(job -> job.poi().details()
                         .stream()
-                        .map(poi -> poi.toPoiPo(job.id)))
-                .collect(toList());
+                        .map(info -> info.toPoiPo(job.jobId())))
+                .collect(Collectors.toList());
     }
 
     public static List<JobPo> jobs2JobPos(List<Job> jobs) {
         return jobs.stream()
                 .map(Job::toJobPo)
-                .collect(toList());
+                .collect(Collectors.toList());
     }
 
-    public static List<Job> jobpos2Jobs(List<JobPo> jobPos) {
+    public static List<Job> jobPos2Jobs(List<JobPo> jobPos) {
         return jobPos.stream()
                 .map(JobPo::toJob)
-                .collect(toList());
+                .collect(Collectors.toList());
     }
 
     public static List<POI.Info> poipo2Poi(List<PoiPo> poiPos) {
         return poiPos.stream()
-                .map(PoiPo::toPoi)
-                .collect(toList());
+                .map(PoiPo::toPoiInfo)
+                .collect(Collectors.toList());
     }
 
     public static String obj2String(Object obj) {

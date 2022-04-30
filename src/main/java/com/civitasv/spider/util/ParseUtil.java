@@ -42,7 +42,7 @@ public class ParseUtil {
      * @param text 字符串
      * @return int整型
      */
-    public static Integer tryParse(String text) {
+    public static Integer parseStr2Int(String text) {
         try {
             return Integer.parseInt(text);
         } catch (NumberFormatException e) {

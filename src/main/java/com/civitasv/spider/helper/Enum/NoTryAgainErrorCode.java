@@ -1,7 +1,15 @@
 package com.civitasv.spider.helper.Enum;
 
-public enum NoTryAgainErrorCode {
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.Accessors;
 
+@Getter
+@Accessors(fluent = true)
+@ToString
+@RequiredArgsConstructor
+public enum NoTryAgainErrorCode {
     // 自定义Error
     KEY_POOL_RUN_OUT_OF(90001, "key池已耗尽，无法继续获取POI...", "请更换新的key，或暂停任务，第二天再尝试爬取poi"),
     STOP_TASK(90003, "任务终止", "请重启任务"),
@@ -48,25 +56,7 @@ public enum NoTryAgainErrorCode {
 
     private final Integer code;
     private final String description;
-    private final String helpinfo;
-
-    public Integer getCode() {
-        return code;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getHelpinfo() {
-        return helpinfo;
-    }
-
-    NoTryAgainErrorCode(Integer code, String description, String helpinfo) {
-        this.code = code;
-        this.description = description;
-        this.helpinfo = helpinfo;
-    }
+    private final String helpMessage;
 
     public static NoTryAgainErrorCode getError(String description) {
         for (NoTryAgainErrorCode value : NoTryAgainErrorCode.values()) {

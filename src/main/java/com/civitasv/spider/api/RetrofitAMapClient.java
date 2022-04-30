@@ -17,7 +17,7 @@ public class RetrofitAMapClient {
 
     public static synchronized RetrofitAMapClient getInstance() {
         if (instance == null)
-            return new RetrofitAMapClient();
+            instance = new RetrofitAMapClient();
         return instance;
     }
 

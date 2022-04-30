@@ -3,29 +3,18 @@ package com.civitasv.spider.model.po;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
+@Getter
+@ToString
 @TableName("city_code")
+@RequiredArgsConstructor
 public class City {
     @TableId("CITY_ID")
     private final String cityId;
     @TableField("NAME")
     private final String cityName;
-
-    public City(String cityId, String cityName) {
-        this.cityId = cityId;
-        this.cityName = cityName;
-    }
-
-    public String getCityId() {
-        return cityId;
-    }
-
-    public String getCityName() {
-        return cityName;
-    }
-
-    @Override
-    public String toString() {
-        return cityName;
-    }
 }

@@ -47,22 +47,13 @@
                     <Insets bottom="10.0" top="5.0"/>
                 </padding>
                 <Label prefHeight="18.0" prefWidth="100.0" text="POI类型："/>
-                <ChoiceBox fx:id="poiCate1" prefWidth="130.0" value="">
+                <ChoiceBox fx:id="poiCateBig" prefWidth="130.0" value="">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
                         </FXCollections>
                     </items>
                 </ChoiceBox>
-                <ChoiceBox fx:id="poiCate2" prefWidth="130.0" value="">
-                    <items>
-                        <FXCollections fx:factory="observableArrayList">
-                        </FXCollections>
-                    </items>
-                    <HBox.margin>
-                        <Insets left="5.0"/>
-                    </HBox.margin>
-                </ChoiceBox>
-                <ChoiceBox fx:id="poiCate3" prefWidth="130.0" value="">
+                <ChoiceBox fx:id="poiCateMid" prefWidth="130.0" value="">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
                         </FXCollections>
@@ -71,7 +62,16 @@
                         <Insets left="5.0"/>
                     </HBox.margin>
                 </ChoiceBox>
-                <Button fx:id="poiAdd" onMouseClicked="#addPoiCategory" prefHeight="30.0" prefWidth="100.0" text="添加">
+                <ChoiceBox fx:id="poiCateSub" prefWidth="130.0" value="">
+                    <items>
+                        <FXCollections fx:factory="observableArrayList">
+                        </FXCollections>
+                    </items>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </ChoiceBox>
+                <Button fx:id="poiCateAddBtn" onMouseClicked="#addPoiCategory" prefHeight="30.0" prefWidth="100.0" text="添加">
                     <HBox.margin>
                         <Insets left="5.0"/>
                     </HBox.margin>

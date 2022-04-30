@@ -12,7 +12,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 
 public class MainApplication extends Application {
-    public static boolean isDEV = false;
+    public static boolean isDEV = true;
 
     @Override
     public void init() throws Exception {

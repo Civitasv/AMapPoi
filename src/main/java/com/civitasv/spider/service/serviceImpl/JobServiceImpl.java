@@ -45,8 +45,8 @@ public class JobServiceImpl implements JobService {
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             JobMapper jobMapper = session.getMapper(JobMapper.class);
             QueryWrapper<JobPo> wrapper = new QueryWrapper<>();
-            wrapper.ne("status", JobStatus.SUCCESS.getCode());
-            wrapper.ne("status", JobStatus.GIVE_UP.getCode());
+            wrapper.ne("status", JobStatus.SUCCESS.code());
+            wrapper.ne("status", JobStatus.GIVE_UP.code());
             return jobMapper.selectList(wrapper);
         }
     }
@@ -109,7 +109,7 @@ public class JobServiceImpl implements JobService {
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             JobMapper jobMapper = session.getMapper(JobMapper.class);
             QueryWrapper<JobPo> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("status", jobStatus.getCode());
+            queryWrapper.eq("status", jobStatus.code());
             return jobMapper.selectCount(queryWrapper);
         }
     }
@@ -120,8 +120,8 @@ public class JobServiceImpl implements JobService {
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             JobMapper jobMapper = session.getMapper(JobMapper.class);
             QueryWrapper<JobPo> wrapper = new QueryWrapper<>();
-            wrapper.ne("status", JobStatus.SUCCESS.getCode());
-            wrapper.ne("status", JobStatus.GIVE_UP.getCode());
+            wrapper.ne("status", JobStatus.SUCCESS.code());
+            wrapper.ne("status", JobStatus.GIVE_UP.code());
             return jobMapper.selectCount(wrapper);
         }
     }

@@ -2,114 +2,112 @@ package com.civitasv.spider.model.bo;
 
 import com.civitasv.spider.model.po.PoiPo;
 import com.civitasv.spider.util.BeanUtils;
+import com.google.gson.annotations.SerializedName;
+import lombok.*;
+import lombok.experimental.Accessors;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
+@Getter
+@Setter
+@Accessors(fluent = true)
+@Builder
+@ToString
 public class POI {
+    @SerializedName("status")
     private final Integer status;
+    @SerializedName("info")
     private String info;
-    private Integer infocode;
+    @SerializedName("infocode")
+    private Integer infoCode;
+    @SerializedName("count")
     private Integer count;
-    private List<Info> pois;
+    @SerializedName("pois")
+    private List<Info> details;
 
+    @Getter
+    @Setter
+    @Accessors(fluent = true)
+    @Builder
+    @ToString
     public static class Info {
-        public Long oid;  // 对应id
-        public String id; // 唯一id 对应pid
-        public String name; // 名称
-        public String type; // 兴趣点类型
-        public String typecode; // 兴趣点类型编码
-        public Object address; // 地址
-        public Object location; // 经纬度
-        public Object tel; // 电话
-        public Object pname; //  省份名称
-        public Object cityname; // 城市名称
-        public Object adname; // 区域名称
+        private transient Long id;  // 对应PoiPo id
+        @SerializedName("id")
+        private String poiId; // 唯一id 对应pid
+        @SerializedName("name")
+        private String name; // 名称
+        @SerializedName("type")
+        private String type; // 兴趣点类型
+        @SerializedName("typecode")
+        private String typeCode; // 兴趣点类型编码
+        @SerializedName("biz_type")
+        private Object bizType; // 行业类型
+        @SerializedName("address")
+        private Object address; // 地址
+        @SerializedName("location")
+        private Object location; // 经纬度
+        @SerializedName("tel")
+        private Object tel; // 电话
+        @SerializedName("pname")
+        private Object provinceName; //  省份名称
+        @SerializedName("cityname")
+        private Object cityName; // 城市名称
+        @SerializedName("adname")
+        private Object adName; // 区域名称
 
-        public Info(Long oid, String id, String name, String type, String typecode, Object address, Object location, Object tel, Object pname, Object cityname, Object adname) {
-            this.oid = oid;
-            this.id = id;
-            this.name = name;
-            this.type = type;
-            this.typecode = typecode;
-            this.address = address;
-            this.location = location;
-            this.tel = tel;
-            this.pname = pname;
-            this.cityname = cityname;
-            this.adname = adname;
+        @SerializedName("postcode")
+        private Object postCode; // 邮编，extensions=all时返回
+        @SerializedName("website")
+        private Object website; // 网址，extensions=all时返回
+        @SerializedName("email")
+        private Object email; // 邮箱，extensions=all时返回
+        @SerializedName("pcode")
+        private Object provinceCode; // 省份编码，extensions=all时返回
+        @SerializedName("citycode")
+        private Object cityCode; // 城市编码，extensions=all时返回
+        @SerializedName("adcode")
+        private Object adCode; // 区域编码，extensions=all时返回
+
+        public PoiPo toPoiPo(Long jobId) {
+            return PoiPo.builder()
+                    .id(id)
+                    .poiId(poiId)
+                    .jobId(jobId)
+                    .name(name)
+                    .type(type)
+                    .typeCode(typeCode)
+                    .bizType(BeanUtils.obj2String(bizType))
+                    .address(BeanUtils.obj2String(address))
+                    .location(BeanUtils.obj2String(location))
+                    .tel(BeanUtils.obj2String(tel))
+                    .provinceName(BeanUtils.obj2String(provinceName))
+                    .cityName(BeanUtils.obj2String(cityName))
+                    .adName(BeanUtils.obj2String(adName))
+                    .build();
         }
 
-        @Override
-        public String toString() {
-            return "Info{" +
-                    "oid=" + oid +
-                    ", id='" + id + '\'' +
-                    ", name='" + name + '\'' +
-                    ", type='" + type + '\'' +
-                    ", typecode='" + typecode + '\'' +
-                    ", address=" + address +
-                    ", location=" + location +
-                    ", tel=" + tel +
-                    ", pname=" + pname +
-                    ", cityname=" + cityname +
-                    ", adname=" + adname +
-                    '}';
+        public PoiPo toPoiPoWithExtensions(Long jobId) {
+            return PoiPo.builder()
+                    .id(id)
+                    .poiId(poiId)
+                    .jobId(jobId)
+                    .name(name)
+                    .type(type)
+                    .typeCode(typeCode)
+                    .bizType(BeanUtils.obj2String(bizType))
+                    .address(BeanUtils.obj2String(address))
+                    .location(BeanUtils.obj2String(location))
+                    .tel(BeanUtils.obj2String(tel))
+                    .provinceName(BeanUtils.obj2String(provinceName))
+                    .cityName(BeanUtils.obj2String(cityName))
+                    .adName(BeanUtils.obj2String(adName))
+                    .postCode(BeanUtils.obj2String(postCode))
+                    .website(BeanUtils.obj2String(website))
+                    .email(BeanUtils.obj2String(email))
+                    .provinceCode(BeanUtils.obj2String(provinceCode))
+                    .cityCode(BeanUtils.obj2String(cityCode))
+                    .adCode(BeanUtils.obj2String(adCode))
+                    .build();
         }
-
-        public PoiPo toPoiPo(Long jobid) {
-            try {
-                return new PoiPo(oid, id, jobid, name, type, typecode, BeanUtils.obj2String(address),
-                        BeanUtils.obj2String(location), BeanUtils.obj2String(tel), BeanUtils.obj2String(pname),
-                        BeanUtils.obj2String(cityname), BeanUtils.obj2String(adname));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
-
-    public Integer getStatus() {
-        return status;
-    }
-
-    public String getInfo() {
-        return info;
-    }
-
-    public Integer getInfocode() {
-        return infocode;
-    }
-
-    public Integer getCount() {
-        return count;
-    }
-
-    public List<Info> getPois() {
-        return Objects.nonNull(pois) ? pois : Collections.emptyList();
-    }
-
-    public POI(Integer status) {
-        this.status = status;
-    }
-
-    public POI(Integer status, String info, Integer infocode, Integer count, List<Info> pois) {
-        this.status = status;
-        this.info = info;
-        this.infocode = infocode;
-        this.count = count;
-        this.pois = pois;
-    }
-
-    @Override
-    public String toString() {
-        return "POI{" +
-                "status=" + status +
-                ", info='" + info + '\'' +
-                ", infocode='" + infocode + '\'' +
-                ", count=" + count +
-                ", pois=" + pois +
-                '}';
     }
 }

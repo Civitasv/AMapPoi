@@ -12,6 +12,7 @@ import com.civitasv.spider.util.MyBatisUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -23,12 +24,8 @@ import java.util.List;
  * @since 2022-04-06 09:08:52
  */
 public class TaskServiceImpl implements TaskService {
-
-    private final JobService jobService = new JobServiceImpl();
-    private final PoiService poiService = new PoiServiceImpl();
-
     @Override
-    public Task getUnFinishedTask() {
+    public Task getUnFinishedTask() throws IOException {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             TaskMapper taskMapper = session.getMapper(TaskMapper.class);
@@ -37,8 +34,8 @@ public class TaskServiceImpl implements TaskService {
             queryWrapper.orderByDesc("id").last("limit 1");
             TaskPo taskPo = taskMapper.selectOne(queryWrapper);
             if (taskPo == null
-                    || TaskStatus.Give_Up.getCode().equals(taskPo.getStatus())
-                    || TaskStatus.Success.getCode().equals(taskPo.getStatus())) {
+                    || TaskStatus.Give_Up.code().equals(taskPo.status())
+                    || TaskStatus.Success.code().equals(taskPo.status())) {
                 return null;
             }
 

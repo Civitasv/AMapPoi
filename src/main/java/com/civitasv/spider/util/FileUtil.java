@@ -50,11 +50,6 @@ public class FileUtil {
         throw new FileExistsException("文件不存在：" + path);
     }
 
-    public static boolean pathExist(String path) {
-        File file = new File(path);
-        return file.exists();
-    }
-
     /**
      * 根据原始文件路径生成一个不重复的文件路径，如果A.shp不存在，则使用原路径
      * 如果A.shp已经存在，则使用新路径A(1).shp，如果A（1）.txt已存在，则使用新路径A（2）.txt，依次类推

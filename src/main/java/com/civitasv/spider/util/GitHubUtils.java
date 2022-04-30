@@ -34,7 +34,7 @@ public class GitHubUtils {
                         : "app/assets/version";
                 versionFilePath = new File(versionFilePath).getPath();
                 String currentVersion = FileUtil.readFile(versionFilePath);
-                if (currentVersion.equals(gitHubReleaseLatest.getTag_name())) {
+                if (currentVersion.equals(gitHubReleaseLatest.tagName())) {
                     if (showWhenNoNewVersion) {
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.INFORMATION,
                                 "检查新版本",
@@ -47,15 +47,15 @@ public class GitHubUtils {
                         MessageUtil.alertConfirmationDialog("新版本更新提示",
                                 "新版本更新提示",
                                 "POIKit已发布新版本，版本相关信息如下：\n" +
-                                        "版本号：" + gitHubReleaseLatest.getTag_name() + "\n" +
-                                        "标题：" + gitHubReleaseLatest.getName() + "\n" +
-                                        "描述：\n" + gitHubReleaseLatest.getBody().replace("*","").replace("=","") + "\n",
+                                        "版本号：" + gitHubReleaseLatest.tagName() + "\n" +
+                                        "标题：" + gitHubReleaseLatest.name() + "\n" +
+                                        "描述：\n" + gitHubReleaseLatest.body().replace("*","").replace("=","") + "\n",
                                 "前往下载新版本",
                                 "关闭"));
                 Platform.runLater(query);
                 // 阻塞本线程
                 if (query.get()) {
-                    Desktop.getDesktop().browse(new URI(gitHubReleaseLatest.getHtml_url()));
+                    Desktop.getDesktop().browse(new URI(gitHubReleaseLatest.htmlUrl()));
                 }
             } catch (Exception e) {
                 e.printStackTrace();

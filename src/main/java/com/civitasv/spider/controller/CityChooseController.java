@@ -86,14 +86,11 @@ public class CityChooseController extends BaseController {
             return;
         }
         parent.adCode.setText(selectCityCode);
-        // 像这样关闭舞台会绕过 onCloseRequest 事件处理程序（如果有的话）
-        Stage stage = (Stage) btnConfirm.getScene().getWindow();
         // 关闭前通知一下事件处理
         stage.close();
     }
 
     public void cancel() {
-        Stage stage = (Stage) btnCancel.getScene().getWindow();
         stage.close();
     }
 }

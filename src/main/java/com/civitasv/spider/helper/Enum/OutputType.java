@@ -1,26 +1,22 @@
 package com.civitasv.spider.helper.Enum;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.Accessors;
+
+@Getter
+@Accessors(fluent = true)
+@ToString
+@RequiredArgsConstructor
 public enum OutputType {
     CSV(0, "csv"),
     SHAPEFILE(1, "shp"),
     GEOJSON(2, "geojson"),
     TXT(3, "txt");
 
-    private final String description;
     private final Integer code;
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Integer getCode() {
-        return code;
-    }
-
-    OutputType(Integer code, String description) {
-        this.description = description;
-        this.code = code;
-    }
+    private final String description;
 
     public static OutputType getOutputType(String description) {
         for (OutputType value : OutputType.values()) {

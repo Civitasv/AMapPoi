@@ -23,52 +23,52 @@ import java.util.stream.Collectors;
 public class PoiCategoryServiceImpl extends ServiceImpl<PoiCategoryMapper, PoiCategory> implements PoiCategoryService {
 
     @Override
-    public List<String> getPoiCategory1() {
+    public List<String> getPoiCategoryBig() {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
             QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
-            wrapper.select(" DISTINCT substr(CATE_ID, 1,2) as CATE_ID, CATE1 ");
-            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.getCate1() + "(" + poiCategory.getCateId() + ")").collect(Collectors.toList());
+            wrapper.select(" DISTINCT substr(CATE_ID, 1,2) as CATE_ID, BIG ");
+            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.big() + "(" + poiCategory.cateId() + ")").collect(Collectors.toList());
         }
     }
 
     @Override
-    public List<String> getPoiCategory2(String cate1) {
+    public List<String> getPoiCategoryMid(String big) {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
             QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
-            wrapper.select("DISTINCT substr(CATE_ID, 1,4) as CATE_ID, CATE2")
-                    .eq("CATE1", cate1);
-            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.getCate2() + "(" + poiCategory.getCateId() + ")").collect(Collectors.toList());
+            wrapper.select("DISTINCT substr(CATE_ID, 1,4) as CATE_ID, MID")
+                    .eq("BIG", big);
+            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.mid() + "(" + poiCategory.cateId() + ")").collect(Collectors.toList());
         }
     }
 
     @Override
-    public List<String> getPoiCategory3(String cate1, String cate2) {
+    public List<String> getPoiCategorySub(String big, String mid) {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
             QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
-            wrapper.select("DISTINCT CATE3, CATE_ID")
-                    .eq("CATE1", cate1)
-                    .eq("CATE2", cate2);
-            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.getCate3() + "(" + poiCategory.getCateId() + ")").collect(Collectors.toList());
+            wrapper.select("DISTINCT SUB, CATE_ID")
+                    .eq("BIG", big)
+                    .eq("MID", mid);
+            return poiCategoryMapper.selectList(wrapper).stream().map(poiCategory -> poiCategory.sub() + "(" + poiCategory.cateId() + ")").collect(Collectors.toList());
         }
     }
 
     @Override
-    public String getPoiCategoryId(String cate1, String cate2, String cate3) {
+    public String getPoiCategoryId(String big, String mid, String sub) {
         SqlSessionFactory defaultMyBatis = MyBatisUtils.getDefaultMybatisPlus();
         try (SqlSession session = defaultMyBatis.openSession(true)) {
             PoiCategoryMapper poiCategoryMapper = session.getMapper(PoiCategoryMapper.class);
             QueryWrapper<PoiCategory> wrapper = new QueryWrapper<>();
             wrapper.select("CATE_ID")
-                    .eq("CATE1", cate1)
-                    .eq("CATE2", cate2)
-                    .eq("CATE3", cate3);
-            return poiCategoryMapper.selectOne(wrapper).getCateId();
+                    .eq("BIG", big)
+                    .eq("MID", mid)
+                    .eq("SUB", sub);
+            return poiCategoryMapper.selectOne(wrapper).cateId();
         }
     }
 }
