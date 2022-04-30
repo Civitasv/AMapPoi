@@ -7,7 +7,6 @@ import lombok.experimental.Accessors;
 
 @Getter
 @Accessors(fluent = true)
-@ToString
 @RequiredArgsConstructor
 public enum CoordinateType {
     BD09(0, "bd09"),
@@ -33,5 +32,10 @@ public enum CoordinateType {
             }
         }
         throw new IllegalArgumentException("没有符合该描述的枚举值");
+    }
+
+    @Override
+    public String toString() {
+        return description;
     }
 }

@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 
 public class POIViewModel {
     private final ViewHolder viewHolder;
-    private final DataHolder dataHolder;
+    private final ConfigHolder dataHolder;
 
     private final AMapDao mapDao;
     private final TaskService taskService;
@@ -85,7 +85,7 @@ public class POIViewModel {
                 .poiCateSub(controller.poiCateSub)
                 .poiCateAddBtn(controller.poiCateAddBtn)
                 .build();
-        this.dataHolder = new DataHolder();
+        this.dataHolder = new ConfigHolder();
         this.mapDao = new AMapDaoImpl();
         this.taskService = new TaskServiceImpl();
         this.jobService = new JobServiceImpl();
@@ -101,7 +101,7 @@ public class POIViewModel {
         public TextField adCode; // 行政区六位代码
         public TextField rectangle; // 矩形左上角#矩形右下角
         public TextField threshold; // 阈值
-        public ChoiceBox<String> format; // 输出格式
+        public ChoiceBox<OutputType> format; // 输出格式
         public TextField outputDirectory; // 输出文件夹
         public TextArea messageDetail; // 输出信息
         public TextField userFile; // 用户自定义文件
@@ -110,7 +110,7 @@ public class POIViewModel {
         public Button directoryBtn; // 点击选择文件夹
         public Button execute; // 执行
         public Button poiType; // 点击查看 poi 类型
-        public ChoiceBox<String> userType; // 用户类型
+        public ChoiceBox<UserType> userType; // 用户类型
         public ChoiceBox<CoordinateType> rectangleCoordinateType; // 矩形坐标格式
         public ChoiceBox<CoordinateType> userFileCoordinateType; // 用户自定义文件坐标格式
         public MenuItem wechat; // 微信
@@ -122,7 +122,7 @@ public class POIViewModel {
         public Button poiCateAddBtn; // poi添加
     }
 
-    private static class DataHolder {
+    private static class ConfigHolder {
         public static final int SIZE = 20;
         public Queue<String> aMapKeys;
         public Integer threadNum;
@@ -151,6 +151,10 @@ public class POIViewModel {
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "高德key池不能为空！"));
             return false;
         }
+        if (viewHolder.userType.getSelectionModel().getSelectedIndex() == -1) {
+            Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "用户类型", null, "请选择用户类型！"));
+            return false;
+        }
         if (viewHolder.keywords.getText().isEmpty() && viewHolder.types.getText().isEmpty()) {
             // 关键字和类型均为空
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "参数设置", null, "POI关键字和POI类型两者至少必填其一！"));
@@ -166,17 +170,13 @@ public class POIViewModel {
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "线程数目", null, "线程数目不能为空！"));
             return false;
         }
+        if(viewHolder.format.getSelectionModel().getSelectedIndex()==-1){
+            Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "输出格式", null, "请选择输出格式！"));
+            return false;
+        }
         if (viewHolder.outputDirectory.getText().isEmpty()) {
             // 输出文件夹为空
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "输出文件夹", null, "输出文件夹不能为空！"));
-            return false;
-        }
-        return true;
-    }
-
-    private boolean userType() {
-        if (viewHolder.userType.getSelectionModel().getSelectedIndex() == -1) {
-            Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "用户类型", null, "请选择用户类型！"));
             return false;
         }
         return true;
@@ -254,13 +254,13 @@ public class POIViewModel {
         int qps = 0;
         appendMessage("您是" + viewHolder.userType.getValue());
         switch (viewHolder.userType.getValue()) {
-            case "个人开发者":
+            case IndividualDevelopers:
                 qps = 20;
                 break;
-            case "个人认证开发者":
+            case IndividualCertifiedDeveloper:
                 qps = 50;
                 break;
-            case "企业开发者":
+            case EnterpriseDeveloper:
                 qps = 300;
                 break;
         }
@@ -346,7 +346,6 @@ public class POIViewModel {
     public void execute(Task task) {
         clearMessage();
         if (!check()) return;
-        if (!userType()) return;
         if (!aMapKeys()) return;
         if (!threadNum()) return;
         if (!threshold()) return;
@@ -430,8 +429,8 @@ public class POIViewModel {
                         .threadNum(dataHolder.threadNum)
                         .threshold(dataHolder.threshold)
                         .outputDirectory(viewHolder.outputDirectory.getText())
-                        .outputType(OutputType.getOutputType(viewHolder.format.getValue()))
-                        .userType(UserType.getUserType(viewHolder.userType.getValue()))
+                        .outputType(viewHolder.format.getValue())
+                        .userType(viewHolder.userType.getValue())
                         .requestExpectedTimes(0)
                         .requestExpectedTimes(0)
                         .poiActualCount(0)
@@ -601,14 +600,14 @@ public class POIViewModel {
 
         // 导出res
         switch (viewHolder.format.getValue()) {
-            case "csv":
-            case "txt":
+            case CSV:
+            case TXT:
                 writeToCsvOrTxt(pois, viewHolder.format.getValue());
                 break;
-            case "geojson":
+            case GEOJSON:
                 writeToGeoJson(pois);
                 break;
-            case "shp":
+            case SHAPEFILE:
                 writeToShp(pois);
         }
         taskService.updateById(task.toTaskPo());
@@ -763,7 +762,7 @@ public class POIViewModel {
         // 保存第一页的数据
         taskService.updateById(task.toTaskPo());
         jobService.saveBatch(BeanUtils.jobs2JobPos(analysisGrid));
-        poiService.saveBatch(BeanUtils.jobs2Poipos(analysisGrid));
+        poiService.saveBatch(BeanUtils.jobs2PoiPos(analysisGrid));
         return analysisGrid;
     }
 
@@ -808,7 +807,7 @@ public class POIViewModel {
             dataHolder.haveSavedUnfinishedJobs = false;
             spiderPoiOfJobs(jobs, task, jobCount);
             if (!dataHolder.hasStart) {
-                return BeanUtils.poipo2Poi(poiService.list());
+                return BeanUtils.poiPo2PoiInfo(poiService.list());
             }
             List<Job> newJobs = Collections.unmodifiableList(BeanUtils.jobPos2Jobs(jobService.listUnFinished()));
             if (newJobs.size() == 0) {
@@ -826,7 +825,7 @@ public class POIViewModel {
             jobs = newJobs;
             i++;
         }
-        return BeanUtils.poipo2Poi(poiService.list());
+        return BeanUtils.poiPo2PoiInfo(poiService.list());
     }
 
     /**
@@ -901,7 +900,7 @@ public class POIViewModel {
                     appendMessage("正在写入数据，请稍等...");
                     taskService.updateById(task.toTaskPo());
                     jobService.updateBatch(BeanUtils.jobs2JobPos(cached));
-                    poiService.saveBatch(BeanUtils.jobs2Poipos(
+                    poiService.saveBatch(BeanUtils.jobs2PoiPos(
                             cached.stream()
                                     .filter(job -> job.jobStatus().equals(JobStatus.SUCCESS))
                                     .collect(Collectors.toList())));
@@ -937,7 +936,7 @@ public class POIViewModel {
         }
         taskService.updateById(task.toTaskPo());
         jobService.updateBatch(BeanUtils.jobs2JobPos(cached));
-        poiService.saveBatch(BeanUtils.jobs2Poipos(
+        poiService.saveBatch(BeanUtils.jobs2PoiPos(
                 cached.stream()
                         .filter(job -> job.jobStatus().equals(JobStatus.SUCCESS))
                         .collect(Collectors.toList()))
@@ -1093,9 +1092,9 @@ public class POIViewModel {
         return filename.length() > 200 ? filename.substring(0, 200) + "等." + format : filename + "." + format;
     }
 
-    private void writeToCsvOrTxt(List<POI.Info> res, String format) {
+    private void writeToCsvOrTxt(List<POI.Info> res, OutputType format) {
         if (!dataHolder.hasStart) return;
-        String filename = filename(format);
+        String filename = filename(format.description());
         File csvFile = FileUtil.getNewFile(filename);
         if (csvFile == null) {
             appendMessage("输出路径有误，请检查后重试！");
@@ -1103,7 +1102,7 @@ public class POIViewModel {
         }
         try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(csvFile.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");
-            if (format.equals("csv"))
+            if (format == OutputType.CSV)
                 writer.write('\ufeff');
             writer.write("id,name,type,typecode,address,tel,pname,cityname,adname,gcj02_lon,gcj02_lat,wgs84_lon,wgs84_lat\r\n");
             for (POI.Info info : res) {

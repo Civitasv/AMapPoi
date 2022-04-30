@@ -6,7 +6,6 @@ import lombok.ToString;
 import lombok.experimental.Accessors;
 
 @Getter
-@ToString
 @Accessors(fluent = true)
 @RequiredArgsConstructor
 public enum UserType {
@@ -33,5 +32,10 @@ public enum UserType {
             }
         }
         throw new IllegalArgumentException("没有符合该描述的枚举值");
+    }
+
+    @Override
+    public String toString() {
+        return description;
     }
 }

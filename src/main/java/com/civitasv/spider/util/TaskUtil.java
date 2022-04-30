@@ -3,13 +3,11 @@ package com.civitasv.spider.util;
 import com.civitasv.spider.helper.Enum.BoundaryType;
 import com.civitasv.spider.helper.Enum.CoordinateType;
 import com.civitasv.spider.model.bo.POI;
-import com.civitasv.spider.viewmodel.POIViewModel;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.function.Predicate;
 
 public class TaskUtil {

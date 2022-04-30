@@ -7,7 +7,6 @@ import lombok.experimental.Accessors;
 
 @Getter
 @Accessors(fluent = true)
-@ToString
 @RequiredArgsConstructor
 public enum BoundaryType {
     ADCODE(0, "行政区"),

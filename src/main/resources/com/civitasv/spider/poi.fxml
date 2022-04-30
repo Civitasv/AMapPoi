@@ -35,9 +35,6 @@
                 <ChoiceBox fx:id="userType" prefWidth="150.0" value="个人开发者">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="个人开发者"/>
-                            <String fx:value="个人认证开发者"/>
-                            <String fx:value="企业开发者"/>
                         </FXCollections>
                     </items>
                 </ChoiceBox>
@@ -192,10 +189,6 @@
                 <ChoiceBox fx:id="format" prefWidth="150.0" value="geojson">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="geojson"/>
-                            <String fx:value="shp"/>
-                            <String fx:value="csv"/>
-                            <String fx:value="txt"/>
                         </FXCollections>
                     </items>
                 </ChoiceBox>

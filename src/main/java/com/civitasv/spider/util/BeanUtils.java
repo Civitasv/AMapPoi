@@ -44,7 +44,7 @@ public class BeanUtils {
         return bean;
     }
 
-    public static List<PoiPo> jobs2Poipos(List<Job> jobs) {
+    public static List<PoiPo> jobs2PoiPos(List<Job> jobs) {
         return jobs.stream().filter(job -> job.poi() != null)
                 .flatMap(job -> job.poi().details()
                         .stream()
@@ -64,7 +64,7 @@ public class BeanUtils {
                 .collect(Collectors.toList());
     }
 
-    public static List<POI.Info> poipo2Poi(List<PoiPo> poiPos) {
+    public static List<POI.Info> poiPo2PoiInfo(List<PoiPo> poiPos) {
         return poiPos.stream()
                 .map(PoiPo::toPoiInfo)
                 .collect(Collectors.toList());

@@ -7,7 +7,6 @@ import lombok.experimental.Accessors;
 
 @Getter
 @Accessors(fluent = true)
-@ToString
 @RequiredArgsConstructor
 public enum OutputType {
     CSV(0, "csv"),
@@ -34,5 +33,10 @@ public enum OutputType {
             }
         }
         throw new IllegalArgumentException("没有符合该描述的枚举值");
+    }
+
+    @Override
+    public String toString() {
+        return description;
     }
 }

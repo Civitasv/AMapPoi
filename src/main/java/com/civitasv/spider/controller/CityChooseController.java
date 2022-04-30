@@ -1,24 +1,19 @@
 package com.civitasv.spider.controller;
 
-import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.model.po.City;
 import com.civitasv.spider.service.CityCodeService;
 import com.civitasv.spider.service.serviceImpl.CityCodeServiceImpl;
 import com.civitasv.spider.util.MessageUtil;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.image.Image;
 import javafx.stage.Modality;
-import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Created by leon
@@ -36,7 +31,7 @@ public class CityChooseController extends BaseController {
         this.parent = parent;
         initTreeView();
         stage.initModality(Modality.APPLICATION_MODAL);
-        stage.initOwner(parent.getMainStage());
+        stage.initOwner(parent.stage());
         stage.show();
     }
 

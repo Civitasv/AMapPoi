@@ -5,8 +5,6 @@ import com.civitasv.spider.helper.Enum.TaskStatus;
 import com.civitasv.spider.mapper.TaskMapper;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.model.po.TaskPo;
-import com.civitasv.spider.service.JobService;
-import com.civitasv.spider.service.PoiService;
 import com.civitasv.spider.service.TaskService;
 import com.civitasv.spider.util.MyBatisUtils;
 import org.apache.ibatis.session.SqlSession;

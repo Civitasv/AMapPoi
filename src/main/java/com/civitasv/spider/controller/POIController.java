@@ -2,10 +2,7 @@ package com.civitasv.spider.controller;
 
 import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.controller.helper.ControllerFactory;
-import com.civitasv.spider.helper.Enum.CoordinateType;
-import com.civitasv.spider.helper.Enum.NoTryAgainErrorCode;
-import com.civitasv.spider.helper.Enum.TaskStatus;
-import com.civitasv.spider.helper.Enum.UserType;
+import com.civitasv.spider.helper.Enum.*;
 import com.civitasv.spider.helper.exception.NoTryAgainException;
 import com.civitasv.spider.helper.exception.TryAgainException;
 import com.civitasv.spider.model.bo.Task;
@@ -50,7 +47,7 @@ public class POIController extends BaseController {
     public TextField adCode; // 行政区六位代码
     public TextField rectangle; // 矩形左上角#矩形右下角
     public TextField threshold; // 阈值
-    public ChoiceBox<String> format; // 输出格式
+    public ChoiceBox<OutputType> format; // 输出格式
     public TextField outputDirectory; // 输出文件夹
     public TextArea messageDetail; // 输出信息
     public TextField userFile; // 用户自定义文件
@@ -59,7 +56,7 @@ public class POIController extends BaseController {
     public Button directoryBtn; // 点击选择文件夹
     public Button execute; // 执行
     public Button poiType; // 点击查看 poi 类型
-    public ChoiceBox<String> userType; // 用户类型
+    public ChoiceBox<UserType> userType; // 用户类型
     public ChoiceBox<CoordinateType> rectangleCoordinateType; // 矩形坐标格式
     public ChoiceBox<CoordinateType> userFileCoordinateType; // 用户自定义文件坐标格式
     public MenuItem wechat; // 微信
@@ -70,7 +67,7 @@ public class POIController extends BaseController {
     public ChoiceBox<String> poiCateSub; // POI小类
     public Button poiCateAddBtn; // poi添加
 
-    // 数据库操作对象
+    // 打开其它页面
     private final ControllerFactory controllerFactory = ControllerUtils.getControllerFactory();
 
     // 大中小类
@@ -82,7 +79,7 @@ public class POIController extends BaseController {
     private final PoiService poiService = new PoiServiceImpl();
     private final PoiCategoryService poiCategoryService = new PoiCategoryServiceImpl();
 
-    public Stage getMainStage() {
+    public Stage stage() {
         return stage;
     }
 
@@ -119,8 +116,19 @@ public class POIController extends BaseController {
         this.types.setTextFormatter(getFormatterNumberPlusComma());
         this.keys.setTextFormatter(getFormatterNumberPlusCommaPlusEnglish());
 
-        // 默认不选择用户类型
-        this.userType.getSelectionModel().select(-1);
+        this.userType.setItems(new ObservableListWrapper<>(
+                Arrays.asList(
+                        UserType.IndividualDevelopers,
+                        UserType.IndividualCertifiedDeveloper,
+                        UserType.EnterpriseDeveloper)
+        ));
+        this.format.setItems(new ObservableListWrapper<>(
+                Arrays.asList(
+                        OutputType.CSV,
+                        OutputType.TXT,
+                        OutputType.GEOJSON,
+                        OutputType.SHAPEFILE)
+        ));
 
         // 设置坐标类型
         List<CoordinateType> list = Arrays.asList(CoordinateType.WGS84, CoordinateType.BD09, CoordinateType.GCJ02);
@@ -151,13 +159,11 @@ public class POIController extends BaseController {
         refreshChoiceBoxCateBig();
 
         this.poiCateBig.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCateMid(newValue));
-
         this.poiCateMid.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> refreshChoiceBoxCateSub(newValue));
-
         this.poiCateSub.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> getPoiCategory(newValue));
 
         // messageDetail 设置为不可编辑
-        messageDetail.setEditable(false);
+        this.messageDetail.setEditable(false);
     }
 
     private boolean continueLastTaskByAlert(Task task, int allJobSize, int unFinishJobSize) {
@@ -187,6 +193,7 @@ public class POIController extends BaseController {
     public Task handleLastTask(boolean skipAlert) throws TryAgainException, NoTryAgainException, IOException {
         // 判断是否有未完成的task
         Task task = taskService.getUnFinishedTask();
+        // 如果全部已完成，那么使 index 归零
         if (task == null) {
             jobService.clearTable();
             poiService.clearTable();
@@ -194,6 +201,7 @@ public class POIController extends BaseController {
         }
 
         if (!skipAlert && !continueLastTaskByAlert(task, jobService.count(), jobService.countUnFinished())) {
+            // 如果用户选择不爬取未完成任务
             jobService.clearTable();
             poiService.clearTable();
             task.taskStatus(TaskStatus.Give_Up);
@@ -205,33 +213,44 @@ public class POIController extends BaseController {
         }
 
         // 初始化界面
-        // 如果还未填入key，则直接使用上次执行任务时的key，如果已经填入key，则将新的key也加入到keys中。
+        // 若当前用户填入的 key 与之前任务不同
         if (!keys.getText().equals(String.join(",", task.aMapKeys()))) {
+            // 则选择新加入的 key
             if (!StringUtils.isEmpty(keys.getText())) {
-                task.aMapKeys(Arrays.stream(keys.getText().split(",")).collect(Collectors.toCollection(ArrayDeque::new)));
+                task.aMapKeys(Arrays.stream(keys.getText().split(","))
+                        .collect(Collectors.toCollection(ArrayDeque::new)));
             }
+            // 如果还未填入key，则直接使上次执行任务时的key
             keys.setText(String.join(",", task.aMapKeys()));
         }
-
-        keywords.setText(task.keywords());
+        int selectedUserTypeIndex = userType.getSelectionModel().getSelectedIndex();
+        if (!task.userType().code().equals(selectedUserTypeIndex)) {
+            // 如果用户填入了不同的用户类型，选择新的
+            if (selectedUserTypeIndex != -1) {
+                task.userType(UserType.getUserType(selectedUserTypeIndex));
+            }
+            userType.getSelectionModel().select(task.userType().code());
+        }
         types.setText(task.types());
-        outputDirectory.setText(task.outputDirectory());
+        keywords.setText(task.keywords());
+        tabs.getSelectionModel().select(task.boundaryType().code());
         threshold.setText(task.threshold().toString());
         if (!threadNum.getText().equals(task.threadNum().toString())) {
+            // 如果用户填入了不同的线程数，选择新的
             if (!StringUtils.isEmpty(threadNum.getText())) {
                 task.threadNum(Integer.parseInt(threadNum.getText()));
             }
             threadNum.setText(task.threadNum().toString());
         }
-        int selectedIndex = userType.getSelectionModel().getSelectedIndex();
-        if (!task.userType().code().equals(selectedIndex)) {
-            if (selectedIndex != -1) {
-                task.userType(UserType.getUserType(selectedIndex));
+        int selectedOutputTypeIndex = format.getSelectionModel().getSelectedIndex();
+        if (!task.outputType().code().equals(selectedOutputTypeIndex)) {
+            // 如果用户填入了不同的输出格式，选择新的
+            if (selectedOutputTypeIndex != -1) {
+                task.outputType(OutputType.getOutputType(selectedOutputTypeIndex));
             }
-            userType.getSelectionModel().select(task.userType().code());
+            format.getSelectionModel().select(task.outputType().code());
         }
-        tabs.getSelectionModel().select(task.boundaryType().code());
-        format.getSelectionModel().select(task.outputType().code());
+        outputDirectory.setText(task.outputDirectory());
         String configContent = task.boundaryConfig().split(":")[1];
         switch (task.boundaryType()) {
             case ADCODE:
