@@ -27,30 +27,39 @@ public class POI {
 
     @Getter
     @Accessors(fluent = true)
-    @ToString
-    @RequiredArgsConstructor
+    @AllArgsConstructor
     public enum OutputFields {
-        ID("id", "唯一ID", false),
-        NAME("name", "名称", false),
-        TYPE("type", "类型", false),
-        TYPE_CODE("typeCode", "类型编码", false),
-        BIZ_TYPE("bizType", "行业类型", false),
-        ADDRESS("address", "地址", false),
-        LOCATION("location", "经纬度", false),
-        TEL("tel", "电话", false),
-        PROVINCE_NAME("provinceName", "省份名称", false),
-        CITY_NAME("cityName", "城市名称", false),
-        AD_NAME("adName", "区域名称", false),
+        ID("id", "唯一ID", false, false),
+        NAME("name", "名称", false, false),
+        TYPE("type", "类型", false, false),
+        TYPE_CODE("typeCode", "类型编码", false, false),
+        BIZ_TYPE("bizType", "行业类型", false, false),
+        ADDRESS("address", "地址", false, false),
+        LOCATION("location", "经纬度", false, false),
+        TEL("tel", "电话", false, false),
+        PROVINCE_NAME("provinceName", "省份名称", false, false),
+        CITY_NAME("cityName", "城市名称", false, false),
+        AD_NAME("adName", "区域名称", false, false),
 
-        POST_CODE("postCode", "邮编", true),
-        WEBSITE("website", "网址", true),
-        EMAIL("email", "邮箱", true),
-        PROVINCE_CODE("provinceCode", "省份编码", true),
-        CITY_CODE("cityCode", "城市编码", true),
-        AD_CODE("adCode", "区域编码", true);
+        POST_CODE("postCode", "邮编", true, false),
+        WEBSITE("website", "网址", true, false),
+        EMAIL("email", "邮箱", true, false),
+        PROVINCE_CODE("provinceCode", "省份编码", true, false),
+        CITY_CODE("cityCode", "城市编码", true, false),
+        AD_CODE("adCode", "区域编码", true, false);
         private final String fieldName;
         private final String description;
         private final boolean inExtension;
+        private boolean checked;
+
+        public void checked(boolean checked) {
+            this.checked = checked;
+        }
+
+        @Override
+        public String toString() {
+            return description;
+        }
     }
 
     @Getter

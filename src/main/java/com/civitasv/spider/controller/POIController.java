@@ -5,6 +5,7 @@ import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.helper.Enum.*;
 import com.civitasv.spider.helper.exception.NoTryAgainException;
 import com.civitasv.spider.helper.exception.TryAgainException;
+import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.service.JobService;
 import com.civitasv.spider.service.PoiCategoryService;
@@ -19,6 +20,7 @@ import com.civitasv.spider.util.GitHubUtils;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import com.sun.javafx.collections.ObservableListWrapper;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
@@ -51,7 +53,6 @@ public class POIController extends BaseController {
     public TextField outputDirectory; // 输出文件夹
     public TextArea messageDetail; // 输出信息
     public TextField userFile; // 用户自定义文件
-    public TextField failJobsFile; // 失败任务文件
     public TabPane tabs; // tab 栏
     public Button directoryBtn; // 点击选择文件夹
     public Button execute; // 执行
@@ -73,6 +74,11 @@ public class POIController extends BaseController {
     // 大中小类
     private String cateBigText, cateMidText, cateSubText;
     private String curCategoryId;
+
+    // 输出字段
+    public void outputFields(List<POI.OutputFields> val) {
+        this.poiViewModel.outputFields(val);
+    }
 
     private final TaskService taskService = new TaskServiceImpl();
     private final JobService jobService = new JobServiceImpl();
@@ -96,6 +102,7 @@ public class POIController extends BaseController {
     private void initStageHandler() {
         stage.setOnShown(event -> {
             try {
+                // TODO: 2022/5/1 handleLastTask 执行了两次 
                 if (handleLastTask(false) != null) {
                     skipHint = true;
                     execute();
@@ -356,13 +363,14 @@ public class POIController extends BaseController {
         poiViewModel.cancel();
     }
 
-    public void openCityChoose() throws IOException {
+    public void chooseAdCode() throws IOException {
         CityChooseController controller = controllerFactory.createController(CityChooseController.class);
         controller.show(this);
     }
 
-    public void chooseAdCode() throws IOException {
-        openCityChoose();
+    public void chooseOutputFields() throws IOException {
+        FieldsChooseController controller = controllerFactory.createController(FieldsChooseController.class);
+        controller.show(this);
     }
 
     public void chooseFile() {

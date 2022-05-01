@@ -23,6 +23,7 @@ import com.civitasv.spider.webdao.impl.AMapDaoImpl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import lombok.Builder;
 import org.geotools.data.DataUtilities;
@@ -57,6 +58,10 @@ public class POIViewModel {
     private ExecutorService worker, executorService;
     private ExecutorCompletionService<Job> completionService;
 
+    public void outputFields(List<POI.OutputFields> outputFields) {
+        this.viewHolder.outputFields = outputFields;
+    }
+
     public POIViewModel(POIController controller) {
         this.viewHolder = ViewHolder.builder()
                 .threadNum(controller.threadNum)
@@ -70,7 +75,6 @@ public class POIViewModel {
                 .outputDirectory(controller.outputDirectory)
                 .messageDetail(controller.messageDetail)
                 .userFile(controller.userFile)
-                .failJobsFile(controller.failJobsFile)
                 .tabs(controller.tabs)
                 .directoryBtn(controller.directoryBtn)
                 .execute(controller.execute)
@@ -103,9 +107,9 @@ public class POIViewModel {
         public TextField threshold; // 阈值
         public ChoiceBox<OutputType> format; // 输出格式
         public TextField outputDirectory; // 输出文件夹
+        public List<POI.OutputFields> outputFields; // 输出字段
         public TextArea messageDetail; // 输出信息
         public TextField userFile; // 用户自定义文件
-        public TextField failJobsFile; // 任务失败文件
         public TabPane tabs; // tab 栏
         public Button directoryBtn; // 点击选择文件夹
         public Button execute; // 执行
@@ -146,6 +150,7 @@ public class POIViewModel {
     }
 
     private boolean check() {
+        System.out.println(viewHolder.outputFields);
         if (viewHolder.keys.getText().isEmpty()) {
             // keys为空
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "高德key池不能为空！"));
@@ -170,7 +175,7 @@ public class POIViewModel {
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "线程数目", null, "线程数目不能为空！"));
             return false;
         }
-        if(viewHolder.format.getSelectionModel().getSelectedIndex()==-1){
+        if (viewHolder.format.getSelectionModel().getSelectedIndex() == -1) {
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "输出格式", null, "请选择输出格式！"));
             return false;
         }

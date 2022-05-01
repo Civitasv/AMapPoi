@@ -10,7 +10,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.stage.Modality;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,7 +23,7 @@ public class CityChooseController extends BaseController {
     public TreeView<City> cityTree;
     public Button btnConfirm, btnCancel;
     private POIController parent;
-    private String selectCityCode;
+    private City selectedCity;
     private final CityCodeService cityCodeService = new CityCodeServiceImpl();
 
     public void show(POIController parent) throws IOException {
@@ -46,13 +45,13 @@ public class CityChooseController extends BaseController {
         for (City province : provinces) {
             TreeItem<City> provinceItem = new TreeItem<>(province);
             rootItem.getChildren().add(provinceItem);
-            String provinceId = province.getCityId();
+            String provinceId = province.cityId();
             // 市节点
             List<City> cities = cityCodeService.listByCityId(provinceId);
             for (City city : cities) {
                 TreeItem<City> cityItem = new TreeItem<>(city);
                 provinceItem.getChildren().add(cityItem);
-                String cityId = city.getCityId();
+                String cityId = city.cityId();
                 // 区县节点
                 List<City> districts = cityCodeService.listByCityId(cityId);
                 for (City district : districts) {
@@ -66,21 +65,22 @@ public class CityChooseController extends BaseController {
         cityTree.setRoot(rootItem);
 
         cityTree.getSelectionModel().selectedItemProperty().addListener(
-                (observableValue, oldItem, newItem) -> selectCityCode = newItem.getValue().getCityId()
+                (observableValue, oldItem, newItem) -> selectedCity
+                        = newItem.getValue()
         );
 
     }
 
     public void confirm() {
-        if (StringUtils.isEmpty(selectCityCode)) {
+        if (selectedCity == null) {
             MessageUtil.alert(Alert.AlertType.ERROR, "未选择", null, "请先选择行政区划！");
             return;
         }
-        if (selectCityCode.equals("100000")) {
+        if (selectedCity.cityId().equals("100000")) {
             MessageUtil.alert(Alert.AlertType.ERROR, "范围过大", null, "选择的查询范围过大！");
             return;
         }
-        parent.adCode.setText(selectCityCode);
+        parent.adCode.setText(selectedCity.cityId());
         // 关闭前通知一下事件处理
         stage.close();
     }

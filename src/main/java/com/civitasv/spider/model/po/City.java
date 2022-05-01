@@ -7,14 +7,20 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.Accessors;
 
 @Getter
-@ToString
 @TableName("city_code")
+@Accessors(fluent = true)
 @RequiredArgsConstructor
 public class City {
     @TableId("CITY_ID")
     private final String cityId;
     @TableField("NAME")
     private final String cityName;
+
+    @Override
+    public String toString() {
+        return cityName;
+    }
 }

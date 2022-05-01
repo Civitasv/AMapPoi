@@ -192,6 +192,13 @@
                         </FXCollections>
                     </items>
                 </ChoiceBox>
+
+                <Button mnemonicParsing="false" onMouseClicked="#chooseOutputFields" prefHeight="30.0"
+                        text="选择输出字段">
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </Button>
             </HBox>
             <HBox alignment="CENTER_LEFT">
                 <padding>
