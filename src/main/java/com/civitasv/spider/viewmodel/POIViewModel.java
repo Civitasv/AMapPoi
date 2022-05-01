@@ -87,6 +87,8 @@ public class POIViewModel {
                 .poiCateMid(controller.poiCateMid)
                 .poiCateSub(controller.poiCateSub)
                 .poiCateAddBtn(controller.poiCateAddBtn)
+                .openQPSBtn(controller.openQPSBtn)
+                .chooseOutputFieldsBtn(controller.chooseOutputFieldsBtn)
                 .build();
         this.viewHolder.initOutputFields();
         this.configHolder = new ConfigHolder();
@@ -107,6 +109,8 @@ public class POIViewModel {
         public TextField threshold; // 阈值
         public ChoiceBox<OutputType> format; // 输出格式
         public TextField outputDirectory; // 输出文件夹
+        public Button openQPSBtn; // 查看 QPS
+        public Button chooseOutputFieldsBtn; // 选择输出字段
         public List<POI.OutputFields> outputFields; // 输出字段
         public TextArea messageDetail; // 输出信息
         public TextField userFile; // 用户自定义文件
@@ -524,6 +528,8 @@ public class POIViewModel {
             viewHolder.poiCateMid.setDisable(isAnalysis);
             viewHolder.poiCateSub.setDisable(isAnalysis);
             viewHolder.poiCateAddBtn.setDisable(isAnalysis);
+            viewHolder.chooseOutputFieldsBtn.setDisable(isAnalysis);
+            viewHolder.openQPSBtn.setDisable(isAnalysis);
         });
     }
 
@@ -1407,11 +1413,5 @@ public class POIViewModel {
 
     private void appendMessage(String text) {
         Platform.runLater(() -> viewHolder.messageDetail.appendText(text + "\r\n"));
-    }
-
-    private void replaceLatestRowMessage(String text) {
-        String allText = viewHolder.messageDetail.getText();
-        int start = allText.lastIndexOf("\n", allText.length() - 2);
-        Platform.runLater(() -> viewHolder.messageDetail.replaceText(new IndexRange(start + 1, allText.length()), text + "\r\n"));
     }
 }

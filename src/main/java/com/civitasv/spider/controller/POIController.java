@@ -49,8 +49,10 @@ public class POIController extends BaseController {
     public TextField adCode; // 行政区六位代码
     public TextField rectangle; // 矩形左上角#矩形右下角
     public TextField threshold; // 阈值
+    public Button openQPSBtn; // 查看 QPS
     public ChoiceBox<OutputType> format; // 输出格式
     public TextField outputDirectory; // 输出文件夹
+    public Button chooseOutputFieldsBtn; // 选择输出字段
     public TextArea messageDetail; // 输出信息
     public TextField userFile; // 用户自定义文件
     public TabPane tabs; // tab 栏

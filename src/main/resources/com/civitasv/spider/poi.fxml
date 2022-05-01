@@ -173,7 +173,7 @@
                 <Label prefHeight="18.0" prefWidth="100.0" text="线程数目："/>
                 <TextField fx:id="threadNum" prefHeight="25.0" prefWidth="300.0" promptText="建议不大于QPS * key数量"
                            HBox.hgrow="ALWAYS"/>
-                <Button mnemonicParsing="false" onMouseClicked="#openQPSPage" prefHeight="30.0"
+                <Button fx:id="openQPSBtn" mnemonicParsing="false" onMouseClicked="#openQPSPage" prefHeight="30.0"
                         text="查看QPS">
                     <HBox.margin>
                         <Insets left="5.0"/>
@@ -193,7 +193,7 @@
                     </items>
                 </ChoiceBox>
 
-                <Button mnemonicParsing="false" onMouseClicked="#chooseOutputFields" prefHeight="30.0"
+                <Button fx:id="chooseOutputFieldsBtn" mnemonicParsing="false" onMouseClicked="#chooseOutputFields" prefHeight="30.0"
                         text="选择输出字段">
                     <HBox.margin>
                         <Insets left="5.0"/>
