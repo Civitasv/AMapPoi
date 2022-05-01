@@ -5,7 +5,6 @@ import com.civitasv.spider.helper.Enum.*;
 import com.civitasv.spider.helper.exception.NoTryAgainException;
 import com.civitasv.spider.helper.exception.TryAgainException;
 import com.civitasv.spider.model.Feature;
-import com.civitasv.spider.model.GeoJSON;
 import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.bo.Task;
@@ -24,7 +23,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.opencsv.CSVWriter;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import lombok.Builder;
 import org.geotools.data.DataUtilities;
@@ -35,22 +33,21 @@ import org.locationtech.jts.geom.*;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
-import java.io.*;
-import java.nio.charset.Charset;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class POIViewModel {
     private final ViewHolder viewHolder;
-    private final ConfigHolder dataHolder;
+    private final ConfigHolder configHolder;
 
     private final AMapDao mapDao;
     private final TaskService taskService;
@@ -92,7 +89,7 @@ public class POIViewModel {
                 .poiCateAddBtn(controller.poiCateAddBtn)
                 .build();
         this.viewHolder.initOutputFields();
-        this.dataHolder = new ConfigHolder();
+        this.configHolder = new ConfigHolder();
         this.mapDao = new AMapDaoImpl();
         this.taskService = new TaskServiceImpl();
         this.jobService = new JobServiceImpl();
@@ -146,6 +143,7 @@ public class POIViewModel {
         public String types;
         public String tab;
         public Double[] boundary;
+        public String extension = "base";
         public boolean haveSavedUnfinishedJobs = false;
         public boolean hasStart = false;
         public int waitFactorForQps = 0;
@@ -153,13 +151,12 @@ public class POIViewModel {
     }
 
     private void otherParams() {
-        dataHolder.haveSavedUnfinishedJobs = false;
-        dataHolder.hasStart = false;
-        dataHolder.waitFactorForQps = 0;
+        configHolder.haveSavedUnfinishedJobs = false;
+        configHolder.hasStart = false;
+        configHolder.waitFactorForQps = 0;
     }
 
     private boolean check() {
-        System.out.println(viewHolder.outputFields);
         if (viewHolder.keys.getText().isEmpty()) {
             // keys为空
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "高德key池不能为空！"));
@@ -204,7 +201,7 @@ public class POIViewModel {
             Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "高德key", null, "请检查key的格式！"));
             return false;
         }
-        dataHolder.aMapKeys = aMapKeys;
+        configHolder.aMapKeys = aMapKeys;
         appendMessage("高德key读取成功");
         return true;
     }
@@ -218,7 +215,7 @@ public class POIViewModel {
             return false;
         }
         appendMessage("线程数目读取成功");
-        dataHolder.threadNum = threadNum;
+        configHolder.threadNum = threadNum;
         return true;
     }
 
@@ -231,7 +228,7 @@ public class POIViewModel {
             return false;
         }
         appendMessage("阈值读取成功");
-        dataHolder.threshold = threshold;
+        configHolder.threshold = threshold;
         return true;
     }
 
@@ -245,7 +242,7 @@ public class POIViewModel {
                 keywords.append("|");
         }
         appendMessage("POI关键字读取成功");
-        dataHolder.keywords = keywords.toString();
+        configHolder.keywords = keywords.toString();
         return true;
     }
 
@@ -259,7 +256,7 @@ public class POIViewModel {
                 types.append("|");
         }
         appendMessage("POI类型读取成功");
-        dataHolder.types = types.toString();
+        configHolder.types = types.toString();
         return true;
     }
 
@@ -278,7 +275,7 @@ public class POIViewModel {
                 qps = 300;
                 break;
         }
-        dataHolder.qps = qps;
+        configHolder.qps = qps;
         return true;
     }
 
@@ -312,15 +309,25 @@ public class POIViewModel {
                 }
                 break;
         }
-        dataHolder.tab = tab;
+        configHolder.tab = tab;
         return true;
     }
 
+    private void extension() {
+        for (POI.OutputFields item : viewHolder.outputFields) {
+            if (item.inExtension()) {
+                configHolder.extension = "all";
+                return;
+            }
+        }
+        configHolder.extension = "base";
+    }
+
     private void alterThreadNum() {
-        if (dataHolder.threadNum > dataHolder.qps * dataHolder.aMapKeys.size()) {
-            int maxThreadNum = getMaxThreadNum(dataHolder.qps, dataHolder.aMapKeys.size());
+        if (configHolder.threadNum > configHolder.qps * configHolder.aMapKeys.size()) {
+            int maxThreadNum = getMaxThreadNum(configHolder.qps, configHolder.aMapKeys.size());
             appendMessage(viewHolder.userType.getValue() + "线程数不能超过" + maxThreadNum);
-            dataHolder.threadNum = maxThreadNum;
+            configHolder.threadNum = maxThreadNum;
             appendMessage("设置线程数目为" + maxThreadNum);
         }
     }
@@ -341,8 +348,8 @@ public class POIViewModel {
      * 每次运行时间 ms
      */
     private void perExecuteTime() {
-        int threadNum = dataHolder.threadNum, qps = dataHolder.qps, keysNum = dataHolder.aMapKeys.size();
-        dataHolder.perExecuteTime = getPerExecuteTime(keysNum, threadNum, qps, 1);
+        int threadNum = configHolder.threadNum, qps = configHolder.qps, keysNum = configHolder.aMapKeys.size();
+        configHolder.perExecuteTime = getPerExecuteTime(keysNum, threadNum, qps, 1);
     }
 
     private int getPerExecuteTime(int keysNum, int threadNum, int qps, double waitFactor) {
@@ -367,6 +374,7 @@ public class POIViewModel {
         if (!types()) return;
         if (!qps()) return;
         if (!tab()) return;
+        extension();
         alterThreadNum();
         perExecuteTime();
         otherParams();
@@ -375,73 +383,73 @@ public class POIViewModel {
         worker = Executors.newSingleThreadExecutor();
         if (task == null) {
             String boundaryConfig = "";
-            switch (dataHolder.tab) {
+            switch (configHolder.tab) {
                 case "行政区":
-                    if (!dataHolder.hasStart) return;
+                    if (!configHolder.hasStart) return;
                     String adCode = viewHolder.adCode.getText();
                     appendMessage("获取行政区 " + adCode + " 区域边界中");
                     // 获取完整边界和边界名
                     Map<String, Object> data = DataVUtil.getBoundaryAndAdNameByAdCodeFromDataV(adCode);
                     if (data == null) {
-                        if (!dataHolder.hasStart) return;
+                        if (!configHolder.hasStart) return;
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "行政区边界", null, "无法获取行政区边界，请检查行政区代码或稍后重试！"));
                         analysis(false);
                         return;
                     }
                     String adName = (String) data.get("adName");
                     Geometry geometry = (Geometry) data.get("gcj02Boundary");
-                    dataHolder.boundary = getBoundaryFromGeometry(geometry);
-                    if (!dataHolder.hasStart) return;
+                    configHolder.boundary = getBoundaryFromGeometry(geometry);
+                    if (!configHolder.hasStart) return;
                     appendMessage("成功获取行政区 " + adCode + ":" + adName + " 区域边界");
-                    boundaryConfig = dataHolder.tab + ":" + adCode + "," + adName;
+                    boundaryConfig = configHolder.tab + ":" + adCode + "," + adName;
                     break;
                 case "矩形":
                     // 获取坐标类型
-                    if (!dataHolder.hasStart) return;
+                    if (!configHolder.hasStart) return;
                     String rectangle = viewHolder.rectangle.getText();
                     CoordinateType type = viewHolder.rectangleCoordinateType.getValue();
-                    boundaryConfig = dataHolder.tab + ":" + rectangle + "," + type;
+                    boundaryConfig = configHolder.tab + ":" + rectangle + "," + type;
                     appendMessage("解析矩形区域中");
                     Double[] rectangleBoundary = BoundaryUtil.getBoundaryByRectangle(rectangle, type);
                     if (rectangleBoundary == null) {
-                        if (!dataHolder.hasStart) return;
+                        if (!configHolder.hasStart) return;
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "矩形", null, "无法获取矩形边界，请检查矩形格式！"));
                         analysis(false);
                         return;
                     }
-                    dataHolder.boundary = rectangleBoundary;
-                    if (!dataHolder.hasStart) return;
+                    configHolder.boundary = rectangleBoundary;
+                    if (!configHolder.hasStart) return;
                     appendMessage("解析矩形区域成功");
                     break;
                 case "自定义":
-                    if (!dataHolder.hasStart) return;
+                    if (!configHolder.hasStart) return;
                     appendMessage("解析用户geojson文件中");
                     Geometry boundary;
                     try {
                         boundary = BoundaryUtil.getBoundaryByUserFile(viewHolder.userFile.getText(), viewHolder.userFileCoordinateType.getValue());
                     } catch (IOException e) {
                         e.printStackTrace();
-                        if (!dataHolder.hasStart) return;
+                        if (!configHolder.hasStart) return;
                         Platform.runLater(() -> MessageUtil.alert(Alert.AlertType.ERROR, "自定义", null, "geojson文件解析失败：" + e.getMessage()));
                         analysis(false);
                         return;
                     }
-                    dataHolder.boundary = getBoundaryFromGeometry(boundary);
+                    configHolder.boundary = getBoundaryFromGeometry(boundary);
 
-                    boundaryConfig = dataHolder.tab + ":" + viewHolder.userFile.getText() + ","
+                    boundaryConfig = configHolder.tab + ":" + viewHolder.userFile.getText() + ","
                             + viewHolder.userFileCoordinateType.getValue().description();
-                    if (!dataHolder.hasStart) return;
+                    if (!configHolder.hasStart) return;
                     appendMessage("成功解析用户文件");
                     break;
             }
             try {
                 BoundaryType boundaryType = BoundaryType.getBoundaryType(boundaryConfig.split(":")[0]);
                 task = Task.builder()
-                        .aMapKeys(dataHolder.aMapKeys)
-                        .types(dataHolder.types)
-                        .keywords(dataHolder.keywords)
-                        .threadNum(dataHolder.threadNum)
-                        .threshold(dataHolder.threshold)
+                        .aMapKeys(configHolder.aMapKeys)
+                        .types(configHolder.types)
+                        .keywords(configHolder.keywords)
+                        .threadNum(configHolder.threadNum)
+                        .threshold(configHolder.threshold)
                         .outputDirectory(viewHolder.outputDirectory.getText())
                         .outputType(viewHolder.format.getValue())
                         .userType(viewHolder.userType.getValue())
@@ -452,7 +460,7 @@ public class POIViewModel {
                         .totalExecutedTimes(0)
                         .taskStatus(TaskStatus.UnStarted)
                         .boundaryConfig(boundaryConfig)
-                        .boundary(dataHolder.boundary)
+                        .boundary(configHolder.boundary)
                         .boundaryType(boundaryType)
                         .jobs(new ArrayList<>())
                         .filter(TaskUtil.generateFilter(boundaryConfig, boundaryType))
@@ -477,18 +485,19 @@ public class POIViewModel {
         });
     }
 
+
     public void cancel() {
         analysis(false);
     }
 
     private void analysis(boolean start) {
-        if (!dataHolder.hasStart && !start) {
+        if (!configHolder.hasStart && !start) {
             return;
         }
-        if (dataHolder.hasStart && start) {
+        if (configHolder.hasStart && start) {
             return;
         }
-        dataHolder.hasStart = start;
+        configHolder.hasStart = start;
         setDisable(start);
         appendMessage(start ? "开始POI爬取，请勿操作" : "停止POI爬取");
         if (!start && executorService != null)
@@ -558,7 +567,7 @@ public class POIViewModel {
      * @param task task对象
      */
     private void executeTask(Task task) {
-        dataHolder.waitFactorForQps = 0;
+        configHolder.waitFactorForQps = 0;
         if (TaskStatus.UnStarted.equals(task.taskStatus()) || TaskStatus.Preprocessing.equals(task.taskStatus())) {
             // 清空数据表
             jobService.clearTable();
@@ -573,7 +582,7 @@ public class POIViewModel {
                 firstPageJobs = getAnalysisGridsReTry(task.boundary(), task, 3);
             } catch (NoTryAgainException e) {
                 // e.printStackTrace();
-                if (dataHolder.hasStart) appendMessage(e.getMessage());
+                if (configHolder.hasStart) appendMessage(e.getMessage());
                 return;
             }
             task.jobs().addAll(firstPageJobs);
@@ -595,7 +604,7 @@ public class POIViewModel {
         }
 
         // 3. 开始爬取
-        if (!dataHolder.hasStart) return;
+        if (!configHolder.hasStart) return;
         appendMessage("开始POI爬取，" + (!task.keywords().isEmpty() ? "POI关键字：" + task.keywords() : "") + (!task.types().isEmpty() ? (" POI类型：" + task.types()) : ""));
 
         List<POI.Info> pois;
@@ -603,7 +612,7 @@ public class POIViewModel {
             pois = getPoiOfJobsWithReTry(task, 3);
         } catch (NoTryAgainException e) {
             // e.printStackTrace();
-            if (dataHolder.hasStart) appendMessage(e.getMessage());
+            if (configHolder.hasStart) appendMessage(e.getMessage());
             return;
         }
 
@@ -642,7 +651,7 @@ public class POIViewModel {
     }
 
     private List<Job> getAnalysisGridsReTry(Double[] beginRect, Task task, int tryTimes) throws NoTryAgainException {
-        Job beginJob = new Job(null, task.id(), beginRect, task.types(), task.keywords(), 1, dataHolder.SIZE);
+        Job beginJob = new Job(null, task.id(), beginRect, task.types(), task.keywords(), 1, configHolder.SIZE);
         ArrayList<Job> falseJobs = new ArrayList<>();
         List<Job> analysisGrids = getAnalysisGrids(Collections.singletonList(beginJob), task, 0, falseJobs);
         int i = 1;
@@ -681,7 +690,7 @@ public class POIViewModel {
         while (tryJobs.size() != 0) {
             List<Job> unTriedJobs = new ArrayList<>(tryJobs);
             for (Job job : tryJobs) {
-                if (!dataHolder.hasStart) {
+                if (!configHolder.hasStart) {
                     throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
                 }
                 completionService.submit(() -> {
@@ -739,7 +748,7 @@ public class POIViewModel {
                                     for (int n = 0; n < 2; n++) {
                                         Double[] bounds = {left + m * itemWidth, bottom + n * itemHeight,
                                                 left + (m + 1) * itemWidth, bottom + (n + 1) * itemHeight};
-                                        nextTryJobs.add(new Job(null, task.id(), bounds, task.types(), task.keywords(), 1, dataHolder.SIZE));
+                                        nextTryJobs.add(new Job(null, task.id(), bounds, task.types(), task.keywords(), 1, configHolder.SIZE));
                                     }
                                 }
                             } else {
@@ -776,7 +785,7 @@ public class POIViewModel {
         // 保存第一页的数据
         taskService.updateById(task.toTaskPo());
         jobService.saveBatch(BeanUtils.jobs2JobPos(analysisGrid));
-        poiService.saveBatch(BeanUtils.jobs2PoiPos(analysisGrid));
+        poiService.saveBatch(BeanUtils.jobs2PoiPos(analysisGrid, configHolder.extension.equals("all")));
         return analysisGrid;
     }
 
@@ -814,14 +823,14 @@ public class POIViewModel {
         List<Job> jobs = Collections.unmodifiableList(BeanUtils.jobPos2Jobs((jobService.listUnFinished())));
         int jobCount = jobService.count();
         int i = 0;
-        while (dataHolder.hasStart) {
+        while (configHolder.hasStart) {
             if (i != 0) {
                 appendMessage("正在重试：第" + i + "次");
             }
-            dataHolder.haveSavedUnfinishedJobs = false;
+            configHolder.haveSavedUnfinishedJobs = false;
             spiderPoiOfJobs(jobs, task, jobCount);
-            if (!dataHolder.hasStart) {
-                return BeanUtils.poiPo2PoiInfo(poiService.list());
+            if (!configHolder.hasStart) {
+                return BeanUtils.poiPo2PoiInfo(poiService.list(), configHolder.extension.equals("all"));
             }
             List<Job> newJobs = Collections.unmodifiableList(BeanUtils.jobPos2Jobs(jobService.listUnFinished()));
             if (newJobs.size() == 0) {
@@ -839,7 +848,7 @@ public class POIViewModel {
             jobs = newJobs;
             i++;
         }
-        return BeanUtils.poiPo2PoiInfo(poiService.list());
+        return BeanUtils.poiPo2PoiInfo(poiService.list(), configHolder.extension.equals("all"));
     }
 
     /**
@@ -865,7 +874,7 @@ public class POIViewModel {
                     synchronized (this) {
                         // 执行完job对爬取结果的处理
                         // 如果主动停止，则不输出
-                        if (dataHolder.hasStart) appendMessage(e.getMessage());
+                        if (configHolder.hasStart) appendMessage(e.getMessage());
                         job.jobStatus(JobStatus.Failed);
                         job.tryAgainErrorCode(e.tryAgainError());
                         return job;
@@ -874,7 +883,7 @@ public class POIViewModel {
                     synchronized (this) {
                         // 执行完job对爬取结果的处理
                         // 如果主动停止，则不输出
-                        if (dataHolder.hasStart) appendMessage(e.getMessage());
+                        if (configHolder.hasStart) appendMessage(e.getMessage());
                         // 暂定本次爬取
                         analysis(false);
                         job.jobStatus(JobStatus.Failed);
@@ -917,7 +926,7 @@ public class POIViewModel {
                     poiService.saveBatch(BeanUtils.jobs2PoiPos(
                             cached.stream()
                                     .filter(job -> job.jobStatus().equals(JobStatus.SUCCESS))
-                                    .collect(Collectors.toList())));
+                                    .collect(Collectors.toList()), configHolder.extension.equals("all")));
                     cached.clear();
                 }
             }
@@ -940,7 +949,7 @@ public class POIViewModel {
      * @param unFinishedJob 未完成的Job
      */
     private synchronized void saveUnFinishedJob(Task task, List<Job> cached, ArrayList<Job> unFinishedJob) {
-        if (dataHolder.haveSavedUnfinishedJobs) {
+        if (configHolder.haveSavedUnfinishedJobs) {
             return;
         }
         appendMessage("任务即将停止，正在保存任务状态...请不要关闭软件");
@@ -953,12 +962,12 @@ public class POIViewModel {
         poiService.saveBatch(BeanUtils.jobs2PoiPos(
                 cached.stream()
                         .filter(job -> job.jobStatus().equals(JobStatus.SUCCESS))
-                        .collect(Collectors.toList()))
+                        .collect(Collectors.toList()), configHolder.extension.equals("all"))
         );
 
         task.taskStatus(TaskStatus.Pause);
         taskService.updateById(task.toTaskPo());
-        dataHolder.haveSavedUnfinishedJobs = true;
+        configHolder.haveSavedUnfinishedJobs = true;
     }
 
     /**
@@ -982,19 +991,19 @@ public class POIViewModel {
      * @throws NoTryAgainException 如果未获取到key（例如没有可选key），抛出该异常
      */
     private synchronized String getAMapKey() throws NoTryAgainException {
-        if (dataHolder.aMapKeys.isEmpty()) {
+        if (configHolder.aMapKeys.isEmpty()) {
             return null;
         }
-        String key = dataHolder.aMapKeys.poll();
+        String key = configHolder.aMapKeys.poll();
         if (key == null) {
             throw new NoTryAgainException(NoTryAgainErrorCode.KEY_POOL_RUN_OUT_OF);
         }
-        dataHolder.aMapKeys.offer(key);
+        configHolder.aMapKeys.offer(key);
         return key;
     }
 
     private synchronized boolean removeKey(String key) {
-        return dataHolder.aMapKeys.remove(key);
+        return configHolder.aMapKeys.remove(key);
     }
 
     /**
@@ -1030,18 +1039,18 @@ public class POIViewModel {
      * @throws TryAgainException 如果爬取失败，则抛出该异常
      */
     private POI getPoi(String key, String polygon, String keywords, String types, int page, int size) throws NoTryAgainException, TryAgainException {
-        if (!dataHolder.hasStart) {
+        if (!configHolder.hasStart) {
             throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
         }
         LocalDateTime startTime = LocalDateTime.now();//获取开始时间
-        POI poi = mapDao.getPoi(key, polygon, keywords, types, "base", page, size);
+        POI poi = mapDao.getPoi(key, polygon, keywords, types, configHolder.extension, page, size);
         LocalDateTime endTime = LocalDateTime.now(); //获取结束时间
-        int maxThreadNum = getMaxThreadNum(dataHolder.qps, dataHolder.aMapKeys.size());
-        int threadNum = Math.min(maxThreadNum, dataHolder.threadNum);
-        int perExecuteTime = getPerExecuteTime(dataHolder.aMapKeys.size(), threadNum, dataHolder.qps, dataHolder.threadNum * 1.0 / threadNum);
+        int maxThreadNum = getMaxThreadNum(configHolder.qps, configHolder.aMapKeys.size());
+        int threadNum = Math.min(maxThreadNum, configHolder.threadNum);
+        int perExecuteTime = getPerExecuteTime(configHolder.aMapKeys.size(), threadNum, configHolder.qps, configHolder.threadNum * 1.0 / threadNum);
         if (Duration.between(startTime, endTime).toMillis() < perExecuteTime) { // 严格控制每次执行perExecuteTime
             try {
-                TimeUnit.MILLISECONDS.sleep(perExecuteTime - Duration.between(startTime, endTime).toMillis() + (long) (Math.log(dataHolder.waitFactorForQps) * 50L));
+                TimeUnit.MILLISECONDS.sleep(perExecuteTime - Duration.between(startTime, endTime).toMillis() + (long) (Math.log(configHolder.waitFactorForQps) * 50L));
             } catch (InterruptedException e) {
 //                e.printStackTrace();
             }
@@ -1060,13 +1069,13 @@ public class POIViewModel {
                         // key额度用完，移除该key
                         if (noTryAgainErrorCode.equals(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT)) {
                             NoTryAgainException noTryAgainException = new NoTryAgainException(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT);
-                            if (dataHolder.aMapKeys.contains(key)) {
+                            if (configHolder.aMapKeys.contains(key)) {
                                 // 输出底层错误信息
                                 appendMessage(noTryAgainException.getMessage());
                                 removeKey(key);
                             }
                             // 如果还有可用key，则继续尝试，否则抛出不可重试异常
-                            if (dataHolder.aMapKeys.size() != 0) {
+                            if (configHolder.aMapKeys.size() != 0) {
                                 throw new TryAgainException(TryAgainErrorCode.TRY_OTHER_KEY, "无效key：" + key, noTryAgainException);
                             }
                         }
@@ -1076,8 +1085,8 @@ public class POIViewModel {
                 // 可重试异常
                 TryAgainErrorCode tryAgainErrorCode = TryAgainErrorCode.getError(poi.infoCode());
                 if (tryAgainErrorCode != null) {
-                    if (dataHolder.errorCodeHashSet.contains(tryAgainErrorCode)) {
-                        dataHolder.waitFactorForQps++;
+                    if (configHolder.errorCodeHashSet.contains(tryAgainErrorCode)) {
+                        configHolder.waitFactorForQps++;
                     }
                     throw new TryAgainException(tryAgainErrorCode);
                 }
@@ -1092,7 +1101,7 @@ public class POIViewModel {
 
     private String filename(String format) {
         String filename = viewHolder.outputDirectory.getText();
-        switch (dataHolder.tab) {
+        switch (configHolder.tab) {
             case "行政区":
                 filename = filename + "/解析结果_" + viewHolder.adCode.getText() + (!viewHolder.types.getText().isEmpty() ? "types_" + viewHolder.types.getText() : "") + (!viewHolder.keywords.getText().isEmpty() ? "keywords_" + viewHolder.keywords.getText() : "");
                 break;
@@ -1194,7 +1203,7 @@ public class POIViewModel {
     }
 
     private void writeToCsv(List<POI.Info> res, List<POI.OutputFields> outputFields) {
-        if (!dataHolder.hasStart) return;
+        if (!configHolder.hasStart) return;
         String filename = filename("csv");
         File csvFile = FileUtil.getNewFile(filename);
         if (csvFile == null) {
@@ -1216,7 +1225,7 @@ public class POIViewModel {
     }
 
     private void writeToGeoJson(List<POI.Info> res, List<POI.OutputFields> outputFields) {
-        if (!dataHolder.hasStart) return;
+        if (!configHolder.hasStart) return;
         String filename = filename("json");
         File jsonFile = FileUtil.getNewFile(filename);
         if (jsonFile == null) {
@@ -1262,7 +1271,7 @@ public class POIViewModel {
     }
 
     private void writeToShp(List<POI.Info> res, List<POI.OutputFields> outputFields) {
-        if (!dataHolder.hasStart) return;
+        if (!configHolder.hasStart) return;
         String filename = filename("shp");
         appendMessage("正在写入数据，请等待");
         try {

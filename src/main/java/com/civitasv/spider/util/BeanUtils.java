@@ -44,11 +44,13 @@ public class BeanUtils {
         return bean;
     }
 
-    public static List<PoiPo> jobs2PoiPos(List<Job> jobs) {
+    public static List<PoiPo> jobs2PoiPos(List<Job> jobs, boolean includeExtensions) {
         return jobs.stream().filter(job -> job.poi() != null)
                 .flatMap(job -> job.poi().details()
                         .stream()
-                        .map(info -> info.toPoiPo(job.jobId())))
+                        .map(info -> includeExtensions
+                                ? info.toPoiPoWithExtensions(job.jobId())
+                                : info.toPoiPo(job.jobId())))
                 .collect(Collectors.toList());
     }
 
@@ -64,9 +66,9 @@ public class BeanUtils {
                 .collect(Collectors.toList());
     }
 
-    public static List<POI.Info> poiPo2PoiInfo(List<PoiPo> poiPos) {
+    public static List<POI.Info> poiPo2PoiInfo(List<PoiPo> poiPos, boolean includeExtensions) {
         return poiPos.stream()
-                .map(PoiPo::toPoiInfo)
+                .map(includeExtensions ? PoiPo::toPoiInfoWithExtensions : PoiPo::toPoiInfo)
                 .collect(Collectors.toList());
     }
 
