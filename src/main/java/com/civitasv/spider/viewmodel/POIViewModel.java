@@ -22,6 +22,7 @@ import com.civitasv.spider.webdao.AMapDao;
 import com.civitasv.spider.webdao.impl.AMapDaoImpl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.opencsv.CSVWriter;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
@@ -34,15 +35,16 @@ import org.locationtech.jts.geom.*;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -89,6 +91,7 @@ public class POIViewModel {
                 .poiCateSub(controller.poiCateSub)
                 .poiCateAddBtn(controller.poiCateAddBtn)
                 .build();
+        this.viewHolder.initOutputFields();
         this.dataHolder = new ConfigHolder();
         this.mapDao = new AMapDaoImpl();
         this.taskService = new TaskServiceImpl();
@@ -124,6 +127,12 @@ public class POIViewModel {
         public ChoiceBox<String> poiCateMid; // POI中类
         public ChoiceBox<String> poiCateSub; // POI小类
         public Button poiCateAddBtn; // poi添加
+
+        void initOutputFields() {
+            this.outputFields = Arrays.stream(POI.OutputFields.values())
+                    .filter(POI.OutputFields::checked)
+                    .collect(Collectors.toList());
+        }
     }
 
     private static class ConfigHolder {
@@ -437,7 +446,7 @@ public class POIViewModel {
                         .outputType(viewHolder.format.getValue())
                         .userType(viewHolder.userType.getValue())
                         .requestExpectedTimes(0)
-                        .requestExpectedTimes(0)
+                        .requestActualTimes(0)
                         .poiActualCount(0)
                         .poiExpectedCount(0)
                         .totalExecutedTimes(0)
@@ -445,6 +454,7 @@ public class POIViewModel {
                         .boundaryConfig(boundaryConfig)
                         .boundary(dataHolder.boundary)
                         .boundaryType(boundaryType)
+                        .jobs(new ArrayList<>())
                         .filter(TaskUtil.generateFilter(boundaryConfig, boundaryType))
                         .build();
                 TaskPo taskPo = task.toTaskPo();
@@ -606,14 +616,13 @@ public class POIViewModel {
         // 导出res
         switch (viewHolder.format.getValue()) {
             case CSV:
-            case TXT:
-                writeToCsvOrTxt(pois, viewHolder.format.getValue());
+                writeToCsv(pois, viewHolder.outputFields);
                 break;
             case GEOJSON:
-                writeToGeoJson(pois);
+                writeToGeoJson(pois, viewHolder.outputFields);
                 break;
             case SHAPEFILE:
-                writeToShp(pois);
+                writeToShp(pois, viewHolder.outputFields);
         }
         taskService.updateById(task.toTaskPo());
 
@@ -1097,25 +1106,106 @@ public class POIViewModel {
         return filename.length() > 200 ? filename.substring(0, 200) + "等." + format : filename + "." + format;
     }
 
-    private void writeToCsvOrTxt(List<POI.Info> res, OutputType format) {
+    private String[] header(List<POI.OutputFields> outputFields) {
+        return outputFields.stream()
+                .map(POI.OutputFields::fieldName)
+                .toArray(String[]::new);
+    }
+
+    private String[] content(POI.Info item, List<POI.OutputFields> outputFields) {
+        List<String> result = new ArrayList<>();
+        String[] lnglat = BeanUtils.obj2String(item.location()).split(",");
+        double[] wgs84;
+        if (lnglat.length == 2) {
+            wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lnglat[0]), Double.parseDouble(lnglat[1]));
+        } else {
+            wgs84 = new double[]{0.0, 0.0};
+        }
+
+        for (POI.OutputFields field : outputFields) {
+            switch (field) {
+                case ID:
+                    result.add(BeanUtils.obj2String(item.poiId()));
+                    break;
+                case TEL:
+                    result.add(BeanUtils.obj2String(item.tel()));
+                    break;
+                case NAME:
+                    result.add(BeanUtils.obj2String(item.name()));
+                    break;
+                case TYPE:
+                    result.add(BeanUtils.obj2String(item.type()));
+                    break;
+                case EMAIL:
+                    result.add(BeanUtils.obj2String(item.email()));
+                    break;
+                case AD_CODE:
+                    result.add(BeanUtils.obj2String(item.adCode()));
+                    break;
+                case AD_NAME:
+                    result.add(BeanUtils.obj2String(item.adName()));
+                    break;
+                case ADDRESS:
+                    result.add(BeanUtils.obj2String(item.address()));
+                    break;
+                case WEBSITE:
+                    result.add(BeanUtils.obj2String(item.website()));
+                    break;
+                case BIZ_TYPE:
+                    result.add(BeanUtils.obj2String(item.bizType()));
+                    break;
+                case GCJ02_LNG:
+                    if (lnglat.length == 2) {
+                        result.add(lnglat[0]);
+                    }
+                    break;
+                case GCJ02_LAT:
+                    if (lnglat.length == 2) {
+                        result.add(lnglat[1]);
+                    }
+                    break;
+                case WGS84_LNG:
+                    result.add(BeanUtils.obj2String(wgs84[0]));
+                    break;
+                case WGS84_LAT:
+                    result.add(BeanUtils.obj2String(wgs84[1]));
+                    break;
+                case CITY_CODE:
+                    result.add(BeanUtils.obj2String(item.cityCode()));
+                    break;
+                case CITY_NAME:
+                    result.add(BeanUtils.obj2String(item.cityName()));
+                    break;
+                case POST_CODE:
+                    result.add(BeanUtils.obj2String(item.postCode()));
+                    break;
+                case TYPE_CODE:
+                    result.add(BeanUtils.obj2String(item.typeCode()));
+                    break;
+                case PROVINCE_CODE:
+                    result.add(BeanUtils.obj2String(item.provinceCode()));
+                    break;
+                case PROVINCE_NAME:
+                    result.add(BeanUtils.obj2String(item.provinceName()));
+                    break;
+            }
+        }
+        return result.toArray(new String[0]);
+    }
+
+    private void writeToCsv(List<POI.Info> res, List<POI.OutputFields> outputFields) {
         if (!dataHolder.hasStart) return;
-        String filename = filename(format.description());
+        String filename = filename("csv");
         File csvFile = FileUtil.getNewFile(filename);
         if (csvFile == null) {
             appendMessage("输出路径有误，请检查后重试！");
             return;
         }
-        try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(csvFile.toPath(), StandardCharsets.UTF_8))) {
+        try (CSVWriter writer = new CSVWriter(Files.newBufferedWriter(csvFile.toPath(), StandardCharsets.UTF_8))) {
             appendMessage("正在写入数据，请等待");
-            if (format == OutputType.CSV)
-                writer.write('\ufeff');
-            writer.write("id,name,type,typecode,address,tel,pname,cityname,adname,gcj02_lon,gcj02_lat,wgs84_lon,wgs84_lat\r\n");
+            writer.writeNext(header(outputFields));
             for (POI.Info info : res) {
-                String[] lonlat = info.location().toString().split(",");
-                if (lonlat.length == 2) {
-                    double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
-                    writer.write("\"" + info.id() + "\"," + "\"" + info.name() + "\"," + "\"" + info.type() + "\"," + "\"" + info.typeCode() + "\"," + "\"" + info.address() + "\"," + "\"" + info.tel() + "\"," + "\"" + info.provinceName() + "\"," + "\"" + info.cityName() + "\"," + "\"" + info.adName() + "\"," + "\"" + lonlat[0] + "\"," + "\"" + lonlat[1] + "\"," + "\"" + wgs84[0] + "\"," + "\"" + wgs84[1] + "\"\r\n");
-                }
+                writer.writeNext(content(info, outputFields));
             }
             appendMessage("写入成功，结果存储于" + csvFile.getAbsolutePath());
         } catch (IOException e) {
@@ -1125,18 +1215,31 @@ public class POIViewModel {
         }
     }
 
-    private void writeToGeoJson(List<POI.Info> res) {
+    private void writeToGeoJson(List<POI.Info> res, List<POI.OutputFields> outputFields) {
         if (!dataHolder.hasStart) return;
         String filename = filename("json");
-        GeoJSON geoJSON = parseResult(res);
         File jsonFile = FileUtil.getNewFile(filename);
         if (jsonFile == null) {
             appendMessage("输出路径有误，请检查后重试！");
             return;
         }
-        try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8))) {
+        try (BufferedWriter writer = Files.newBufferedWriter(jsonFile.toPath(), StandardCharsets.UTF_8)) {
             appendMessage("正在写入数据，请等待");
-            writer.write(geoJSON.toString());
+            writer.write("{" +
+                    "\"type\":\"" + "FeatureCollection" + "\"" +
+                    ", \"features\": [");
+            boolean first = true;
+            for (POI.Info item : res) {
+                Feature feature = getFeatureFromInfo(item, outputFields);
+                if (feature != null) {
+                    if (!first)
+                        writer.write(",");
+                    writer.write(feature.toString());
+                    first = false;
+                }
+            }
+            writer.write("]" +
+                    "}");
             appendMessage("写入成功，结果存储于" + jsonFile.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
@@ -1145,8 +1248,20 @@ public class POIViewModel {
         }
     }
 
+    private String createTypeSpecForShp(List<POI.OutputFields> outputFields) {
+        // 对于 shapefile 和 GeoJSON 数据，坐标信息一定会导出，这里仅会影响 properties 中的值
+        String[] header = outputFields.stream()
+                .map(POI.OutputFields::shapeFieldName)
+                .toArray(String[]::new);
+        StringBuilder result = new StringBuilder();
+        for (String item : header) {
+            result.append(item).append(":String").append(",");
+        }
+        result.deleteCharAt(result.length() - 1);
+        return result.toString();
+    }
 
-    private void writeToShp(List<POI.Info> res) {
+    private void writeToShp(List<POI.Info> res, List<POI.OutputFields> outputFields) {
         if (!dataHolder.hasStart) return;
         String filename = filename("shp");
         appendMessage("正在写入数据，请等待");
@@ -1154,30 +1269,23 @@ public class POIViewModel {
             final SimpleFeatureType type =
                     DataUtilities.createType(
                             "Location",
-                            "the_geom:Point:srid=4326,id:String,name:String,type:String,typecode:String,address:String,tel:String,pname:String,cityname:String,adname:String,gcj02_lon:String,gcj02_lat:String,wgs84_lon:String,wgs84_lat:String"
+                            "the_geom:Point:srid=4326," + createTypeSpecForShp(outputFields)
                     );
             List<SimpleFeature> features = new ArrayList<>();
             GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
             SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(type);
             for (POI.Info info : res) {
-                String[] lonlat = info.location().toString().split(",");
-                if (lonlat.length == 2) {
-                    double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
+                String[] lnglat = info.location().toString().split(",");
+                if (lnglat.length == 2) {
+                    double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lnglat[0]), Double.parseDouble(lnglat[1]));
                     Point point = geometryFactory.createPoint(new Coordinate(wgs84[0], wgs84[1]));
                     featureBuilder.add(point);
-                    featureBuilder.add(info.id());
-                    featureBuilder.add(info.name());
-                    featureBuilder.add(info.type());
-                    featureBuilder.add(info.typeCode());
-                    featureBuilder.add(info.address() != null ? info.address().toString() : "");
-                    featureBuilder.add(info.tel() != null ? info.tel().toString() : "");
-                    featureBuilder.add(info.provinceName() != null ? info.provinceName().toString() : "");
-                    featureBuilder.add(info.cityName() != null ? info.cityName().toString() : "");
-                    featureBuilder.add(info.adName() != null ? info.adName().toString() : "");
-                    featureBuilder.add(String.valueOf(lonlat[0]));
-                    featureBuilder.add(String.valueOf(lonlat[1]));
-                    featureBuilder.add(String.valueOf(wgs84[0]));
-                    featureBuilder.add(String.valueOf(wgs84[1]));
+
+                    // attrs
+                    String[] content = content(info, outputFields);
+                    for (String item : content) {
+                        featureBuilder.add(item);
+                    }
                     SimpleFeature feature = featureBuilder.buildFeature(null);
                     features.add(feature);
                 }
@@ -1196,48 +1304,87 @@ public class POIViewModel {
         }
     }
 
-    private GeoJSON parseResult(List<POI.Info> res) {
-        List<Feature> features = new ArrayList<>();
-        for (POI.Info info : res) {
-            if (info.location() == null)
-                continue;
-            String[] lonlat = info.location().toString().split(",");
-            if (lonlat.length == 2) {
-                double[] wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lonlat[0]), Double.parseDouble(lonlat[1]));
-                JsonObject geometry = new JsonObject();
-                geometry.addProperty("type", "Point");
-                JsonArray coordinates = new JsonArray();
-                coordinates.add(wgs84[0]);
-                coordinates.add(wgs84[1]);
-                geometry.add("coordinates", coordinates);
-                Feature feature = new Feature(geometry.toString());
-                feature.addProperty("id", info.id().toString());
-                feature.addProperty("name", info.name());
-                feature.addProperty("type", info.type());
-                feature.addProperty("typecode", info.typeCode());
-                if (info.tel() != null)
-                    feature.addProperty("tel", info.tel().toString());
-                else feature.addProperty("tel", "");
-                if (info.address() != null)
-                    feature.addProperty("address", info.address().toString());
-                else feature.addProperty("address", "");
-                if (info.provinceName() != null)
-                    feature.addProperty("pname", info.provinceName().toString());
-                else feature.addProperty("pname", "");
-                if (info.cityName() != null)
-                    feature.addProperty("cityname", info.cityName().toString());
-                else feature.addProperty("cityname", "");
-                if (info.adName() != null)
-                    feature.addProperty("adname", info.adName().toString());
-                else feature.addProperty("adname", "");
-                feature.addProperty("gcj02_lon", lonlat[0]);
-                feature.addProperty("gcj02_lat", lonlat[1]);
-                feature.addProperty("wgs84_lon", String.valueOf(wgs84[0]));
-                feature.addProperty("wgs84_lat", String.valueOf(wgs84[1]));
-                features.add(feature);
+    private Feature getFeatureFromInfo(POI.Info item, List<POI.OutputFields> outputFields) {
+        String[] lnglat = BeanUtils.obj2String(item.location()).split(",");
+        double[] wgs84;
+        if (lnglat.length == 2) {
+            wgs84 = CoordinateTransformUtil.transformGCJ02ToWGS84(Double.parseDouble(lnglat[0]), Double.parseDouble(lnglat[1]));
+        } else {
+            return null;
+        }
+        JsonObject geometry = new JsonObject();
+        geometry.addProperty("type", "Point");
+        JsonArray coordinates = new JsonArray();
+        coordinates.add(wgs84[0]);
+        coordinates.add(wgs84[1]);
+        geometry.add("coordinates", coordinates);
+
+        Map<String, String> properties = new HashMap<>();
+        for (POI.OutputFields field : outputFields) {
+            switch (field) {
+                case ID:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.poiId()));
+                    break;
+                case TEL:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.tel()));
+                    break;
+                case NAME:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.name()));
+                    break;
+                case TYPE:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.type()));
+                    break;
+                case EMAIL:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.email()));
+                    break;
+                case AD_CODE:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.adCode()));
+                    break;
+                case AD_NAME:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.adName()));
+                    break;
+                case ADDRESS:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.address()));
+                    break;
+                case WEBSITE:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.website()));
+                    break;
+                case BIZ_TYPE:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.bizType()));
+                    break;
+                case GCJ02_LNG:
+                    properties.put(field.fieldName(), lnglat[0]);
+                    break;
+                case GCJ02_LAT:
+                    properties.put(field.fieldName(), lnglat[1]);
+                    break;
+                case WGS84_LNG:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(wgs84[0]));
+                    break;
+                case WGS84_LAT:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(wgs84[1]));
+                    break;
+                case CITY_CODE:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.cityCode()));
+                    break;
+                case CITY_NAME:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.cityName()));
+                    break;
+                case POST_CODE:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.postCode()));
+                    break;
+                case TYPE_CODE:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.typeCode()));
+                    break;
+                case PROVINCE_CODE:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.provinceCode()));
+                    break;
+                case PROVINCE_NAME:
+                    properties.put(field.fieldName(), BeanUtils.obj2String(item.provinceName()));
+                    break;
             }
         }
-        return new GeoJSON(features);
+        return new Feature(geometry.toString(), properties);
     }
 
     private boolean parseRect(String text) {

@@ -83,7 +83,7 @@ public class JobPo implements Serializable {
     /**
      * POI 爬取时，该 Job 实际获得的数量
      */
-    @TableField("POU_ACTUAL_COUNT")
+    @TableField("POI_ACTUAL_COUNT")
     private final Integer poiActualCount;
 
     /**

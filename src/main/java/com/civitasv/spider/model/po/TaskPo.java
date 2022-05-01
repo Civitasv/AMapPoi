@@ -15,6 +15,7 @@ import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -111,6 +112,7 @@ public class TaskPo implements Serializable {
                 .boundaryType(boundaryType)
                 .boundary(Arrays.stream(bounds.split(",")).map(Double::valueOf).toArray(Double[]::new))
                 .filter(TaskUtil.generateFilter(boundaryConfig, boundaryType))
+                .jobs(new ArrayList<>())
                 .build();
     }
 }

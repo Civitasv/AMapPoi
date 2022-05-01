@@ -11,8 +11,7 @@ import lombok.experimental.Accessors;
 public enum OutputType {
     CSV(0, "csv"),
     SHAPEFILE(1, "shp"),
-    GEOJSON(2, "geojson"),
-    TXT(3, "txt");
+    GEOJSON(2, "geojson");
 
     private final Integer code;
     private final String description;

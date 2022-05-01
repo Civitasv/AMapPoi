@@ -132,7 +132,6 @@ public class POIController extends BaseController {
         this.format.setItems(new ObservableListWrapper<>(
                 Arrays.asList(
                         OutputType.CSV,
-                        OutputType.TXT,
                         OutputType.GEOJSON,
                         OutputType.SHAPEFILE)
         ));

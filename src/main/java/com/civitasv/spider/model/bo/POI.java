@@ -29,25 +29,29 @@ public class POI {
     @Accessors(fluent = true)
     @AllArgsConstructor
     public enum OutputFields {
-        ID("id", "唯一ID", false, false),
-        NAME("name", "名称", false, false),
-        TYPE("type", "类型", false, false),
-        TYPE_CODE("typeCode", "类型编码", false, false),
-        BIZ_TYPE("bizType", "行业类型", false, false),
-        ADDRESS("address", "地址", false, false),
-        LOCATION("location", "经纬度", false, false),
-        TEL("tel", "电话", false, false),
-        PROVINCE_NAME("provinceName", "省份名称", false, false),
-        CITY_NAME("cityName", "城市名称", false, false),
-        AD_NAME("adName", "区域名称", false, false),
+        ID("id", "id", "唯一ID", false, true),
+        NAME("name", "name", "名称", false, true),
+        TYPE("type", "type", "类型", false, true),
+        TYPE_CODE("typeCode", "typeCode", "类型编码", false, true),
+        BIZ_TYPE("bizType", "bizType", "行业类型", false, true),
+        ADDRESS("address", "address", "地址", false, true),
+        GCJ02_LNG("gcj02_lng", "gcj02_lng", "gcj02 格式经度", false, true),
+        GCJ02_LAT("gcj02_lat", "gcj02_lat", "gcj02 格式纬度", false, true),
+        WGS84_LNG("wgs84_lng", "wgs84_lng", "wgs84 格式经度", false, true),
+        WGS84_LAT("wgs84_lat", "wgs84_lat", "wgs84 格式纬度", false, true),
+        TEL("tel", "tel", "电话", false, true),
+        PROVINCE_NAME("provinceName", "province", "省份名称", false, true),
+        CITY_NAME("cityName", "city", "城市名称", false, true),
+        AD_NAME("adName", "ad", "区域名称", false, true),
 
-        POST_CODE("postCode", "邮编", true, false),
-        WEBSITE("website", "网址", true, false),
-        EMAIL("email", "邮箱", true, false),
-        PROVINCE_CODE("provinceCode", "省份编码", true, false),
-        CITY_CODE("cityCode", "城市编码", true, false),
-        AD_CODE("adCode", "区域编码", true, false);
+        POST_CODE("postCode", "postCode", "邮编", true, false),
+        WEBSITE("website", "website", "网址", true, false),
+        EMAIL("email", "email", "邮箱", true, false),
+        PROVINCE_CODE("provinceCode", "provCode", "省份编码", true, false),
+        CITY_CODE("cityCode", "cityCode", "城市编码", true, false),
+        AD_CODE("adCode", "adCode", "区域编码", true, false);
         private final String fieldName;
+        private final String shapeFieldName; // shp 字段长度有限制
         private final String description;
         private final boolean inExtension;
         private boolean checked;
@@ -70,13 +74,13 @@ public class POI {
     public static class Info {
         private transient Long id;  // 对应PoiPo id
         @SerializedName("id")
-        private String poiId; // 唯一id 对应pid
+        private Object poiId; // 唯一id 对应pid
         @SerializedName("name")
-        private String name; // 名称
+        private Object name; // 名称
         @SerializedName("type")
-        private String type; // 兴趣点类型
+        private Object type; // 兴趣点类型
         @SerializedName("typecode")
-        private String typeCode; // 兴趣点类型编码
+        private Object typeCode; // 兴趣点类型编码
         @SerializedName("biz_type")
         private Object bizType; // 行业类型
         @SerializedName("address")
@@ -108,11 +112,11 @@ public class POI {
         public PoiPo toPoiPo(Long jobId) {
             return PoiPo.builder()
                     .id(id)
-                    .poiId(poiId)
+                    .poiId(BeanUtils.obj2String(poiId))
                     .jobId(jobId)
-                    .name(name)
-                    .type(type)
-                    .typeCode(typeCode)
+                    .name(BeanUtils.obj2String(name))
+                    .type(BeanUtils.obj2String(type))
+                    .typeCode(BeanUtils.obj2String(typeCode))
                     .bizType(BeanUtils.obj2String(bizType))
                     .address(BeanUtils.obj2String(address))
                     .location(BeanUtils.obj2String(location))
@@ -126,11 +130,11 @@ public class POI {
         public PoiPo toPoiPoWithExtensions(Long jobId) {
             return PoiPo.builder()
                     .id(id)
-                    .poiId(poiId)
+                    .poiId(BeanUtils.obj2String(poiId))
                     .jobId(jobId)
-                    .name(name)
-                    .type(type)
-                    .typeCode(typeCode)
+                    .name(BeanUtils.obj2String(name))
+                    .type(BeanUtils.obj2String(type))
+                    .typeCode(BeanUtils.obj2String(typeCode))
                     .bizType(BeanUtils.obj2String(bizType))
                     .address(BeanUtils.obj2String(address))
                     .location(BeanUtils.obj2String(location))
