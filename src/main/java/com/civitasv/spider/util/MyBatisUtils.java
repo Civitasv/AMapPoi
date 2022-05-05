@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.mapper.*;
 import org.apache.ibatis.datasource.pooled.PooledDataSource;
+import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.transaction.TransactionFactory;
@@ -33,7 +34,9 @@ public class MyBatisUtils {
         configuration.addMapper(PoiMapper.class);
         configuration.addMapper(PoiCategoryMapper.class);
         configuration.addMapper(CityCodeMapper.class);
-        // configuration.setLogImpl(StdOutImpl.class);
+        if(isDEV){
+            configuration.setLogImpl(StdOutImpl.class);
+        }
         mybatisPlusSqlSessionFactory = new MybatisSqlSessionFactoryBuilder().build(configuration);
         return mybatisPlusSqlSessionFactory;
     }

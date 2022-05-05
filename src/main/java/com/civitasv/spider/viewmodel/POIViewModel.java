@@ -25,6 +25,7 @@ import com.opencsv.CSVWriter;
 import javafx.application.Platform;
 import javafx.scene.control.*;
 import lombok.Builder;
+import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.geotools.data.DataUtilities;
 import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
@@ -44,6 +45,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.civitasv.spider.MainApplication.isDEV;
 
 public class POIViewModel {
     private final ViewHolder viewHolder;
@@ -587,7 +590,9 @@ public class POIViewModel {
             try {
                 firstPageJobs = getAnalysisGridsReTry(task.boundary(), task, 3);
             } catch (NoTryAgainException e) {
-                // e.printStackTrace();
+                if(isDEV){
+                    e.printStackTrace();
+                }
                 if (configHolder.hasStart) appendMessage(e.getMessage());
                 return;
             }
@@ -617,7 +622,9 @@ public class POIViewModel {
         try {
             pois = getPoiOfJobsWithReTry(task, 3);
         } catch (NoTryAgainException e) {
-            // e.printStackTrace();
+            if(isDEV){
+                e.printStackTrace();
+            }
             if (configHolder.hasStart) appendMessage(e.getMessage());
             return;
         }
@@ -649,7 +656,6 @@ public class POIViewModel {
                 "结果分析",
                 "任务结果分析",
                 "poi爬取任务结果如下：\n" +
-                        "任务状态：" + task.taskStatus().description() + "\n" +
                         "任务状态：" + task.taskStatus().description() + "\n" +
                         "完成度：" + (allJobSize - unFinishJobSize) + "/" + allJobSize + " \n" +
                         "总计爬取poi数量：" + finalPois.size() + "\n"
@@ -768,10 +774,14 @@ public class POIViewModel {
                             throw new TimeoutException();
                         }
                     } catch (TimeoutException e) {
-//                        e.printStackTrace();
+                        if(isDEV){
+                            e.printStackTrace();
+                        }
                         falseJobs.addAll(unTriedJobs);
                     } catch (InterruptedException | ExecutionException e) {
-//                        e.printStackTrace();
+                        if(isDEV){
+                            e.printStackTrace();
+                        }
                         throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK, e);
                     }
                 }
