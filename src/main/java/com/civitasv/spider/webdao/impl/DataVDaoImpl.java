@@ -1,21 +1,34 @@
 package com.civitasv.spider.webdao.impl;
 
+import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.api.RetrofitDataVClient;
 import com.civitasv.spider.webdao.DataVDao;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import retrofit2.Call;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public class DataVDaoImpl implements DataVDao {
     @Override
     public JsonObject getBoundary(String areaCode) {
-        Call<JsonObject> call = RetrofitDataVClient.getInstance().getDataVService().getBoundary(areaCode);
+        StringBuilder stringBuilder = new StringBuilder();
         try {
-            return call.execute().body();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            Path path = Paths.get(Objects.requireNonNull(MainApplication.class.getResource("geojson/" + areaCode + ".json")).toURI());
+            try (Stream<String> stream = Files.lines(path, StandardCharsets.UTF_8)) {
+                stream.forEach(s -> stringBuilder.append(s).append("\n"));
+            }
+        } catch (URISyntaxException | IOException e) {
+            throw new RuntimeException(e);
         }
+        return new JsonParser().parse(stringBuilder.toString()).getAsJsonObject();
     }
 }
