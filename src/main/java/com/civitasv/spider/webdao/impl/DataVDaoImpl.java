@@ -22,11 +22,11 @@ public class DataVDaoImpl implements DataVDao {
     public JsonObject getBoundary(String areaCode) {
         StringBuilder stringBuilder = new StringBuilder();
         try {
-            Path path = Paths.get(Objects.requireNonNull(MainApplication.class.getResource("geojson/" + areaCode + ".json")).toURI());
+            Path path = Paths.get("vendor", "geojson", areaCode + ".json");
             try (Stream<String> stream = Files.lines(path, StandardCharsets.UTF_8)) {
                 stream.forEach(s -> stringBuilder.append(s).append("\n"));
             }
-        } catch (URISyntaxException | IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return new JsonParser().parse(stringBuilder.toString()).getAsJsonObject();

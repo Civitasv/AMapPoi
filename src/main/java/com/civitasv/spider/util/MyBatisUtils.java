@@ -12,11 +12,11 @@ import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 
 import javax.sql.DataSource;
 
-import static com.civitasv.spider.MainApplication.isDEV;
+import java.nio.file.Paths;
 
 public class MyBatisUtils {
     // database URL
-    public static String url = isDEV ? "jdbc:sqlite:" + MainApplication.class.getResource("db/poi.db") : "jdbc:sqlite:app/assets/poi.db";
+    public static String url = "jdbc:sqlite:" + Paths.get("vendor", "db", "poi.db");
 
     private static SqlSessionFactory mybatisPlusSqlSessionFactory;
 

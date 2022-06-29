@@ -10,6 +10,7 @@ import javafx.scene.control.Alert;
 import java.awt.*;
 import java.io.File;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,10 +30,8 @@ public class GitHubUtils {
         worker.submit(() -> {
             try {
                 GitHubRelease gitHubReleaseLatest = GitHubUtils.getGitHubReleaseLatest();
-                String versionFilePath = MainApplication.isDEV
-                        ? Objects.requireNonNull(MainApplication.class.getResource("version")).toURI().getPath()
-                        : "app/assets/version";
-                versionFilePath = new File(versionFilePath).getPath();
+                String versionFilePath = Paths.get("vendor", "version").toString();
+
                 String currentVersion = FileUtil.readFile(versionFilePath);
                 if (currentVersion.equals(gitHubReleaseLatest.tagName())) {
                     if (showWhenNoNewVersion) {
@@ -49,7 +48,7 @@ public class GitHubUtils {
                                 "POIKit已发布新版本，版本相关信息如下：\n" +
                                         "版本号：" + gitHubReleaseLatest.tagName() + "\n" +
                                         "标题：" + gitHubReleaseLatest.name() + "\n" +
-                                        "描述：\n" + gitHubReleaseLatest.body().replace("*","").replace("=","") + "\n",
+                                        "描述：\n" + gitHubReleaseLatest.body().replace("*", "").replace("=", "") + "\n",
                                 "前往下载新版本",
                                 "关闭"));
                 Platform.runLater(query);

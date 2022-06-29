@@ -5,4 +5,4 @@ out
 latest
 geospider.iml
 META-INF
-.lock
+vendor/.lock

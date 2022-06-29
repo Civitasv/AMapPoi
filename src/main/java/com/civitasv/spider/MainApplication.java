@@ -7,13 +7,14 @@ import com.civitasv.spider.util.GitHubUtils;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 public class MainApplication extends Application {
-    public static boolean isDEV = true;
-
     @Override
     public void init() throws Exception {
         super.init();
@@ -33,7 +34,10 @@ public class MainApplication extends Application {
     }
 
     public static void main(String[] args) {
-        try(RandomAccessFile randomAccessFile = new RandomAccessFile(isDEV?"./.lock":"app/assets/.lock", "rw")) {
+        try (RandomAccessFile randomAccessFile =
+                     new RandomAccessFile(
+                             Paths.get("vendor", ".lock").toFile(),
+                             "rw")) {
             FileChannel channel = randomAccessFile.getChannel();
             if (channel.tryLock() == null)
                 System.out.println("只能同时运行一个实例");
