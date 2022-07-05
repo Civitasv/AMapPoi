@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Retrofit DataV API 基类
  */
+
+@Deprecated
 public class RetrofitDataVClient {
     private static RetrofitDataVClient instance;
     private static Retrofit retrofit;

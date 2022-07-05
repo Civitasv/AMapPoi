@@ -3,6 +3,6 @@ src/test
 target
 out
 latest
-geospider.iml
+*.iml
 META-INF
-.lock
+vendor/.lock

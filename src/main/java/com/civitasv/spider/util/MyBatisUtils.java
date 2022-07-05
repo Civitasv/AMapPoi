@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
 import com.civitasv.spider.MainApplication;
 import com.civitasv.spider.mapper.*;
 import org.apache.ibatis.datasource.pooled.PooledDataSource;
-import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.transaction.TransactionFactory;
@@ -13,11 +12,11 @@ import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 
 import javax.sql.DataSource;
 
-import static com.civitasv.spider.MainApplication.isDEV;
+import java.nio.file.Paths;
 
 public class MyBatisUtils {
     // database URL
-    public static String url = isDEV ? "jdbc:sqlite:" + MainApplication.class.getResource("db/poi.db") : "jdbc:sqlite:app/assets/poi.db";
+    public static String url = "jdbc:sqlite:" + Paths.get("vendor", "db", "poi.db");
 
     private static SqlSessionFactory mybatisPlusSqlSessionFactory;
 
@@ -34,9 +33,7 @@ public class MyBatisUtils {
         configuration.addMapper(PoiMapper.class);
         configuration.addMapper(PoiCategoryMapper.class);
         configuration.addMapper(CityCodeMapper.class);
-        if(isDEV){
-            configuration.setLogImpl(StdOutImpl.class);
-        }
+        // configuration.setLogImpl(StdOutImpl.class);
         mybatisPlusSqlSessionFactory = new MybatisSqlSessionFactoryBuilder().build(configuration);
         return mybatisPlusSqlSessionFactory;
     }

@@ -46,8 +46,6 @@ import java.util.concurrent.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.civitasv.spider.MainApplication.isDEV;
-
 public class POIViewModel {
     private final ViewHolder viewHolder;
     private final ConfigHolder configHolder;
@@ -590,9 +588,7 @@ public class POIViewModel {
             try {
                 firstPageJobs = getAnalysisGridsReTry(task.boundary(), task, 3);
             } catch (NoTryAgainException e) {
-                if(isDEV){
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
                 if (configHolder.hasStart) appendMessage(e.getMessage());
                 return;
             }
@@ -622,9 +618,7 @@ public class POIViewModel {
         try {
             pois = getPoiOfJobsWithReTry(task, 3);
         } catch (NoTryAgainException e) {
-            if(isDEV){
-                e.printStackTrace();
-            }
+            e.printStackTrace();
             if (configHolder.hasStart) appendMessage(e.getMessage());
             return;
         }
@@ -762,14 +756,10 @@ public class POIViewModel {
                             throw new TimeoutException();
                         }
                     } catch (TimeoutException e) {
-                        if(isDEV){
-                            e.printStackTrace();
-                        }
+                        e.printStackTrace();
                         falseJobs.addAll(unTriedJobs);
                     } catch (InterruptedException | ExecutionException e) {
-                        if(isDEV){
-                            e.printStackTrace();
-                        }
+                        e.printStackTrace();
                         throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK, e);
                     }
                 }
