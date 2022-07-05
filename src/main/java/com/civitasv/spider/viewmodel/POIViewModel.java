@@ -662,6 +662,14 @@ public class POIViewModel {
         ));
     }
 
+    /**
+     * 对getAnalysisGrids的封装，用于执行任务重试
+     * @param beginRect 初始矩形范围
+     * @param task task对象
+     * @param tryTimes 重试次数
+     * @return 第一页job集合
+     * @throws NoTryAgainException 如果任务无可重试，则抛出NoTryAgainException异常
+     */
     private List<Job> getAnalysisGridsReTry(Double[] beginRect, Task task, int tryTimes) throws NoTryAgainException {
         Job beginJob = new Job(null, task.id(), beginRect, task.types(), task.keywords(), 1, configHolder.SIZE);
         ArrayList<Job> falseJobs = new ArrayList<>();
@@ -687,7 +695,6 @@ public class POIViewModel {
 
     /**
      * 爬取第一页生成poi爬取格网，每个格网的数据量小于阈值。
-     *
      * @param tryJobs 初始尝试的Job
      * @param task    task对象
      * @return 划分格网的第一页Job
@@ -699,40 +706,19 @@ public class POIViewModel {
 
         List<Job> nextTryJobs = new ArrayList<>();
 
+        // 每轮并发探测（即查询第一页，获得查询范围内的poi数量）全部的任务。
+        // 每个任务如果返回的数据量超出阈值，则会被剖分，并在下一次循环中被处理。
         while (tryJobs.size() != 0) {
+            // unTriedJobs记录未探测过的任务
             List<Job> unTriedJobs = new ArrayList<>(tryJobs);
             for (Job job : tryJobs) {
                 if (!configHolder.hasStart) {
                     throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
                 }
-                completionService.submit(() -> {
-                    try {
-                        executeJob(job);
-                        return job;
-                    } catch (TryAgainException e) {
-                        // 执行完job对爬取结果的处理
-                        // 如果主动停止，则不输出
-                        synchronized (this) {
-                            appendMessage(e.getMessage());
-                            job.jobStatus(JobStatus.Failed);
-                            job.tryAgainErrorCode(e.tryAgainError());
-                            return job;
-                        }
-                    } catch (NoTryAgainException e) {
-                        // 执行完job对爬取结果的处理
-                        // 如果主动停止，则不输出
-                        synchronized (this) {
-                            appendMessage(e.getMessage());
-                            // 暂定本次爬取
-                            analysis(false);
-                            job.jobStatus(JobStatus.Failed);
-                            job.noTryAgainErrorCode(e.noTryAgainError());
-                            return job;
-                        }
-                    }
-                });
+                submitJob(completionService, job);
             }
 
+            // 计算重试次数，每隔500ms轮询一次，直到取得任务结果或轮询超时
             int tryTimes = (int) (20 / 0.5);
             for (int i = 0; i < tryJobs.size(); i++) {
                 for (int j = 0; j < tryTimes; j++) {
@@ -743,6 +729,7 @@ public class POIViewModel {
                             task.plusRequestActualTimes(); //增加请求次数
                             Job job = future.get();
                             unTriedJobs.remove(job);
+                            // 如果本次请求失败，如可重试，则继续重试，否则终止任务
                             if (job.jobStatus() != JobStatus.SUCCESS) {
                                 if (job.noTryAgainErrorCode() != null) {
                                     throw new NoTryAgainException(job.noTryAgainErrorCode());
@@ -750,6 +737,7 @@ public class POIViewModel {
                                 falseJobs.add(job);
                                 break;
                             }
+                            // 请求成功，则继续处理
                             if (job.poi().count() > task.threshold()) {
                                 appendMessage("超出阈值，继续四分，已包含" + (analysisGrid.size() + baseJobCount) + "个任务");
                                 // 继续四分
@@ -803,6 +791,40 @@ public class POIViewModel {
         jobService.saveBatch(BeanUtils.jobs2JobPos(analysisGrid));
         poiService.saveBatch(BeanUtils.jobs2PoiPos(analysisGrid, configHolder.extension.equals("all")));
         return analysisGrid;
+    }
+
+    /**
+     * 提交任务，任务会自己处理抛出的异常
+     * @param completionService executors
+     * @param job 被提交的job
+     */
+    private void submitJob(CompletionService<Job> completionService, Job job) {
+        completionService.submit(() -> {
+            try {
+                executeJob(job);
+                return job;
+            } catch (TryAgainException e) {
+                // 执行完job对爬取结果的处理
+                // 如果主动停止，则不输出
+                synchronized (this) {
+                    if(configHolder.hasStart) appendMessage(e.getMessage());
+                    job.jobStatus(JobStatus.Failed);
+                    job.tryAgainErrorCode(e.tryAgainError());
+                    return job;
+                }
+            } catch (NoTryAgainException e) {
+                // 执行完job对爬取结果的处理
+                // 如果主动停止，则不输出
+                synchronized (this) {
+                    if(configHolder.hasStart) appendMessage(e.getMessage());
+                    // 暂定本次爬取
+                    analysis(false);
+                    job.jobStatus(JobStatus.Failed);
+                    job.noTryAgainErrorCode(e.noTryAgainError());
+                    return job;
+                }
+            }
+        });
     }
 
     /**
@@ -882,32 +904,7 @@ public class POIViewModel {
 
         // 构造异步job
         for (Job job : unFinishedJobs) {
-            completionService.submit(() -> {
-                try {
-                    executeJob(job);
-                    return job;
-                } catch (TryAgainException e) {
-                    synchronized (this) {
-                        // 执行完job对爬取结果的处理
-                        // 如果主动停止，则不输出
-                        if (configHolder.hasStart) appendMessage(e.getMessage());
-                        job.jobStatus(JobStatus.Failed);
-                        job.tryAgainErrorCode(e.tryAgainError());
-                        return job;
-                    }
-                } catch (NoTryAgainException e) {
-                    synchronized (this) {
-                        // 执行完job对爬取结果的处理
-                        // 如果主动停止，则不输出
-                        if (configHolder.hasStart) appendMessage(e.getMessage());
-                        // 暂定本次爬取
-                        analysis(false);
-                        job.jobStatus(JobStatus.Failed);
-                        job.noTryAgainErrorCode(e.noTryAgainError());
-                        return job;
-                    }
-                }
-            });
+            submitJob(completionService, job);
         }
 
         // 阻塞获取
@@ -1061,6 +1058,8 @@ public class POIViewModel {
         LocalDateTime startTime = LocalDateTime.now();//获取开始时间
         POI poi = mapDao.getPoi(key, polygon, keywords, types, configHolder.extension, page, size);
         LocalDateTime endTime = LocalDateTime.now(); //获取结束时间
+
+        // 计算每个任务抛出的等待时间
         int maxThreadNum = getMaxThreadNum(configHolder.qps, configHolder.aMapKeys.size());
         int threadNum = Math.min(maxThreadNum, configHolder.threadNum);
         int perExecuteTime = getPerExecuteTime(configHolder.aMapKeys.size(), threadNum, configHolder.qps, configHolder.threadNum * 1.0 / threadNum);
