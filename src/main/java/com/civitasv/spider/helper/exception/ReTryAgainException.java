@@ -10,14 +10,14 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(fluent = true)
 @ToString
-public class TryAgainException extends Exception {
+public class ReTryAgainException extends Exception {
     // 默认的错误信息
     private TryAgainErrorCode tryAgainError;
 
     // 携带的额外信息
     private String extraMessage = null;
 
-    public TryAgainException(TryAgainErrorCode tryAgainErrorCode) {
+    public ReTryAgainException(TryAgainErrorCode tryAgainErrorCode) {
         // 将getMessage()方法的返回值与自定义异常信息同步
         super("errorCode: " + tryAgainErrorCode.code() + "\n" +
                 "errorMessage: " + tryAgainErrorCode.description() + "\n" +
@@ -25,7 +25,7 @@ public class TryAgainException extends Exception {
         this.tryAgainError = tryAgainErrorCode;
     }
 
-    public TryAgainException(TryAgainErrorCode tryAgainErrorCode, String extraMessage) {
+    public ReTryAgainException(TryAgainErrorCode tryAgainErrorCode, String extraMessage) {
         // 将getMessage()方法的返回值与自定义异常信息同步
         super("errorCode: " + tryAgainErrorCode.code() + ";\n" +
                 "errorMessage" + ": " + tryAgainErrorCode.description() + " --- " + extraMessage + "\n" +
@@ -34,12 +34,12 @@ public class TryAgainException extends Exception {
         this.extraMessage = extraMessage;
     }
 
-    public TryAgainException(TryAgainErrorCode iCustomErrorCodeEnum, Exception deException) {
+    public ReTryAgainException(TryAgainErrorCode iCustomErrorCodeEnum, Exception deException) {
         this(iCustomErrorCodeEnum);
         addSuppressed(deException);
     }
 
-    public TryAgainException(TryAgainErrorCode iCustomErrorCodeEnum, String extraMessage, Exception deException) {
+    public ReTryAgainException(TryAgainErrorCode iCustomErrorCodeEnum, String extraMessage, Exception deException) {
         this(iCustomErrorCodeEnum, extraMessage);
         addSuppressed(deException);
     }
