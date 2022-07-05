@@ -3,8 +3,8 @@ package com.civitasv.spider.controller;
 import com.civitasv.spider.controller.helper.BaseController;
 import com.civitasv.spider.controller.helper.ControllerFactory;
 import com.civitasv.spider.helper.Enum.*;
-import com.civitasv.spider.helper.exception.NoTryAgainException;
-import com.civitasv.spider.helper.exception.TryAgainException;
+import com.civitasv.spider.helper.exception.UnRetryAgainException;
+import com.civitasv.spider.helper.exception.ReTryAgainException;
 import com.civitasv.spider.model.bo.POI;
 import com.civitasv.spider.model.bo.Task;
 import com.civitasv.spider.service.JobService;
@@ -20,7 +20,6 @@ import com.civitasv.spider.util.GitHubUtils;
 import com.civitasv.spider.util.MessageUtil;
 import com.civitasv.spider.viewmodel.POIViewModel;
 import com.sun.javafx.collections.ObservableListWrapper;
-import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
@@ -110,7 +109,7 @@ public class POIController extends BaseController {
                     execute();
                     skipHint = false;
                 }
-            } catch (TryAgainException | NoTryAgainException | IOException e) {
+            } catch (ReTryAgainException | UnRetryAgainException | IOException e) {
                 e.printStackTrace();
             }
         });
@@ -198,7 +197,7 @@ public class POIController extends BaseController {
                 "否");
     }
 
-    public Task handleLastTask(boolean skipAlert) throws TryAgainException, NoTryAgainException, IOException {
+    public Task handleLastTask(boolean skipAlert) throws ReTryAgainException, UnRetryAgainException, IOException {
         // 判断是否有未完成的task
         Task task = taskService.getUnFinishedTask();
         // 如果全部已完成，那么使 index 归零
@@ -215,7 +214,7 @@ public class POIController extends BaseController {
             task.taskStatus(TaskStatus.Give_Up);
             taskService.updateById(task.toTaskPo());
             if (!StringUtils.isEmpty(outputDirectory.getText()) && !startNewTaskByAlert()) {
-                throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
+                throw new UnRetryAgainException(NoTryAgainErrorCode.STOP_TASK);
             }
             return null;
         }
@@ -355,7 +354,7 @@ public class POIController extends BaseController {
     public void execute() {
         try {
             poiViewModel.execute(handleLastTask(skipHint));
-        } catch (TryAgainException | NoTryAgainException | IOException e) {
+        } catch (ReTryAgainException | UnRetryAgainException | IOException e) {
             e.printStackTrace();
         }
     }

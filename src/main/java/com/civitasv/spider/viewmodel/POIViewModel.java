@@ -2,8 +2,8 @@ package com.civitasv.spider.viewmodel;
 
 import com.civitasv.spider.controller.POIController;
 import com.civitasv.spider.helper.Enum.*;
-import com.civitasv.spider.helper.exception.NoTryAgainException;
-import com.civitasv.spider.helper.exception.TryAgainException;
+import com.civitasv.spider.helper.exception.UnRetryAgainException;
+import com.civitasv.spider.helper.exception.ReTryAgainException;
 import com.civitasv.spider.model.Feature;
 import com.civitasv.spider.model.bo.Job;
 import com.civitasv.spider.model.bo.POI;
@@ -25,7 +25,6 @@ import com.opencsv.CSVWriter;
 import javafx.application.Platform;
 import javafx.scene.control.*;
 import lombok.Builder;
-import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.geotools.data.DataUtilities;
 import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
@@ -587,7 +586,7 @@ public class POIViewModel {
             List<Job> firstPageJobs;
             try {
                 firstPageJobs = getAnalysisGridsReTry(task.boundary(), task, 3);
-            } catch (NoTryAgainException e) {
+            } catch (UnRetryAgainException e) {
                 e.printStackTrace();
                 if (configHolder.hasStart) appendMessage(e.getMessage());
                 return;
@@ -617,7 +616,7 @@ public class POIViewModel {
         List<POI.Info> pois;
         try {
             pois = getPoiOfJobsWithReTry(task, 3);
-        } catch (NoTryAgainException e) {
+        } catch (UnRetryAgainException e) {
             e.printStackTrace();
             if (configHolder.hasStart) appendMessage(e.getMessage());
             return;
@@ -662,9 +661,9 @@ public class POIViewModel {
      * @param task task对象
      * @param tryTimes 重试次数
      * @return 第一页job集合
-     * @throws NoTryAgainException 如果任务无可重试，则抛出NoTryAgainException异常
+     * @throws UnRetryAgainException 如果任务无可重试，则抛出NoTryAgainException异常
      */
-    private List<Job> getAnalysisGridsReTry(Double[] beginRect, Task task, int tryTimes) throws NoTryAgainException {
+    private List<Job> getAnalysisGridsReTry(Double[] beginRect, Task task, int tryTimes) throws UnRetryAgainException {
         Job beginJob = new Job(null, task.id(), beginRect, task.types(), task.keywords(), 1, configHolder.SIZE);
         ArrayList<Job> falseJobs = new ArrayList<>();
         List<Job> analysisGrids = getAnalysisGrids(Collections.singletonList(beginJob), task, 0, falseJobs);
@@ -677,7 +676,7 @@ public class POIViewModel {
             if (i == tryTimes) {
                 appendMessage("已重试三次" + "重试失败，还有" + falseJobs.size() + "个Job未切分");
                 appendMessage("请重新点击执行，尝试爬取，或放弃尝试");
-                throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
+                throw new UnRetryAgainException(NoTryAgainErrorCode.STOP_TASK);
             }
             i++;
         }
@@ -693,7 +692,7 @@ public class POIViewModel {
      * @param task    task对象
      * @return 划分格网的第一页Job
      */
-    private List<Job> getAnalysisGrids(List<Job> tryJobs, Task task, int baseJobCount, ArrayList<Job> falseJobs) throws NoTryAgainException {
+    private List<Job> getAnalysisGrids(List<Job> tryJobs, Task task, int baseJobCount, ArrayList<Job> falseJobs) throws UnRetryAgainException {
         ExecutorService executorService = Executors.newFixedThreadPool(task.threadNum());
         List<Job> analysisGrid = new ArrayList<>();
         CompletionService<Job> completionService = new ExecutorCompletionService<>(executorService);
@@ -707,7 +706,7 @@ public class POIViewModel {
             List<Job> unTriedJobs = new ArrayList<>(tryJobs);
             for (Job job : tryJobs) {
                 if (!configHolder.hasStart) {
-                    throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
+                    throw new UnRetryAgainException(NoTryAgainErrorCode.STOP_TASK);
                 }
                 submitJob(completionService, job);
             }
@@ -726,7 +725,7 @@ public class POIViewModel {
                             // 如果本次请求失败，如可重试，则继续重试，否则终止任务
                             if (job.jobStatus() != JobStatus.SUCCESS) {
                                 if (job.noTryAgainErrorCode() != null) {
-                                    throw new NoTryAgainException(job.noTryAgainErrorCode());
+                                    throw new UnRetryAgainException(job.noTryAgainErrorCode());
                                 }
                                 falseJobs.add(job);
                                 break;
@@ -760,7 +759,7 @@ public class POIViewModel {
                         falseJobs.addAll(unTriedJobs);
                     } catch (InterruptedException | ExecutionException e) {
                         e.printStackTrace();
-                        throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK, e);
+                        throw new UnRetryAgainException(NoTryAgainErrorCode.STOP_TASK, e);
                     }
                 }
             }
@@ -793,7 +792,7 @@ public class POIViewModel {
             try {
                 executeJob(job);
                 return job;
-            } catch (TryAgainException e) {
+            } catch (ReTryAgainException e) {
                 // 执行完job对爬取结果的处理
                 // 如果主动停止，则不输出
                 synchronized (this) {
@@ -802,7 +801,7 @@ public class POIViewModel {
                     job.tryAgainErrorCode(e.tryAgainError());
                     return job;
                 }
-            } catch (NoTryAgainException e) {
+            } catch (UnRetryAgainException e) {
                 // 执行完job对爬取结果的处理
                 // 如果主动停止，则不输出
                 synchronized (this) {
@@ -847,7 +846,7 @@ public class POIViewModel {
      * @param retryTimes 重试次数
      * @return 爬到的poi数据
      */
-    private List<POI.Info> getPoiOfJobsWithReTry(Task task, int retryTimes) throws NoTryAgainException {
+    private List<POI.Info> getPoiOfJobsWithReTry(Task task, int retryTimes) throws UnRetryAgainException {
         List<Job> jobs = Collections.unmodifiableList(BeanUtils.jobPos2Jobs((jobService.listUnFinished())));
         int jobCount = jobService.count();
         int i = 0;
@@ -885,7 +884,7 @@ public class POIViewModel {
      * @param unFinishedJobs 待爬取的job
      * @param task           task对象
      */
-    private void spiderPoiOfJobs(List<Job> unFinishedJobs, Task task, int allJobsCount) throws NoTryAgainException {
+    private void spiderPoiOfJobs(List<Job> unFinishedJobs, Task task, int allJobsCount) throws UnRetryAgainException {
         int finishedJobsCount = allJobsCount - unFinishedJobs.size();
         // 缓存机制
         int saveThreshold = 50;
@@ -908,7 +907,7 @@ public class POIViewModel {
                         Job job = future.get();
                         if (job.jobStatus() != JobStatus.SUCCESS) {
                             if (job.noTryAgainErrorCode() != null) {
-                                throw new NoTryAgainException(job.noTryAgainErrorCode());
+                                throw new UnRetryAgainException(job.noTryAgainErrorCode());
                             }
                         } else {
                             statistics(job, task);
@@ -936,10 +935,10 @@ public class POIViewModel {
         } catch (TimeoutException e) {
 //            e.printStackTrace();
             saveUnFinishedJob(task, cached, unFinishedJob);
-        } catch (NoTryAgainException | InterruptedException | ExecutionException e) {
+        } catch (UnRetryAgainException | InterruptedException | ExecutionException e) {
 //            e.printStackTrace();
             saveUnFinishedJob(task, cached, unFinishedJob);
-            throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK, e.getMessage());
+            throw new UnRetryAgainException(NoTryAgainErrorCode.STOP_TASK, e.getMessage());
 
         }
     }
@@ -977,9 +976,9 @@ public class POIViewModel {
      * 执行一个Job
      *
      * @param job 等待执行的job
-     * @throws TryAgainException 如果爬取失败，抛出该异常
+     * @throws ReTryAgainException 如果爬取失败，抛出该异常
      */
-    private void executeJob(Job job) throws NoTryAgainException, TryAgainException {
+    private void executeJob(Job job) throws UnRetryAgainException, ReTryAgainException {
         double left = job.bounds()[0], bottom = job.bounds()[1], right = job.bounds()[2], top = job.bounds()[3];
         String polygon = left + "," + top + "|" + right + "," + bottom;
         String key = getAMapKey();
@@ -991,15 +990,15 @@ public class POIViewModel {
      * 获取单个Key，每个key的均匀使用
      *
      * @return 选定的key值
-     * @throws NoTryAgainException 如果未获取到key（例如没有可选key），抛出该异常
+     * @throws UnRetryAgainException 如果未获取到key（例如没有可选key），抛出该异常
      */
-    private synchronized String getAMapKey() throws NoTryAgainException {
+    private synchronized String getAMapKey() throws UnRetryAgainException {
         if (configHolder.aMapKeys.isEmpty()) {
             return null;
         }
         String key = configHolder.aMapKeys.poll();
         if (key == null) {
-            throw new NoTryAgainException(NoTryAgainErrorCode.KEY_POOL_RUN_OUT_OF);
+            throw new UnRetryAgainException(NoTryAgainErrorCode.KEY_POOL_RUN_OUT_OF);
         }
         configHolder.aMapKeys.offer(key);
         return key;
@@ -1039,11 +1038,11 @@ public class POIViewModel {
      * @param page     页数
      * @param size     单页数据量
      * @return 爬取到的poi对象
-     * @throws TryAgainException 如果爬取失败，则抛出该异常
+     * @throws ReTryAgainException 如果爬取失败，则抛出该异常
      */
-    private POI getPoi(String key, String polygon, String keywords, String types, int page, int size) throws NoTryAgainException, TryAgainException {
+    private POI getPoi(String key, String polygon, String keywords, String types, int page, int size) throws UnRetryAgainException, ReTryAgainException {
         if (!configHolder.hasStart) {
-            throw new NoTryAgainException(NoTryAgainErrorCode.STOP_TASK);
+            throw new UnRetryAgainException(NoTryAgainErrorCode.STOP_TASK);
         }
         LocalDateTime startTime = LocalDateTime.now();//获取开始时间
         POI poi = mapDao.getPoi(key, polygon, keywords, types, configHolder.extension, page, size);
@@ -1065,7 +1064,7 @@ public class POIViewModel {
         if (poi == null || poi.infoCode() != 10000) {
             if (poi == null || poi.infoCode() == null || poi.status() == null || poi.info() == null) {
                 // 如果必要字段为空
-                throw new TryAgainException(TryAgainErrorCode.RETURN_NULL_DATA);
+                throw new ReTryAgainException(TryAgainErrorCode.RETURN_NULL_DATA);
             } else {
                 // 不可重试异常
                 NoTryAgainErrorCode noTryAgainErrorCode = NoTryAgainErrorCode.getError(poi.infoCode());
@@ -1073,19 +1072,19 @@ public class POIViewModel {
                     synchronized (this) {
                         // key额度用完，移除该key
                         if (noTryAgainErrorCode.equals(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT)) {
-                            NoTryAgainException noTryAgainException = new NoTryAgainException(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT);
+                            UnRetryAgainException unReTryAgainException = new UnRetryAgainException(NoTryAgainErrorCode.USER_DAILY_QUERY_OVER_LIMIT);
                             if (configHolder.aMapKeys.contains(key)) {
                                 // 输出底层错误信息
-                                appendMessage(noTryAgainException.getMessage());
+                                appendMessage(unReTryAgainException.getMessage());
                                 removeKey(key);
                             }
                             // 如果还有可用key，则继续尝试，否则抛出不可重试异常
                             if (configHolder.aMapKeys.size() != 0) {
-                                throw new TryAgainException(TryAgainErrorCode.TRY_OTHER_KEY, "无效key：" + key, noTryAgainException);
+                                throw new ReTryAgainException(TryAgainErrorCode.TRY_OTHER_KEY, "无效key：" + key, unReTryAgainException);
                             }
                         }
                     }
-                    throw new NoTryAgainException(noTryAgainErrorCode);
+                    throw new UnRetryAgainException(noTryAgainErrorCode);
                 }
                 // 可重试异常
                 TryAgainErrorCode tryAgainErrorCode = TryAgainErrorCode.getError(poi.infoCode());
@@ -1093,13 +1092,13 @@ public class POIViewModel {
                     if (configHolder.errorCodeHashSet.contains(tryAgainErrorCode)) {
                         configHolder.waitFactorForQps++;
                     }
-                    throw new TryAgainException(tryAgainErrorCode);
+                    throw new ReTryAgainException(tryAgainErrorCode);
                 }
-                throw new NoTryAgainException(NoTryAgainErrorCode.UNKNOWN_WEB_ERROR);
+                throw new UnRetryAgainException(NoTryAgainErrorCode.UNKNOWN_WEB_ERROR);
             }
         }
         if (poi.count() == null || poi.details() == null || poi.infoCode() == null || poi.status() == null) {
-            throw new TryAgainException(TryAgainErrorCode.RETURN_NULL_DATA);
+            throw new ReTryAgainException(TryAgainErrorCode.RETURN_NULL_DATA);
         }
         return poi;
     }
