@@ -7,3 +7,5 @@ end
 
 # 发布：bundle exec jekyll serve
 # 更新：bundle update
+
+gem "webrick", "~> 1.7"
