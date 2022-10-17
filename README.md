@@ -1,5 +1,8 @@
 # POIKit
 
+> 警告！本软件仅作为学习交流使用，不得用于任何商业用途！  
+> 如果软件造成侵权，请及时通知并提供详细侵权情况证明，本人将在第一时间内删除侵权软件！
+
 [![build](https://img.shields.io/badge/build-success-brightgreen)](https://github.com/Civitasv/AMapPoi)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Civitasv/AMapPoi/graphs/commit-activity)
 [![version](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=version&query=tag_name&url=https%3A%2F%2Fapi.github.com%2Frepos%2FCivitasv%2FAMapPoi%2Freleases%2Flatest)](https://github.com/Civitasv/AMapPoi/releases/latest)
