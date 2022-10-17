@@ -92,7 +92,7 @@ public class TaskPo implements Serializable {
 
     public Task toTask() throws IOException {
         Queue<String> queue = Arrays.stream(keys.split(",")).collect(Collectors.toCollection(LinkedList::new));
-        BoundaryType boundaryType = BoundaryType.getBoundaryType(boundaryConfig.split(":")[0]);
+        BoundaryType boundaryType = BoundaryType.getBoundaryType(boundaryConfig.split("#")[0]);
         return Task.builder().id(id)
                 .aMapKeys(queue)
                 .types(types)

@@ -270,13 +270,13 @@ public class POIViewModel {
         appendMessage("您是" + viewHolder.userType.getValue());
         switch (viewHolder.userType.getValue()) {
             case IndividualDevelopers:
-                qps = 20;
+                qps = 10;
                 break;
             case IndividualCertifiedDeveloper:
-                qps = 50;
+                qps = 30;
                 break;
             case EnterpriseDeveloper:
-                qps = 300;
+                qps = 100;
                 break;
         }
         configHolder.qps = qps;
@@ -405,14 +405,14 @@ public class POIViewModel {
                     configHolder.boundary = getBoundaryFromGeometry(geometry);
                     if (!configHolder.hasStart) return;
                     appendMessage("成功获取行政区 " + adCode + ":" + adName + " 区域边界");
-                    boundaryConfig = configHolder.tab + ":" + adCode + "," + adName;
+                    boundaryConfig = configHolder.tab + "#" + adCode + "," + adName;
                     break;
                 case "矩形":
                     // 获取坐标类型
                     if (!configHolder.hasStart) return;
                     String rectangle = viewHolder.rectangle.getText();
                     CoordinateType type = viewHolder.rectangleCoordinateType.getValue();
-                    boundaryConfig = configHolder.tab + ":" + rectangle + "," + type;
+                    boundaryConfig = configHolder.tab + "#" + rectangle + "," + type;
                     appendMessage("解析矩形区域中");
                     Double[] rectangleBoundary = BoundaryUtil.getBoundaryByRectangle(rectangle, type);
                     if (rectangleBoundary == null) {
@@ -440,14 +440,14 @@ public class POIViewModel {
                     }
                     configHolder.boundary = getBoundaryFromGeometry(boundary);
 
-                    boundaryConfig = configHolder.tab + ":" + viewHolder.userFile.getText() + ","
+                    boundaryConfig = configHolder.tab + "#" + viewHolder.userFile.getText() + ","
                             + viewHolder.userFileCoordinateType.getValue().description();
                     if (!configHolder.hasStart) return;
                     appendMessage("成功解析用户文件");
                     break;
             }
             try {
-                BoundaryType boundaryType = BoundaryType.getBoundaryType(boundaryConfig.split(":")[0]);
+                BoundaryType boundaryType = BoundaryType.getBoundaryType(boundaryConfig.split("#")[0]);
                 task = Task.builder()
                         .aMapKeys(configHolder.aMapKeys)
                         .types(configHolder.types)
@@ -657,9 +657,10 @@ public class POIViewModel {
 
     /**
      * 对getAnalysisGrids的封装，用于执行任务重试
+     *
      * @param beginRect 初始矩形范围
-     * @param task task对象
-     * @param tryTimes 重试次数
+     * @param task      task对象
+     * @param tryTimes  重试次数
      * @return 第一页job集合
      * @throws UnRetryAgainException 如果任务无可重试，则抛出NoTryAgainException异常
      */
@@ -688,6 +689,7 @@ public class POIViewModel {
 
     /**
      * 爬取第一页生成poi爬取格网，每个格网的数据量小于阈值。
+     *
      * @param tryJobs 初始尝试的Job
      * @param task    task对象
      * @return 划分格网的第一页Job
@@ -784,8 +786,9 @@ public class POIViewModel {
 
     /**
      * 提交任务，任务会自己处理抛出的异常
+     *
      * @param completionService executors
-     * @param job 被提交的job
+     * @param job               被提交的job
      */
     private void submitJob(CompletionService<Job> completionService, Job job) {
         completionService.submit(() -> {
@@ -796,7 +799,7 @@ public class POIViewModel {
                 // 执行完job对爬取结果的处理
                 // 如果主动停止，则不输出
                 synchronized (this) {
-                    if(configHolder.hasStart) appendMessage(e.getMessage());
+                    if (configHolder.hasStart) appendMessage(e.getMessage());
                     job.jobStatus(JobStatus.Failed);
                     job.tryAgainErrorCode(e.tryAgainError());
                     return job;
@@ -805,7 +808,7 @@ public class POIViewModel {
                 // 执行完job对爬取结果的处理
                 // 如果主动停止，则不输出
                 synchronized (this) {
-                    if(configHolder.hasStart) appendMessage(e.getMessage());
+                    if (configHolder.hasStart) appendMessage(e.getMessage());
                     // 暂定本次爬取
                     analysis(false);
                     job.jobStatus(JobStatus.Failed);

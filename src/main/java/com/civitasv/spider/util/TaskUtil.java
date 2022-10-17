@@ -15,7 +15,7 @@ public class TaskUtil {
         // 生成filter
         Predicate<? super POI.Info> result;
         final GeometryFactory geometryFactory = new GeometryFactory();
-        String configContent = boundaryConfig.split(":")[1];
+        String configContent = boundaryConfig.split("#")[1];
         String[] data = configContent.split(",");
         switch (boundaryType) {
             case ADCODE:
